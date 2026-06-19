@@ -131,6 +131,45 @@ jobs:
           fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
+      - name: Resolve Linux app icon
+        id: linux_icon
+        run: |
+          ICON_SRC=""
+          for candidate in \
+            assets/icon.png \
+            icon.png \
+            installers/windows/assets/app_icon.png; do
+            if [ -f "$candidate" ]; then
+              ICON_SRC="$candidate"
+              break
+            fi
+          done
+
+          if [ -z "$ICON_SRC" ]; then
+            for candidate in \
+              assets/icon.ico \
+              installers/windows/assets/app_icon.ico; do
+              if [ -f "$candidate" ]; then
+                mkdir -p build
+                pip install Pillow
+                python -c "from PIL import Image; Image.open('${candidate}').save('build/linux-icon.png')"
+                ICON_SRC="build/linux-icon.png"
+                break
+              fi
+            done
+          fi
+
+          if [ -z "$ICON_SRC" ]; then
+            mkdir -p build
+            pip install Pillow
+            python -c "from PIL import Image; Image.new('RGBA', (256, 256), (30, 64, 175, 255)).save('build/linux-icon.png')"
+            ICON_SRC="build/linux-icon.png"
+            echo "No icon asset found; using generated placeholder PNG"
+          fi
+
+          echo "path=$ICON_SRC" >> "$GITHUB_OUTPUT"
+          echo "Using Linux icon: $ICON_SRC"
+
       - name: Build .deb package
         run: |
           mkdir -p debian-pkg/DEBIAN
@@ -147,14 +186,7 @@ jobs:
 
           cp linux/career-copilot-premium.desktop debian-pkg/usr/share/applications/
 
-          ICON_SRC=""
-          if [ -f "assets/icon.png" ]; then ICON_SRC="assets/icon.png"
-          elif [ -f "icon.png" ]; then ICON_SRC="icon.png"
-          elif [ -f "installers/windows/assets/app_icon.png" ]; then ICON_SRC="installers/windows/assets/app_icon.png"
-          fi
-          if [ -n "$ICON_SRC" ]; then
-            cp "$ICON_SRC" debian-pkg/usr/share/icons/hicolor/256x256/apps/career-copilot-premium.png
-          fi
+          cp "${{ steps.linux_icon.outputs.path }}" debian-pkg/usr/share/icons/hicolor/256x256/apps/career-copilot-premium.png
 
           dpkg-deb --build --root-owner-group debian-pkg CareerCopilotPremium-linux.deb
 
@@ -182,16 +214,10 @@ jobs:
           cp linux/career-copilot-premium.desktop AppDir/
           cp linux/career-copilot-premium.desktop AppDir/usr/share/applications/
 
-          ICON_SRC=""
-          if [ -f "assets/icon.png" ]; then ICON_SRC="assets/icon.png"
-          elif [ -f "icon.png" ]; then ICON_SRC="icon.png"
-          elif [ -f "installers/windows/assets/app_icon.png" ]; then ICON_SRC="installers/windows/assets/app_icon.png"
-          fi
-          if [ -n "$ICON_SRC" ]; then
-            cp "$ICON_SRC" AppDir/usr/share/icons/hicolor/256x256/apps/career-copilot-premium.png
-            cp "$ICON_SRC" AppDir/career-copilot-premium.png
-            cp "$ICON_SRC" AppDir/.DirIcon
-          fi
+          ICON_SRC="${{ steps.linux_icon.outputs.path }}"
+          cp "$ICON_SRC" AppDir/usr/share/icons/hicolor/256x256/apps/career-copilot-premium.png
+          cp "$ICON_SRC" AppDir/career-copilot-premium.png
+          cp "$ICON_SRC" AppDir/.DirIcon
 
           export ARCH=x86_64
           export APPIMAGE_EXTRACT_AND_RUN=1
