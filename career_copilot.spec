@@ -58,16 +58,12 @@ def _load_macos_info_plist() -> dict:
     }
 
 
-a = Analysis(
-    ["premium_launcher.py"],
-    pathex=["."],
-    binaries=[
-        *qt_binaries,
-        *shiboken_binaries,
-        *sounddevice_binaries,
-        *speech_binaries,
-    ],
-    datas=[
+def _optional_data(src: str, dest: str) -> tuple[str, str] | None:
+    return (src, dest) if Path(src).is_file() else None
+
+
+def _build_datas() -> list[tuple[str, str]]:
+    required = [
         ("desktop_app", "desktop_app"),
         ("web_app", "web_app"),
         ("mobile_app/__init__.py", "mobile_app"),
@@ -81,16 +77,40 @@ a = Analysis(
         ("app_licensing.py", "."),
         ("web_app/templates", "web_app/templates"),
         ("web_app/static", "web_app/static"),
+    ]
+    optional = [
         ("data/cache/.gitkeep", "data/cache"),
         ("data/user_profiles/.gitkeep", "data/user_profiles"),
         (".env.example", "."),
         ("installers/windows/assets/user_manual.html", "docs"),
         ("docs/USER_MANUAL.html", "docs"),
-        *qt_datas,
-        *shiboken_datas,
-        *sounddevice_datas,
-        *speech_datas,
+    ]
+    datas: list[tuple[str, str]] = []
+    for src, dest in required:
+        if not Path(src).exists():
+            raise FileNotFoundError(f"Required PyInstaller data path missing: {src}")
+        datas.append((src, dest))
+    for src, dest in optional:
+        entry = _optional_data(src, dest)
+        if entry is not None:
+            datas.append(entry)
+    datas.extend(qt_datas)
+    datas.extend(shiboken_datas)
+    datas.extend(sounddevice_datas)
+    datas.extend(speech_datas)
+    return datas
+
+
+a = Analysis(
+    ["premium_launcher.py"],
+    pathex=["."],
+    binaries=[
+        *qt_binaries,
+        *shiboken_binaries,
+        *sounddevice_binaries,
+        *speech_binaries,
     ],
+    datas=_build_datas(),
     hiddenimports=[
         "flask",
         *collect_submodules("flask"),

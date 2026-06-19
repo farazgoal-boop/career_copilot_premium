@@ -13,6 +13,7 @@ __pycache__/
 # Local secrets and editor state
 .env
 .env.*
+!.env.example
 .flask_secret_key
 .vscode/
 
