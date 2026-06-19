@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Black and white donkey robot icon">
+  <rect width="512" height="512" fill="#ffffff"/>
+  <g fill="none" stroke="#000000" stroke-width="18" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M168 132 L126 54 L210 106" fill="#ffffff"/>
+    <path d="M344 132 L386 54 L302 106" fill="#ffffff"/>
+    <path d="M126 54 L150 130"/>
+    <path d="M386 54 L362 130"/>
+    <ellipse cx="256" cy="274" rx="168" ry="162" fill="#ffffff"/>
+    <ellipse cx="194" cy="250" rx="28" ry="22" fill="#000000"/>
+    <circle cx="318" cy="250" r="34" fill="#ffffff"/>
+    <circle cx="318" cy="250" r="14" fill="#000000"/>
+    <path d="M142 328 C184 292, 224 292, 246 324"/>
+    <path d="M266 324 C290 296, 332 296, 370 328"/>
+    <path d="M230 286 L178 304"/>
+    <path d="M230 314 L176 334"/>
+    <path d="M282 286 L334 304"/>
+    <path d="M282 314 L336 334"/>
+    <path d="M206 370 C228 390, 284 390, 306 370"/>
+    <path d="M226 398 L286 398"/>
+    <rect x="232" y="214" width="48" height="36" rx="8" fill="#ffffff"/>
+    <path d="M256 214 L256 184"/>
+    <circle cx="256" cy="172" r="8" fill="#000000"/>
+    <path d="M104 252 L58 252"/>
+    <path d="M454 252 L408 252"/>
+  </g>
+  <g fill="#000000">
+    <path d="M132 206 L158 188 L178 206 L150 224 Z"/>
+    <path d="M354 206 L380 188 L400 206 L372 224 Z"/>
+    <rect x="82" y="84" width="16" height="344" rx="8"/>
+    <rect x="414" y="84" width="16" height="344" rx="8"/>
+  </g>
+</svg>

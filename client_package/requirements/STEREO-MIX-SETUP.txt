@@ -1,0 +1,18 @@
+Stereo Mix — Capture Zoom/WhatsApp Call Audio
+=============================================
+
+1. Right-click the speaker icon in Windows taskbar → Sounds.
+
+2. Open the Recording tab.
+
+3. Right-click empty area → Show Disabled Devices.
+
+4. Enable "Stereo Mix" (or "What U Hear" / loopback device).
+
+5. Set Stereo Mix as Default Device (optional).
+
+6. Restart Career Copilot Premium.
+
+7. Dashboard Go Live checklist should show "Call audio" as Ready.
+
+If Stereo Mix is not available, the app uses your microphone instead.

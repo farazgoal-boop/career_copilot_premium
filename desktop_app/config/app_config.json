@@ -1,0 +1,7 @@
+{
+  "theme": "dark",
+  "hotkey": "F2",
+  "overlay_opacity": 0.7,
+  "data_directory": "data",
+  "log_directory": "logs"
+}

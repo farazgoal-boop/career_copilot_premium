@@ -1,0 +1,10 @@
+VirusTotal Scan
+===============
+
+Upload Windows/CareerCopilotPremium_Setup_v1.0.0.exe to:
+https://www.virustotal.com
+
+Paste your public scan link below:
+LINK: (pending — upload Setup.exe and paste link here)
+
+Note: Unsigned apps may show 2–5 false positives. This is normal for PyInstaller builds.

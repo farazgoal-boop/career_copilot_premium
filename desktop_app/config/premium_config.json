@@ -1,0 +1,23 @@
+{
+  "premium": true,
+  "features": [
+    "encryption",
+    "confidence_validator",
+    "learning_reports",
+    "desktop_overlay"
+  ],
+  "packaging_targets": [
+    "windows_desktop",
+    "android_mobile"
+  ],
+  "mobile_follow_up": {
+    "android_bubble_status": "implemented",
+    "react_native_shell": "implemented",
+    "native_overlay_service": "implemented",
+    "bridge_contract": "desktop_session_store_v1",
+    "kivy_dashboard": "implemented",
+    "android_build_entry": "main.py",
+    "overlay_permission_flow": "implemented",
+    "floating_bubble_ui": "implemented"
+  }
+}

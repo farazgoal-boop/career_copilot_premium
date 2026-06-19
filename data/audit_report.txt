@@ -1,0 +1,69 @@
+Career Copilot Premium Full Audit Report
+Generated at: 2026-06-09T19:02:10.974659+00:00
+Workspace root: D:\claude testing app\fresh career_copilot_premium
+
+Overall Score: 6/8 checks passed
+
+[FAIL] Dependency Check
+  - flask: 3.1.3
+  - cryptography: 44.0.3
+  - qrcode: 8.2
+  - pillow: 12.2.0
+  - segno: 1.6.6
+  - sounddevice: 0.5.5
+  - soundfile: 0.13.1
+  - numpy: 2.4.6
+  - pypdf: 5.9.0
+  - PySide6: 6.11.1
+  - werkzeug: 3.1.8
+  - jinja2: 3.1.6
+  - Install command: .venv\Scripts\pip.exe install sqlalchemy
+  Issues:
+  - Missing packages: sqlalchemy
+  - Install command: .venv\Scripts\pip.exe install sqlalchemy
+
+[PASS] File Structure Check
+  - Files checked: 9
+  - Folders checked: 5
+
+[PASS] Flask App Check
+  - root: HTTP 302
+  - dashboard: HTTP 200
+  - app.css: HTTP 200
+  - app.js: HTTP 200
+  - briefing-get: HTTP 200
+  - briefing-post: HTTP 200
+  - health: HTTP 200
+  - recent-sessions: HTTP 200
+
+[PASS] Database Check
+  - Database initialized: D:\claude testing app\fresh career_copilot_premium\data\cache\audit_database.sqlite3
+  - SQLite create/write/read/encryption checks executed.
+
+[PASS] Mobile Bridge Check
+  - Started mobile bridge server on 127.0.0.1:8765.
+  - Mobile bridge /health returned ok:true.
+  - Pairing code generated: 018916
+  - Pairing code persisted to data/cache/pairing_codes.json
+  - Stopped audit-started mobile bridge server.
+
+[PASS] Session Creation Check
+  - Created profile: D:\claude testing app\fresh career_copilot_premium\data\user_profiles\test-audit\test-audit\user_complete_profile.json
+  - Created session: test-audit-audit-labs-backend-engineer-20260609190202
+  - Session state loaded successfully.
+  - Cleaned up test-audit profile and audit registry/database files.
+
+[FAIL] Licensing Check
+  - Machine fingerprint format valid: A96A4B240576B98DF9FB0EA2
+  - Request code format valid: CCP-AFDB-A920-DA0B-FC8B-879A
+  Issues:
+  - License file does not exist: D:\claude testing app\fresh career_copilot_premium\data\cache\license_state.json
+
+[PASS] Ollama/AI Check
+  - Discovered models: llama3.2:3b, nomic-embed-text:latest, qwen2.5-coder:1.5b-base, llama3.2:1b
+  - Generate response sample: OK
+
+Recommended Fixes
+- Missing packages: sqlalchemy
+- Install command: .venv\Scripts\pip.exe install sqlalchemy
+- License file does not exist: D:\claude testing app\fresh career_copilot_premium\data\cache\license_state.json

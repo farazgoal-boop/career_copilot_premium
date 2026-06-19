@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Career Copilot Premium{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/premium.css') }}">
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="premium-layout {% block body_class %}{% endblock %}">
+  <header class="premium-navbar">
+    <a class="premium-navbar__brand" href="{{ url_for('dashboard') }}">
+      <div class="premium-navbar__logo">CC</div>
+      <div class="premium-navbar__wordmark">
+        <strong>Career Copilot Premium</strong>
+        <span>Operator Control Room</span>
+      </div>
+    </a>
+
+    <div class="premium-navbar__actions">
+      <div class="premium-status">
+        <span class="premium-status__dot premium-status__dot--{{ 'online' if session_online|default(false) else 'offline' }}"></span>
+        <span>{{ session_status_label|default('Session Offline') }}</span>
+      </div>
+      <a class="premium-cta" href="{{ connect_mobile_url if connect_mobile_url is defined else url_for('dashboard') ~ '#command-deck' }}">Connect Mobile</a>
+    </div>
+  </header>
+
+  <main class="premium-main">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="premium-footer">
+    <div class="premium-footer__brand">Faraz Automation</div>
+    <div class="premium-footer__links">
+      <a class="premium-footer__link" href="https://muhammad-faraz-dev.netlify.app" target="_blank" rel="noopener noreferrer" title="Web"><span class="premium-footer__icon">🌐</span><span>Web</span></a>
+      <a class="premium-footer__link premium-footer__link--facebook" href="https://facebook.com/share/1JGnSNK2Mc" target="_blank" rel="noopener noreferrer" title="Facebook"><span class="premium-footer__icon">f</span><span>Facebook</span></a>
+      <a class="premium-footer__link premium-footer__link--fiverr" href="https://fiverr.com/s/qDKLLXX" target="_blank" rel="noopener noreferrer" title="Fiverr"><span class="premium-footer__icon">Fi</span><span>Fiverr</span></a>
+      <a class="premium-footer__link premium-footer__link--upwork" href="https://upwork.com/freelancers/~018c67c9c97b482a3a" target="_blank" rel="noopener noreferrer" title="Upwork"><span class="premium-footer__icon">Up</span><span>Upwork</span></a>
+      <a class="premium-footer__link" href="https://github.com/farazgoal-boop" target="_blank" rel="noopener noreferrer" title="GitHub"><span class="premium-footer__icon">GH</span><span>GitHub</span></a>
+      <a class="premium-footer__link premium-footer__link--linkedin" href="https://linkedin.com/in/m-faraz-85b175179" target="_blank" rel="noopener noreferrer" title="LinkedIn"><span class="premium-footer__icon">in</span><span>LinkedIn</span></a>
+      <a class="premium-footer__link premium-footer__link--youtube" href="https://www.youtube.com/@farazautomation" target="_blank" rel="noopener noreferrer" title="YouTube"><span class="premium-footer__icon">YT</span><span>YouTube</span></a>
+      <a class="premium-footer__link premium-footer__link--email" href="mailto:farazautomation@gmail.com" title="Email"><span class="premium-footer__icon">@</span><span>Email</span></a>
+    </div>
+  </footer>
+
+  <div id="premium-toast-host" class="premium-toast-host" aria-live="polite" aria-atomic="true"></div>
+
+  <script>
+    (() => {
+      const host = document.getElementById('premium-toast-host');
+      window.showToast = function showToast(message, tone = 'info') {
+        if (!host || !message) {
+          return;
+        }
+        const toast = document.createElement('div');
+        toast.className = `premium-toast premium-toast--${tone}`;
+        toast.textContent = String(message);
+        host.appendChild(toast);
+        window.requestAnimationFrame(() => toast.classList.add('is-visible'));
+        window.setTimeout(() => {
+          toast.classList.remove('is-visible');
+          window.setTimeout(() => toast.remove(), 200);
+        }, 2600);
+      };
+    })();
+  </script>
+  {% block extra_scripts %}{% endblock %}
+</body>
+</html>

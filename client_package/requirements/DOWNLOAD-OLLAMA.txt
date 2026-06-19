@@ -1,0 +1,17 @@
+Ollama — Local AI Engine (Recommended)
+======================================
+
+1. Download Ollama for Windows:
+   https://ollama.com/download
+
+2. Install and open Ollama.
+
+3. Open Command Prompt and run:
+   ollama pull llama3.2:1b
+
+4. Verify Ollama is running:
+   ollama list
+
+5. Restart Career Copilot Premium.
+
+No API key required when Ollama is running.

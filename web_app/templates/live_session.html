@@ -1,0 +1,698 @@
+{% extends "base.html" %}
+
+{% block title %}Career Copilot Live Session{% endblock %}
+
+{% block body_class %}live-session-view{% endblock %}
+
+{% block extra_head %}
+  <style>
+    :root {
+      --bg: #0f0f0f;
+      --panel: #171717;
+      --panel-strong: #1d1d1d;
+      --line: rgba(255, 255, 255, 0.08);
+      --text: #ffffff;
+      --muted: #b9b9c2;
+      --accent: #6366f1;
+      --accent-soft: rgba(99, 102, 241, 0.16);
+      --ready: #14b8a6;
+      --listening: #22c55e;
+      --processing: #f59e0b;
+      --shadow: 0 30px 70px rgba(0, 0, 0, 0.38);
+    }
+
+    * { box-sizing: border-box; }
+
+    .shell {
+      width: min(1120px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 28px 0 40px;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .eyebrow {
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      font-size: 0.76rem;
+      margin: 0 0 8px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+    }
+
+    .session-chip {
+      padding: 10px 14px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1.55fr 0.85fr;
+      gap: 20px;
+    }
+
+    .single-view-grid {
+      grid-template-columns: 1.1fr 1.2fr;
+      align-items: start;
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.015));
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+    }
+
+    .hero-card {
+      padding: 26px;
+      margin-bottom: 20px;
+      background: linear-gradient(145deg, rgba(14, 165, 164, 0.12), rgba(23, 23, 23, 0.95));
+    }
+
+    .left-stack,
+    .right-stack {
+      display: grid;
+      gap: 20px;
+    }
+
+    .stage-card,
+    .composer-card {
+      padding: 24px;
+    }
+
+    .stage-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .stage-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 0.84rem;
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .call-stage-box {
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      background: radial-gradient(circle at 18% 10%, rgba(14, 165, 164, 0.2), rgba(23, 23, 23, 0.94));
+      padding: 18px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .meeting-preview {
+      border: 1px dashed rgba(255, 255, 255, 0.2);
+      border-radius: 16px;
+      min-height: 150px;
+      display: grid;
+      place-items: center;
+      color: #d5f2ef;
+      text-align: center;
+      padding: 14px;
+      font-size: 0.95rem;
+      line-height: 1.5;
+      background: rgba(8, 14, 20, 0.56);
+    }
+
+    .speech-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    .speech-bubble {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 12px 14px;
+      background: rgba(8, 14, 20, 0.62);
+    }
+
+    .speech-bubble h4 {
+      margin: 0 0 8px;
+      font-size: 0.85rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #9ce3dc;
+    }
+
+    .speech-bubble p {
+      margin: 0;
+      color: #e7f7f4;
+      min-height: 48px;
+      line-height: 1.45;
+      white-space: pre-wrap;
+    }
+
+    .speech-bubble p.placeholder {
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    .composer-card textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+      font: inherit;
+      color: var(--text);
+      background: rgba(8, 14, 20, 0.75);
+      resize: vertical;
+      min-height: 90px;
+      margin: 10px 0 12px;
+    }
+
+    .composer-actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .steer-status {
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+      min-height: 20px;
+    }
+
+    .status-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+
+    .status-dot {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.03);
+      flex: 0 0 auto;
+    }
+
+    .status-dot.listening { background: var(--listening); }
+    .status-dot.processing { background: var(--processing); }
+    .status-dot.ready { background: var(--ready); }
+
+    .status-label {
+      font-size: clamp(1.4rem, 3vw, 2.4rem);
+      font-weight: 700;
+    }
+
+    .status-hint {
+      color: var(--muted);
+      font-size: 1rem;
+      line-height: 1.6;
+      margin: 0;
+    }
+
+    .answer-card,
+    .controls-card,
+    .meta-card {
+      padding: 24px;
+    }
+
+    .answer-header,
+    .controls-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    h2, h3 {
+      margin: 0;
+      font-size: 1.2rem;
+    }
+
+    .answer-body {
+      min-height: 180px;
+      padding: 22px;
+      border-radius: 22px;
+      background: var(--panel-strong);
+      border: 1px solid var(--line);
+      font-size: clamp(1.15rem, 2vw, 1.6rem);
+      line-height: 1.7;
+      white-space: pre-wrap;
+    }
+
+    .answer-body.placeholder {
+      color: var(--muted);
+      font-size: 1.05rem;
+    }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      border: 0;
+      border-radius: 999px;
+      min-height: 46px;
+      padding: 0 18px;
+      font: inherit;
+      cursor: pointer;
+      transition: transform 160ms ease, opacity 160ms ease;
+    }
+
+    button:hover { transform: translateY(-1px); }
+    button:disabled { opacity: 0.5; cursor: wait; }
+
+    .button-primary {
+      background: var(--accent);
+      color: white;
+      box-shadow: 0 14px 24px rgba(14, 165, 164, 0.25);
+    }
+
+    .button-secondary {
+      background: rgba(255,255,255,0.06);
+      color: white;
+      border: 1px solid var(--line);
+    }
+
+    .pill-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .pill {
+      padding: 12px 16px;
+      border-radius: 999px;
+      border: 1px solid rgba(14, 165, 164, 0.34);
+      background: var(--accent-soft);
+      color: var(--text);
+      cursor: pointer;
+      line-height: 1.35;
+    }
+
+    .pill:hover {
+      border-color: rgba(14, 165, 164, 0.62);
+    }
+
+    .meta-list {
+      display: grid;
+      gap: 14px;
+    }
+
+    .meta-row {
+      padding: 14px 16px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--line);
+    }
+
+    .meta-row strong {
+      display: block;
+      font-size: 0.84rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .meta-row span {
+      line-height: 1.5;
+    }
+
+    @media (max-width: 920px) {
+      .grid,
+      .single-view-grid { grid-template-columns: 1fr; }
+      .topbar { align-items: flex-start; flex-direction: column; }
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+  <main class="shell">
+    <div class="topbar">
+      <div>
+        <p class="eyebrow">Live Companion Screen</p>
+        <h1>Call Session View</h1>
+      </div>
+      <div class="session-chip">Session: {{ session_id }}</div>
+    </div>
+
+    <section class="hero-card card js-data-card is-loading">
+      <div class="status-row">
+        <span id="status-dot" class="status-dot processing"></span>
+        <div>
+          <div id="status-label" class="status-label">Processing...</div>
+          <p id="status-hint" class="status-hint">Waiting for the next live update from the session.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid single-view-grid">
+      <div class="left-stack">
+        <section class="stage-card card js-data-card is-loading">
+          <div class="stage-header">
+            <div>
+              <h2>Call Overlap Workspace</h2>
+              <p class="status-hint">Single view for interviewer context, your spoken line, and AI reply guidance.</p>
+            </div>
+            <span class="stage-tag">Companion overlap mode</span>
+          </div>
+
+          <div class="call-stage-box">
+            <div class="meeting-preview">Keep Zoom/WhatsApp call window visible behind or beside this panel for true one-screen operation.<br><strong>Recommended default:</strong> Preset B (70/30 split) - caller window 70%, Career Copilot 30%.</div>
+            <div class="speech-grid">
+              <article class="speech-bubble">
+                <h4>Interviewer Said</h4>
+                <p id="interviewer-text" class="placeholder">Waiting for interviewer prompt...</p>
+              </article>
+              <article class="speech-bubble">
+                <h4>You Said</h4>
+                <p id="user-text" class="placeholder">Your spoken response will appear here for separation.</p>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <section class="composer-card card js-data-card is-loading">
+          <h3>Live Input to AI</h3>
+          <p class="status-hint">Type a quick steer in the same view to adjust the next generated reply without switching screens.</p>
+          <textarea id="live-steer-input" placeholder="Example: keep next answer under 25 seconds and focus on delivery speed."></textarea>
+          <div class="composer-actions">
+            <button id="send-live-steer" class="button-primary" type="button">Send Input</button>
+          </div>
+          <p id="steer-status" class="steer-status">No live input sent yet.</p>
+        </section>
+
+        <section class="answer-card card js-data-card is-loading">
+          <div class="answer-header">
+            <h2>Main Reply</h2>
+            <button id="copy-button" class="button-secondary" type="button">Copy</button>
+          </div>
+          <div id="answer-body" class="answer-body placeholder">Waiting for the operator to capture a question and prepare the next answer.</div>
+        </section>
+
+        <section class="controls-card card js-data-card is-loading" style="margin-top:20px;">
+          <div class="controls-header">
+            <h3>Alternative Replies</h3>
+          </div>
+          <div id="alternatives" class="pill-list"></div>
+          <div class="actions" style="margin-top: 20px;">
+            <button id="fallback-simple" class="button-primary" type="button">Simpler</button>
+            <button id="fallback-emergency" class="button-secondary" type="button">Emergency 1-liner</button>
+          </div>
+        </section>
+      </div>
+
+      <div class="right-stack">
+        <aside class="meta-card card js-data-card is-loading">
+          <h3 style="margin-bottom:18px;">Session Context</h3>
+          <div class="meta-list">
+            <div class="meta-row">
+              <strong>Profile</strong>
+              <span id="meta-profile">-</span>
+            </div>
+            <div class="meta-row">
+              <strong>Target</strong>
+              <span id="meta-target">-</span>
+            </div>
+            <div class="meta-row">
+              <strong>Worker Status</strong>
+              <span id="meta-worker">-</span>
+            </div>
+            <div class="meta-row">
+              <strong>Last Updated</strong>
+              <span id="meta-updated">-</span>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+  </main>
+{% endblock %}
+
+{% block extra_scripts %}
+  <script>
+    (() => {
+      const sessionId = {{ session_id|tojson }};
+      const initialPayload = {{ initial_payload|tojson }};
+      const answerBody = document.getElementById('answer-body');
+      const statusDot = document.getElementById('status-dot');
+      const statusLabel = document.getElementById('status-label');
+      const statusHint = document.getElementById('status-hint');
+      const alternatives = document.getElementById('alternatives');
+      const copyButton = document.getElementById('copy-button');
+      const fallbackSimple = document.getElementById('fallback-simple');
+      const fallbackEmergency = document.getElementById('fallback-emergency');
+      const interviewerText = document.getElementById('interviewer-text');
+      const userText = document.getElementById('user-text');
+      const liveSteerInput = document.getElementById('live-steer-input');
+      const sendLiveSteerButton = document.getElementById('send-live-steer');
+      const steerStatus = document.getElementById('steer-status');
+      const metaProfile = document.getElementById('meta-profile');
+      const metaTarget = document.getElementById('meta-target');
+      const metaWorker = document.getElementById('meta-worker');
+      const metaUpdated = document.getElementById('meta-updated');
+      const dataCards = Array.from(document.querySelectorAll('.js-data-card'));
+      let latestPersistentPrompt = String(initialPayload?.prompts?.persistent || '');
+
+      function deriveVisualState(payload) {
+        const overlayStatus = String(payload?.overlay?.status || '').toLowerCase();
+        if (overlayStatus.includes('answer_ready') || overlayStatus.includes('ready')) {
+          return {
+            tone: 'ready',
+            label: 'Answer Ready',
+            hint: payload?.overlay?.headline || 'AI reply is ready to deliver.',
+          };
+        }
+        if (overlayStatus.includes('listening')) {
+          return {
+            tone: 'listening',
+            label: 'Listening...',
+            hint: payload?.readiness?.hint || 'The assistant is listening for the next question.',
+          };
+        }
+        return {
+          tone: 'processing',
+          label: 'Processing...',
+          hint: payload?.readiness?.hint || 'The assistant is thinking through the next response.',
+        };
+      }
+
+      function setStatus(payload) {
+        const state = deriveVisualState(payload);
+        statusDot.className = `status-dot ${state.tone}`;
+        statusLabel.textContent = state.label;
+        statusHint.textContent = state.hint;
+      }
+
+      function setAnswer(payload) {
+        const mainAnswer = String(payload?.overlay?.body || '').trim();
+        if (mainAnswer) {
+          answerBody.textContent = mainAnswer;
+          answerBody.classList.remove('placeholder');
+        } else {
+          answerBody.textContent = 'Waiting for the operator to capture a question and prepare the next answer.';
+          answerBody.classList.add('placeholder');
+        }
+      }
+
+      function setAlternatives(payload) {
+        alternatives.innerHTML = '';
+        const items = Array.isArray(payload?.overlay?.alternatives) ? payload.overlay.alternatives.slice(0, 3) : [];
+        if (!items.length) {
+          const empty = document.createElement('div');
+          empty.className = 'pill';
+          empty.textContent = 'Alternative replies will appear here.';
+          alternatives.appendChild(empty);
+          return;
+        }
+        items.forEach((text) => {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'pill';
+          button.textContent = text;
+          button.addEventListener('click', async () => {
+            try {
+              await navigator.clipboard.writeText(text);
+              window.showToast?.('Alternative reply copied', 'success');
+            } catch {
+              window.showToast?.('Copy failed', 'error');
+            }
+          });
+          alternatives.appendChild(button);
+        });
+      }
+
+      function splitConversationText(payload) {
+        const headline = String(payload?.overlay?.headline || '').trim();
+        const transcript = String(payload?.overlay?.transcript || '').trim();
+        const notifications = Array.isArray(payload?.snapshot?.notifications) ? payload.snapshot.notifications : [];
+
+        let interviewer = '';
+        let user = '';
+
+        const combined = transcript || headline;
+        const interviewerMatch = combined.match(/(?:interviewer|question)\s*:\s*(.+?)(?:\n|$)/i);
+        const userMatch = combined.match(/(?:you|candidate|user)\s*:\s*(.+?)(?:\n|$)/i);
+
+        if (interviewerMatch) interviewer = interviewerMatch[1].trim();
+        if (userMatch) user = userMatch[1].trim();
+
+        if (!interviewer) {
+          interviewer = headline && !/^reply\s+ready$/i.test(headline)
+            ? headline
+            : 'Waiting for interviewer prompt...';
+        }
+
+        if (!user) {
+          const fromNotification = notifications
+            .map((item) => String(item?.message || '').trim())
+            .find((message) => /Switched the suggested answer|Answer ready|Listening/i.test(message));
+          user = fromNotification || 'Your spoken response will appear here for separation.';
+        }
+
+        return { interviewer, user };
+      }
+
+      function setConversation(payload) {
+        const { interviewer, user } = splitConversationText(payload);
+        interviewerText.textContent = interviewer;
+        userText.textContent = user;
+        interviewerText.classList.toggle('placeholder', interviewer.toLowerCase().includes('waiting'));
+        userText.classList.toggle('placeholder', user.toLowerCase().includes('will appear'));
+      }
+
+      function setMeta(payload) {
+        const snapshot = payload?.snapshot || {};
+        metaProfile.textContent = snapshot.profile_name || '-';
+        metaTarget.textContent = `${snapshot.role_title || '-'} at ${snapshot.company_name || '-'}`;
+        metaWorker.textContent = snapshot.worker_status || '-';
+        metaUpdated.textContent = snapshot.updated_at || '-';
+      }
+
+      function render(payload) {
+        dataCards.forEach((card) => card.classList.remove('is-loading'));
+        latestPersistentPrompt = String(payload?.prompts?.persistent || latestPersistentPrompt || '');
+        setStatus(payload);
+        setConversation(payload);
+        setAnswer(payload);
+        setAlternatives(payload);
+        setMeta(payload);
+      }
+
+      async function sendLiveSteer() {
+        const livePrompt = String(liveSteerInput.value || '').trim();
+        if (!livePrompt) {
+          steerStatus.textContent = 'Type live input before sending.';
+          return;
+        }
+
+        sendLiveSteerButton.disabled = true;
+        const previous = sendLiveSteerButton.textContent;
+        sendLiveSteerButton.textContent = 'Sending...';
+        try {
+          const response = await fetch(`/api/session/${encodeURIComponent(sessionId)}/prompts`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              persistent_prompt: latestPersistentPrompt,
+              live_prompt: livePrompt,
+            }),
+          });
+          const payload = await response.json();
+          if (!response.ok) {
+            throw new Error(payload.error || `Input failed: ${response.status}`);
+          }
+          steerStatus.textContent = 'Live input sent. Next generated reply will follow this steer.';
+          window.showToast?.('Live input sent', 'success');
+          render(payload);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'Live input failed';
+          steerStatus.textContent = message;
+          window.showToast?.(message, 'error');
+        } finally {
+          sendLiveSteerButton.disabled = false;
+          sendLiveSteerButton.textContent = previous;
+        }
+      }
+
+      async function refresh() {
+        try {
+          const response = await fetch(`/api/session/${encodeURIComponent(sessionId)}`, { cache: 'no-store' });
+          if (!response.ok) {
+            throw new Error(`Failed to refresh session: ${response.status}`);
+          }
+          const payload = await response.json();
+          render(payload);
+        } catch (error) {
+          statusHint.textContent = error instanceof Error ? error.message : 'Live refresh failed.';
+        }
+      }
+
+      async function postAction(actionId, button) {
+        const previous = button.textContent;
+        button.disabled = true;
+        button.textContent = 'Sending...';
+        try {
+          const response = await fetch(`/session/${encodeURIComponent(sessionId)}/actions/${actionId}`, {
+            method: 'POST',
+          });
+          const payload = await response.json();
+          if (!response.ok) {
+            throw new Error(payload.error || `Action failed: ${response.status}`);
+          }
+          window.showToast?.(`${actionId.replace('fallback_', '').replace('_', ' ')} queued`, 'success');
+          await refresh();
+        } catch (error) {
+          window.showToast?.(error instanceof Error ? error.message : 'Action failed', 'error');
+        } finally {
+          button.disabled = false;
+          button.textContent = previous;
+        }
+      }
+
+      copyButton.addEventListener('click', async () => {
+        const text = answerBody.textContent || '';
+        if (!text || answerBody.classList.contains('placeholder')) {
+          window.showToast?.('No answer to copy yet', 'info');
+          return;
+        }
+        try {
+          await navigator.clipboard.writeText(text);
+          window.showToast?.('Main reply copied', 'success');
+        } catch {
+          window.showToast?.('Copy failed', 'error');
+        }
+      });
+
+      fallbackSimple.addEventListener('click', () => postAction('fallback_simple', fallbackSimple));
+      fallbackEmergency.addEventListener('click', () => postAction('fallback_emergency', fallbackEmergency));
+      sendLiveSteerButton.addEventListener('click', sendLiveSteer);
+
+      render(initialPayload);
+      window.setInterval(refresh, 3000);
+    })();
+  </script>
+{% endblock %}

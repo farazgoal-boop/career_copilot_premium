@@ -1,0 +1,16 @@
+Career Copilot Premium — Linux Setup Guide
+==========================================
+
+1. Open terminal in this folder
+2. Run: chmod +x install_linux.sh START_PREMIUM.sh
+3. Run: ./install_linux.sh
+4. Add MISTRAL_API_KEY to .env
+5. Run: ./START_PREMIUM.sh
+6. Browser opens to http://127.0.0.1:5000
+7. Press F2 during interviews; F3 to hide/show overlay
+
+Audio for calls:
+- PulseAudio loopback: pactl load-module module-loopback
+- The installer runs this automatically when possible
+
+Get free Mistral key: https://console.mistral.ai/

@@ -1,0 +1,5 @@
+1. Copy CareerCopilotPremium.apk to your Android phone.
+2. Allow Install unknown apps for your file manager if Android asks.
+3. Install the APK and open Career Copilot Premium.
+4. Connect phone and PC to the same Wi-Fi network.
+5. On PC dashboard, tap Link Device and scan the QR code or enter the pairing code.

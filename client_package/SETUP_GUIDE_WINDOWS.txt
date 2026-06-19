@@ -1,0 +1,16 @@
+Career Copilot Premium — Windows Setup Guide
+============================================
+
+1. Run CareerCopilotPremium_Setup_v1.0.0.exe
+2. Launch Career Copilot Premium from Start Menu
+3. On first launch, enter your free Mistral API key in the setup window
+4. Get a key at https://console.mistral.ai/ (free account)
+5. Dashboard opens at http://127.0.0.1:5000 (auto-switches to 5001 if busy)
+6. Click "Start Interview" or complete onboarding once
+7. Press F2 during calls to capture interviewer questions
+8. Press F3 to show/hide the overlay
+
+Troubleshooting:
+- App not opening: check logs/startup_error.log next to the EXE
+- Install Visual C++ Redistributable: https://aka.ms/vs/17/release/vc_redist.x64.exe
+- No audio: enable Stereo Mix or install VB-Cable (free) from vb-audio.com/Cable

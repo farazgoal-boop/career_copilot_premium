@@ -1,0 +1,10 @@
+{
+  "stt_model": "speech_recognition",
+  "llm_model": "mistral-small-latest",
+  "llm_base_url": "https://api.mistral.ai/v1/chat/completions",
+  "llm_fallback_model": "llama3.2:3b",
+  "llm_fallback_base_url": "http://127.0.0.1:11434/api/generate",
+  "llm_api_key_env": "MISTRAL_API_KEY",
+  "offline_fallback_enabled": true,
+  "llm_timeout_seconds": 25.0
+}

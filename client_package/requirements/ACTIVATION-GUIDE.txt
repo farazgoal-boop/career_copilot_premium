@@ -1,0 +1,17 @@
+Activation — One Computer Per License ($300 Lifetime)
+=====================================================
+
+1. Launch Career Copilot Premium.
+
+2. On the activation screen, copy your REQUEST CODE (starts with CCP-).
+
+3. Email the request code to your seller.
+
+4. You will receive an ACTIVATION CODE (starts with ACT-).
+
+5. Enter the activation code and click Activate.
+
+6. Activation is bound to this computer only.
+
+Seller tool (for you, not the client):
+  python scripts/generate_activation_code.py CCP-XXXX-...

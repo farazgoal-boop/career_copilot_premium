@@ -1,0 +1,214 @@
+name: Build Mac and Linux Desktop Apps
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Resolve build version
+        id: version
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          if [ -z "$VERSION" ] || [ "$VERSION" = "$GITHUB_REF_NAME" ]; then
+            VERSION="1.0.0"
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          sed "s/VERSION/${VERSION}/g" macos/Info.plist > macos/Info.plist.built
+          mv macos/Info.plist.built macos/Info.plist
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Verify speech-to-text runtime
+        run: python -c "import speech_recognition; print('SpeechRecognition OK')"
+
+      - name: Build with PyInstaller
+        run: pyinstaller career_copilot.spec --noconfirm --clean
+
+      - name: Verify .app bundle exists
+        run: |
+          if [ ! -d "dist/CareerCopilotPremium.app" ]; then
+            echo "PyInstaller did not produce a .app bundle — check career_copilot.spec BUNDLE() block"
+            ls -la dist/
+            exit 1
+          fi
+
+      - name: Install create-dmg
+        run: brew install create-dmg
+
+      - name: Package into DMG
+        run: |
+          create-dmg \
+            --volname "Career Copilot Premium" \
+            --window-pos 200 120 \
+            --window-size 600 400 \
+            --icon-size 100 \
+            --icon "CareerCopilotPremium.app" 150 150 \
+            --hide-extension "CareerCopilotPremium.app" \
+            --app-drop-link 450 150 \
+            "CareerCopilotPremium-mac.dmg" \
+            "dist/CareerCopilotPremium.app" || true
+          if [ ! -f "CareerCopilotPremium-mac.dmg" ]; then
+            echo "DMG creation failed"
+            exit 1
+          fi
+
+      - name: Upload macOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: CareerCopilotPremium-mac.dmg
+          path: CareerCopilotPremium-mac.dmg
+
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libxcb-xinerama0 \
+            libxkbcommon-x11-0 \
+            libxcb-cursor0 \
+            portaudio19-dev \
+            libportaudio2 \
+            fuse \
+            libfuse2 \
+            dpkg-dev
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Verify speech-to-text runtime
+        run: python -c "import speech_recognition; print('SpeechRecognition OK')"
+
+      - name: Build with PyInstaller
+        run: pyinstaller career_copilot.spec --noconfirm --clean
+
+      - name: Verify Linux bundle exists
+        run: |
+          if [ ! -x "dist/CareerCopilotPremium/CareerCopilotPremium" ]; then
+            echo "Expected dist/CareerCopilotPremium/CareerCopilotPremium"
+            ls -la dist/CareerCopilotPremium/ || ls -la dist/
+            exit 1
+          fi
+
+      - name: Get version from tag
+        id: get_version
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          if [ -z "$VERSION" ] || [ "$VERSION" = "$GITHUB_REF_NAME" ]; then
+            VERSION="1.0.0-dev"
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Build .deb package
+        run: |
+          mkdir -p debian-pkg/DEBIAN
+          mkdir -p debian-pkg/usr/local/bin
+          mkdir -p debian-pkg/usr/share/applications
+          mkdir -p debian-pkg/usr/share/icons/hicolor/256x256/apps
+
+          cp -r dist/CareerCopilotPremium/* debian-pkg/usr/local/bin/
+          chmod +x debian-pkg/usr/local/bin/CareerCopilotPremium
+
+          ln -sf /usr/local/bin/CareerCopilotPremium debian-pkg/usr/local/bin/career-copilot-premium
+
+          sed "s/VERSION/${{ steps.get_version.outputs.version }}/g" linux/control > debian-pkg/DEBIAN/control
+
+          cp linux/career-copilot-premium.desktop debian-pkg/usr/share/applications/
+
+          if [ -f "assets/icon.png" ]; then
+            cp assets/icon.png debian-pkg/usr/share/icons/hicolor/256x256/apps/career-copilot-premium.png
+          fi
+
+          dpkg-deb --build --root-owner-group debian-pkg CareerCopilotPremium-linux.deb
+
+      - name: Download appimagetool
+        run: |
+          wget -q https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
+          chmod +x appimagetool-x86_64.AppImage
+
+      - name: Build AppImage
+        run: |
+          mkdir -p AppDir/usr/bin
+          mkdir -p AppDir/usr/share/applications
+          mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
+
+          cp -r dist/CareerCopilotPremium/* AppDir/usr/bin/
+          chmod +x AppDir/usr/bin/CareerCopilotPremium
+
+          cat > AppDir/AppRun << 'EOF'
+          #!/bin/bash
+          HERE="$(dirname "$(readlink -f "${0}")")"
+          exec "${HERE}/usr/bin/CareerCopilotPremium" "$@"
+          EOF
+          chmod +x AppDir/AppRun
+
+          cp linux/career-copilot-premium.desktop AppDir/
+          cp linux/career-copilot-premium.desktop AppDir/usr/share/applications/
+
+          if [ -f "assets/icon.png" ]; then
+            cp assets/icon.png AppDir/usr/share/icons/hicolor/256x256/apps/career-copilot-premium.png
+            cp assets/icon.png AppDir/career-copilot-premium.png
+          fi
+
+          ARCH=x86_64 ./appimagetool-x86_64.AppImage AppDir CareerCopilotPremium-linux.AppImage
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: CareerCopilotPremium-linux
+          path: |
+            CareerCopilotPremium-linux.deb
+            CareerCopilotPremium-linux.AppImage
+
+  create-release:
+    needs: [build-macos, build-linux]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/CareerCopilotPremium-mac.dmg/CareerCopilotPremium-mac.dmg
+            artifacts/CareerCopilotPremium-linux/CareerCopilotPremium-linux.deb
+            artifacts/CareerCopilotPremium-linux/CareerCopilotPremium-linux.AppImage
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

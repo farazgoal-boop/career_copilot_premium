@@ -1,0 +1,16 @@
+Career Copilot Premium — macOS Setup Guide
+==========================================
+
+1. Open Terminal in this folder
+2. Run: chmod +x install_mac.sh START_PREMIUM.sh
+3. Run: ./install_mac.sh
+4. Add MISTRAL_API_KEY to .env (or enter in first-run setup window)
+5. Run: ./START_PREMIUM.sh
+6. Browser opens to http://127.0.0.1:5000
+7. Press F2 during interviews to listen; F3 to hide/show overlay
+
+Audio for Zoom/Meet:
+- Install BlackHole: brew install blackhole-2ch
+- Route meeting audio through BlackHole for speaker capture
+
+Get free Mistral key: https://console.mistral.ai/

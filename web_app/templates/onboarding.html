@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+
+{% block title %}Career Copilot Premium Onboarding{% endblock %}
+
+{% block body_class %}onboarding-view{% endblock %}
+
+{% block extra_head %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/onboarding.css') }}">
+{% endblock %}
+
+{% block content %}
+  <main class="onboarding-shell">
+    <header class="onboarding-hero">
+      <p class="eyebrow">Setup</p>
+      <h1>Three steps to your live operator</h1>
+      <p>Add your profile once. Career Copilot remembers it for every client call on Zoom or WhatsApp.</p>
+    </header>
+
+    <section class="onboarding-card">
+      <div class="onboarding-stepper stepper" aria-label="Onboarding steps">
+        <div class="step-pill active" data-step-pill="0">1. Context</div>
+        <div class="step-pill" data-step-pill="1">2. Identity</div>
+        <div class="step-pill" data-step-pill="2">3. Connect</div>
+      </div>
+
+      {% if error_message %}
+      <div class="error-banner">{{ error_message }}</div>
+      {% endif %}
+
+      <form id="onboarding-form" action="{{ url_for('onboarding') }}" method="post" enctype="multipart/form-data">
+        <section class="step active" data-step="0">
+          <h2>Your offer or resume</h2>
+          <p class="step-copy">Upload a PDF resume or describe your service in plain language.</p>
+          <div class="field-grid">
+            <label class="field-full upload-card">
+              <span>Resume PDF</span>
+              <input id="resume" name="resume" type="file" accept=".pdf,application/pdf">
+              <div class="note">Optional if you fill the description below.</div>
+            </label>
+            <label class="field-full">
+              <span>Product or service description</span>
+              <textarea id="product_description" name="product_description" placeholder="What you sell, who you help, proof points, and tone for client calls."></textarea>
+            </label>
+          </div>
+          <div class="actions actions--end">
+            <button class="button-primary" type="button" data-next>Continue</button>
+          </div>
+        </section>
+
+        <section class="step" data-step="1">
+          <h2>Your identity</h2>
+          <p class="step-copy">This anchors your profile and live session.</p>
+          <div class="field-grid">
+            <label>
+              <span>Your name</span>
+              <input id="full_name" name="full_name" type="text" placeholder="Your name" required>
+            </label>
+            <label>
+              <span>Target role or product</span>
+              <input id="target_name" name="target_name" type="text" placeholder="e.g. Fiverr SEO package" required>
+            </label>
+            <label class="field-full">
+              <span>Current role (optional)</span>
+              <input id="current_role" name="current_role" type="text" placeholder="e.g. Freelance marketer">
+            </label>
+          </div>
+          <div class="actions">
+            <button class="button-secondary" type="button" data-back>Back</button>
+            <button id="launch-session" class="button-primary" type="submit">Create Session</button>
+          </div>
+        </section>
+
+        <section class="step" data-step="2">
+          <div class="success-card">
+            <p class="eyebrow">Session ready</p>
+            <h2>Connect your phone</h2>
+            <p>Open the mobile app on the same Wi-Fi, tap Auto Fix, or enter the desktop IP shown on your dashboard.</p>
+            <div class="actions">
+              <a id="connect-mobile-button" class="button-primary button-link" href="{{ url_for('dashboard') }}#command-deck">Link Mobile</a>
+              <a id="continue-dashboard-button" class="button-secondary button-link" href="{{ url_for('dashboard') }}">Open Dashboard</a>
+            </div>
+          </div>
+        </section>
+      </form>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      const form = document.getElementById('onboarding-form');
+      const steps = Array.from(document.querySelectorAll('[data-step]'));
+      const pills = Array.from(document.querySelectorAll('[data-step-pill]'));
+      const nextButton = document.querySelector('[data-next]');
+      const backButton = document.querySelector('[data-back]');
+      const launchButton = document.getElementById('launch-session');
+      const connectButton = document.getElementById('connect-mobile-button');
+      const continueButton = document.getElementById('continue-dashboard-button');
+
+      function showStep(index) {
+        steps.forEach((step, stepIndex) => step.classList.toggle('active', stepIndex === index));
+        pills.forEach((pill, pillIndex) => {
+          pill.classList.toggle('active', pillIndex === index);
+          pill.classList.toggle('complete', pillIndex < index);
+        });
+      }
+
+      function hasSourceContext() {
+        const fileInput = document.getElementById('resume');
+        const description = document.getElementById('product_description');
+        return (fileInput?.files?.length > 0) || Boolean(description?.value.trim());
+      }
+
+      nextButton?.addEventListener('click', () => {
+        if (!hasSourceContext()) {
+          window.showToast?.('Add a resume or service description first.', 'error');
+          return;
+        }
+        showStep(1);
+      });
+
+      backButton?.addEventListener('click', () => showStep(0));
+
+      form?.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const fullName = document.getElementById('full_name');
+        const targetName = document.getElementById('target_name');
+        if (!fullName.value.trim() || !targetName.value.trim()) {
+          window.showToast?.('Enter your name and target role or product.', 'error');
+          return;
+        }
+
+        launchButton.disabled = true;
+        launchButton.textContent = 'Creating session…';
+
+        try {
+          const requestUrl = new URL(form.action, window.location.href);
+          requestUrl.searchParams.set('response_format', 'json');
+          const response = await fetch(requestUrl.toString(), {
+            method: 'POST',
+            body: new FormData(form),
+            headers: {
+              'X-Requested-With': 'XMLHttpRequest',
+              Accept: 'application/json',
+            },
+          });
+
+          const contentType = response.headers.get('content-type') || '';
+          if (!contentType.includes('application/json')) {
+            const rawBody = await response.text();
+            const parsed = rawBody ? new DOMParser().parseFromString(rawBody, 'text/html') : null;
+            const serverMessage = parsed?.querySelector('.error-banner')?.textContent?.trim();
+            throw new Error(serverMessage || 'Unexpected server response. Please retry.');
+          }
+
+          const payload = await response.json();
+          if (!response.ok || !payload.ok) {
+            throw new Error(payload.error || 'Could not create session.');
+          }
+
+          connectButton.href = payload.connect_mobile_url || connectButton.href;
+          continueButton.href = payload.dashboard_url || continueButton.href;
+          window.showToast?.('Session created.', 'success');
+          showStep(2);
+        } catch (error) {
+          window.showToast?.(error.message || 'Could not create session.', 'error');
+        } finally {
+          launchButton.disabled = false;
+          launchButton.textContent = 'Create Session';
+        }
+      });
+    })();
+  </script>
+{% endblock %}

@@ -1,0 +1,44 @@
+{
+  "work_modes": [
+    "Remote",
+    "Office",
+    "Hybrid"
+  ],
+  "skill_levels": [
+    "Beginner",
+    "Intermediate",
+    "Expert"
+  ],
+  "difficulty_levels": [
+    "Junior",
+    "Mid",
+    "Senior",
+    "Lead"
+  ],
+  "industries": [
+    "IT/Software",
+    "Banking/Finance",
+    "Healthcare",
+    "Education",
+    "E-commerce",
+    "Manufacturing"
+  ],
+  "company_types": [
+    "Startup",
+    "Corporate",
+    "Agency",
+    "Freelance"
+  ],
+  "answer_styles": [
+    "Simple English",
+    "Professional",
+    "Technical",
+    "Balanced"
+  ],
+  "response_tones": [
+    "Confident",
+    "Humble",
+    "Energetic",
+    "Calm"
+  ]
+}

@@ -1,0 +1,675 @@
+{% extends "base.html" %}
+
+{% block title %}Career Copilot Premium Control Room{% endblock %}
+
+{% block extra_head %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+{% endblock %}
+
+{% block body_class %}dashboard-view{% endblock %}
+
+{% block content %}
+  <header class="command-header" id="command-header">
+    <div class="command-header__brand-block">
+      <h1 class="command-header__title">Career Copilot Premium</h1>
+      <span id="section-nav-current" class="command-header__current">Command Deck</span>
+    </div>
+    <nav class="section-nav" aria-label="Workspace sections">
+      <a class="section-nav__link active" href="#command-deck" data-section-target="command-deck">
+        <span class="section-nav__label">Command Deck</span>
+      </a>
+      <a class="section-nav__link" href="#identity-studio" data-section-target="identity-studio">
+        <span class="section-nav__label">Identity Studio</span>
+      </a>
+      <a class="section-nav__link" href="#live-dock" data-section-target="live-dock">
+        <span class="section-nav__label">Live Dock</span>
+      </a>
+      <a class="section-nav__link" href="#answer-console" data-section-target="answer-console">
+        <span class="section-nav__label">Answer Console</span>
+      </a>
+    </nav>
+  </header>
+  <main class="page-shell">
+    <section id="command-deck" class="hero-card app-section" data-section-name="Command Deck">
+      <p class="eyebrow">Career Copilot Premium</p>
+      <div class="hero-stage">
+        <div class="hero-copy-block">
+          <h1>Interview Workspace</h1>
+          <p class="hero-copy">Train one live AI operator on your voice, your proof points, and your meeting discipline. Then keep that operator beside Zoom, WhatsApp, Meet, or Teams while it listens, aligns, and drafts replies that sound like you under pressure.</p>
+          <div class="hero-pill-row">
+            <span class="hero-pill">Zoom and WhatsApp companion mode</span>
+            <span class="hero-pill">Operator memory built from your own profile</span>
+            <span class="hero-pill">Live answer drafting with premium simplicity</span>
+          </div>
+        </div>
+        <aside class="hero-spotlight" aria-label="Product positioning">
+          <p class="hero-spotlight-kicker">Premium Control Room</p>
+          <h2>Built to feel like a live command center, not a freelancer side tool.</h2>
+          <div class="hero-spotlight-list">
+            <span>Fast pairing from desktop to phone</span>
+            <span>Private local workflow with session continuity</span>
+            <span>Operator-grade prompts, session recall, and answer posture</span>
+          </div>
+        </aside>
+      </div>
+      <div class="hero-proof-strip" aria-label="Product trust signals">
+        <article>
+          <span>Companion-first</span>
+          <strong>Keeps Zoom, Meet, Teams, and WhatsApp in front while guidance stays beside the call.</strong>
+        </article>
+        <article>
+          <span>Identity-locked</span>
+          <strong>Builds replies from your own resume, proof points, and meeting discipline instead of generic AI phrasing.</strong>
+        </article>
+        <article>
+          <span>Mobile-linked</span>
+          <strong>Connect desktop and phone with a single pairing flow so your operator stays available across screens.</strong>
+        </article>
+      </div>
+      <section id="preflight-panel" class="preflight-panel panel-card" aria-label="System readiness">
+        <div class="preflight-panel__header">
+          <p class="panel-kicker">Go Live Checklist</p>
+          <h2>System readiness before your interview</h2>
+          <p id="preflight-summary" class="support-copy">Checking activation, audio, and AI engines…</p>
+        </div>
+        <ul id="preflight-checks" class="preflight-checks"></ul>
+        <p id="preflight-hint" class="preflight-hint">Complete all required checks, then create your session in Identity Studio.</p>
+      </section>
+    </section>
+
+    <section id="identity-studio" class="wizard-shell app-section" data-section-name="Identity Studio">
+      <aside class="wizard-sidebar panel-card panel-card--dark">
+        <p class="panel-kicker">Pre-Interview Briefing</p>
+        <h2>Teach the AI who you are before the call</h2>
+        <p class="support-copy support-copy--light">This step-by-step wizard turns the agent into a high-context operator that thinks with your priorities, proof points, tone, and live call discipline instead of sounding like a generic AI tool.</p>
+        <section class="alignment-preview-card">
+          <p class="panel-kicker">Agent Alignment Preview</p>
+          <div class="alignment-preview-grid">
+            <article>
+              <span>Identity lock</span>
+              <strong id="wizard-alignment-role">Waiting for your role</strong>
+            </article>
+            <article>
+              <span>Proof anchor</span>
+              <strong id="wizard-alignment-proof">Add your strongest skill</strong>
+            </article>
+            <article>
+              <span>Meeting mode</span>
+              <strong id="wizard-alignment-meeting">Manual / generic interview</strong>
+            </article>
+            <article>
+              <span>Response tone</span>
+              <strong id="wizard-alignment-tone">Simple, concise, credible</strong>
+            </article>
+          </div>
+        </section>
+        <div id="wizard-stepper" class="wizard-stepper"></div>
+      </aside>
+
+      <section class="wizard-main panel-card panel-card--dark">
+        <div class="wizard-header-row">
+          <div>
+            <p class="panel-kicker">ChatGPT-style onboarding</p>
+            <h2 id="wizard-title">Tell the AI about yourself</h2>
+          </div>
+          <span id="wizard-step-label" class="status-pill status-pill--standby">Step 1</span>
+        </div>
+
+        <div id="wizard-steps" class="wizard-steps">
+
+          <!-- ═══════════════════════════════════════════════════════════
+               STEP 0 — Who you are + Resume upload
+               Resume is FIRST so the app can auto-fill everything below.
+               ═══════════════════════════════════════════════════════════ -->
+          <section class="wizard-step" data-step="0">
+            <h3>Who you are <span class="step-optional-badge">— upload resume to auto-fill</span></h3>
+            <p class="support-copy support-copy--light">
+              Start by uploading your resume — the app will auto-fill name, skills, and experience.
+              Every dropdown has 40+ freelancer-ready options. Type anything to search, or add your own with Enter.
+            </p>
+
+            <!-- Resume upload — first/most prominent row -->
+            <div class="wizard-grid">
+              <div class="field-shell field-shell--full resume-upload-shell">
+                <span>&#128196; Resume file <span class="field-hint">(PDF, DOCX, TXT — upload once, auto-fills all fields)</span></span>
+                <div class="resume-upload-row">
+                  <input id="brief-resume-file-input" type="file" accept=".pdf,.docx,.doc,.txt" class="hidden" aria-label="Browse resume file">
+                  <button id="brief-resume-browse" class="primary-button" type="button">&#128196; Browse &amp; Upload Resume</button>
+                  <span id="brief-resume-file-name" class="resume-file-label">No file selected yet</span>
+                  <button id="brief-resume-extract" class="secondary-button" type="button" disabled>&#9889; Extract &amp; Auto-fill</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Identity fields below resume -->
+            <div class="wizard-grid" style="margin-top:14px">
+              <label class="field-shell">
+                <span>Full name <span class="field-required">*</span></span>
+                <input id="brief-full-name" type="text" placeholder="e.g. Haroon Ahmed" autocomplete="name">
+              </label>
+              <div class="field-shell combobox-shell" data-field="current_role" data-key="current-role">
+                <span>Current / freelance role</span>
+                <div class="combobox-wrap">
+                  <input id="brief-current-role" type="text" placeholder="Select or type your role…" autocomplete="off">
+                  <button class="combobox-toggle" type="button" aria-label="Show options">&#9660;</button>
+                  <ul class="combobox-list hidden"></ul>
+                </div>
+              </div>
+              <label class="field-shell">
+                <span>Years of experience</span>
+                <input id="brief-experience-years" type="number" min="0" step="0.5" placeholder="e.g. 4">
+              </label>
+              <div class="field-shell combobox-shell" data-field="location" data-key="location">
+                <span>Location / timezone</span>
+                <div class="combobox-wrap">
+                  <input id="brief-location" type="text" placeholder="City, country or Remote…" autocomplete="off">
+                  <button class="combobox-toggle" type="button" aria-label="Show options">&#9660;</button>
+                  <ul class="combobox-list hidden"></ul>
+                </div>
+              </div>
+              <div class="field-shell combobox-shell" data-field="work_mode" data-key="work-mode">
+                <span>Work mode preference</span>
+                <div class="combobox-wrap">
+                  <input id="brief-work-mode" type="text" placeholder="Remote / Hybrid / On-site…" autocomplete="off">
+                  <button class="combobox-toggle" type="button" aria-label="Show options">&#9660;</button>
+                  <ul class="combobox-list hidden"></ul>
+                </div>
+              </div>
+              <div class="field-shell combobox-shell" data-field="industry" data-key="industry">
+                <span>Industry / niche</span>
+                <div class="combobox-wrap">
+                  <input id="brief-industry" type="text" placeholder="IT, E-commerce, Design…" autocomplete="off">
+                  <button class="combobox-toggle" type="button" aria-label="Show options">&#9660;</button>
+                  <ul class="combobox-list hidden"></ul>
+                </div>
+              </div>
+              <label class="field-shell">
+                <span>Resume filename</span>
+                <input id="brief-resume-filename" type="text" placeholder="auto-filled from file, or type name">
+              </label>
+              <label class="field-shell field-shell--full">
+                <span>Resume text <span class="field-hint">(auto-filled after extract, or paste manually)</span></span>
+                <textarea id="brief-resume-text" rows="4" placeholder="Click Extract above or paste your resume summary here."></textarea>
+              </label>
+            </div>
+          </section>
+
+          <!-- ═══════════════════════════════════════════════════════════
+               STEP 1 — Skills, experience & proof points
+               ═══════════════════════════════════════════════════════════ -->
+          <section class="wizard-step hidden" data-step="1">
+            <h3>Skills &amp; Experience <span class="step-optional-badge">— all optional</span></h3>
+            <p class="support-copy support-copy--light">Pick skills from the pre-loaded list or type to add your own. Fill achievements and project proof points the AI will use during the interview.</p>
+            <div class="wizard-grid">
+
+              <!-- Skills multi-tag combobox -->
+              <div class="field-shell field-shell--full combobox-shell combobox-tags-shell" data-field="skills" data-key="skills">
+                <span>Skills <span class="field-hint">(pick multiple — click chip × to remove)</span></span>
+                <div class="combobox-wrap">
+                  <div id="brief-skills-tags" class="combobox-tags"></div>
+                  <input id="brief-skills-input" type="text" placeholder="Type to search 50+ skills, or add your own…" autocomplete="off">
+                  <button class="combobox-toggle" type="button" aria-label="Show options">&#9660;</button>
+                  <ul class="combobox-list hidden"></ul>
+                </div>
+                <input id="brief-skills" type="hidden">
+              </div>
+
+              <div class="field-shell combobox-shell" data-field="strongest_skill" data-key="skills">
+                <span>Strongest / signature skill</span>
+                <div class="combobox-wrap">
+                  <input id="brief-strongest-skill" type="text" placeholder="Your #1 standout skill…" autocomplete="off">
+                  <button class="combobox-toggle" type="button" aria-label="Show options">&#9660;</button>
+                  <ul class="combobox-list hidden"></ul>
+                </div>
+              </div>
+
+              <div class="field-shell combobox-shell" data-field="project_technologies" data-key="tech">
+                <span>Project / stack technologies</span>
+                <div class="combobox-wrap">
+                  <input id="brief-project-technologies" type="text" placeholder="Python, React, AWS, Docker…" autocomplete="off">
+                  <button class="combobox-toggle" type="button" aria-label="Show options">&#9660;</button>
+                  <ul class="combobox-list hidden"></ul>
+                </div>
+              </div>
+
+              <label class="field-shell"><span>Recent client / company</span><input id="brief-recent-company" type="text" placeholder="e.g. Fiverr client, Toptal project, XYZ Corp"></label>
+              <label class="field-shell"><span>Work / contract duration</span><input id="brief-work-duration" type="text" placeholder="e.g. Jan 2023 – Present or 18 months"></label>
+
+              <div class="field-shell combobox-shell" data-field="reason_for_change" data-key="reason-for-change">
+                <span>Reason for seeking new role</span>
+                <div class="combobox-wrap">
+                  <input id="brief-reason-for-change" type="text" placeholder="Select or describe your reason…" autocomplete="off">
+                  <button class="combobox-toggle" type="button" aria-label="Show options">&#9660;</button>
+                  <ul class="combobox-list hidden"></ul>
+                </div>
+              </div>
+
+              <div class="field-shell combobox-shell" data-field="salary_expectations" data-key="salary">
+                <span>Rate / salary expectation</span>
+                <div class="combobox-wrap">
+                  <input id="brief-salary-expectations" type="text" placeholder="e.g. $25/hr, $3000/mo, negotiable…" autocomplete="off">
+                  <button class="combobox-toggle" type="button" aria-label="Show options">&#9660;</button>
+                  <ul class="combobox-list hidden"></ul>
+                </div>
+              </div>
+
+              <label class="field-shell field-shell--full"><span>Best proof / achievement story</span><textarea id="brief-strongest-example" rows="2" placeholder="e.g. Built a React dashboard that saved client $8k/month in manual reporting. Delivered in 2 weeks."></textarea></label>
+              <label class="field-shell field-shell--full"><span>Experience highlights <span class="field-hint">(one bullet per line)</span></span><textarea id="brief-experience-highlights" rows="3" placeholder="Delivered 12 Upwork projects with 5-star ratings.&#10;Automated reporting pipeline saving 30 hrs/week.&#10;Maintained Fiverr Level 2 for 3 consecutive years."></textarea></label>
+              <label class="field-shell"><span>Featured project name</span><input id="brief-project-name" type="text" placeholder="e.g. E-commerce Automation Bot, Admin Dashboard"></label>
+              <label class="field-shell field-shell--full"><span>Project summary</span><textarea id="brief-project-summary" rows="2" placeholder="What the project does and what business problem it solves."></textarea></label>
+              <label class="field-shell field-shell--full"><span>Your specific contribution</span><textarea id="brief-project-contribution" rows="2" placeholder="What you personally designed, built, or led."></textarea></label>
+            </div>
+          </section>
+
+          <!-- ═══════════════════════════════════════════════════════════
+               STEP 2 — Target role, interview style & coaching
+               ═══════════════════════════════════════════════════════════ -->
+          <section class="wizard-step hidden" data-step="2">
+            <h3>Target role &amp; interview style <span class="step-optional-badge">— all optional</span></h3>
+            <p class="support-copy support-copy--light">Tell the AI what role and client you are targeting. All fields have smart defaults for freelancers.</p>
+            <div class="wizard-grid">
+
+              <div class="field-shell combobox-shell" data-field="target_role" data-key="current-role">
+                <span>Target role</span>
+                <div class="combobox-wrap">
+                  <input id="brief-target-role" type="text" placeholder="e.g. Full-Stack Developer" autocomplete="off">
+                  <button class="combobox-toggle" type="button" aria-label="Show options">&#9660;</button>
+                  <ul class="combobox-list hidden"></ul>
+                </div>
+              </div>
+
+              <label class="field-shell"><span>Client / company name</span><input id="brief-company-name" type="text" placeholder="e.g. Toptal client, Upwork project"></label>
+
+              <div class="field-shell combobox-shell" data-field="company_type" data-key="company-type">
+                <span>Client / company type</span>
+                <div class="combobox-wrap">
+                  <input id="brief-company-type" type="text" placeholder="Startup, Agency, Freelance client…" autocomplete="off">
+                  <button class="combobox-toggle" type="button" aria-label="Show options">&#9660;</button>
+                  <ul class="combobox-list hidden"></ul>
+                </div>
+              </div>
+
+              <div class="field-shell combobox-shell" data-field="interview_difficulty" data-key="interview-difficulty">
+                <span>Interview level</span>
+                <div class="combobox-wrap">
+                  <input id="brief-interview-difficulty" type="text" placeholder="Junior, Mid, Senior…" autocomplete="off">
+                  <button class="combobox-toggle" type="button" aria-label="Show options">&#9660;</button>
+                  <ul class="combobox-list hidden"></ul>
+                </div>
+              </div>
+
+              <div class="field-shell combobox-shell" data-field="meeting_source" data-key="meeting-source">
+                <span>Interview platform</span>
+                <div class="combobox-wrap">
+                  <input id="brief-meeting-source" type="text" placeholder="Zoom, Google Meet, WhatsApp…" autocomplete="off">
+                  <button class="combobox-toggle" type="button" aria-label="Show options">&#9660;</button>
+                  <ul class="combobox-list hidden"></ul>
+                </div>
+              </div>
+
+              <label class="field-shell"><span>Meeting / call window name</span><input id="brief-meeting-window-name" type="text" placeholder="e.g. Zoom interview room"></label>
+
+              <div class="field-shell combobox-shell" data-field="meeting_capture_mode" data-key="capture-mode">
+                <span>Capture mode</span>
+                <div class="combobox-wrap">
+                  <input id="brief-meeting-capture-mode" type="text" placeholder="Select capture mode" autocomplete="off">
+                  <button class="combobox-toggle" type="button" aria-label="Show options">&#9660;</button>
+                  <ul class="combobox-list hidden"></ul>
+                </div>
+              </div>
+
+              <div class="field-shell combobox-shell" data-field="answer_style" data-key="answer-style">
+                <span>Answer style</span>
+                <div class="combobox-wrap">
+                  <input id="brief-answer-style" type="text" placeholder="Select or describe your preferred style" autocomplete="off">
+                  <button class="combobox-toggle" type="button" aria-label="Show options">&#9660;</button>
+                  <ul class="combobox-list hidden"></ul>
+                </div>
+              </div>
+
+              <label class="field-shell field-shell--full"><span>Company / client values</span><textarea id="brief-company-values" rows="2" placeholder="e.g. Speed, ownership, async communication"></textarea></label>
+              <label class="field-shell field-shell--full"><span>Expected questions <span class="field-hint">(one per line)</span></span><textarea id="brief-expected-questions" rows="3" placeholder="Tell me about yourself&#10;Why should we hire you?&#10;What is your daily rate?"></textarea></label>
+              <label class="field-shell field-shell--full"><span>Live constraints</span><textarea id="brief-live-constraints" rows="2" placeholder="e.g. Keep answers under 30 seconds. Avoid jargon."></textarea></label>
+              <label class="field-shell field-shell--full"><span>Camera / screen placement</span><textarea id="brief-camera-layout-preference" rows="2" placeholder="e.g. Keep Career Copilot beside Zoom while real video shows in Zoom."></textarea></label>
+
+              <!-- Weakness / coaching block — collapsible -->
+              <details class="field-shell field-shell--full coaching-details">
+                <summary>Coaching &amp; weak areas <span class="field-hint">(optional — expand to fill)</span></summary>
+                <div class="wizard-grid" style="margin-top:12px">
+                  <label class="field-shell"><span>English fluency (1–10)</span><input id="brief-english-fluency-level" type="number" min="1" max="10" value="7"></label>
+                  <label class="field-shell"><span>Interview anxiety (1–10)</span><input id="brief-interview-anxiety-level" type="number" min="1" max="10" value="4"></label>
+                  <label class="field-shell field-shell--full"><span>Technical weak areas</span><textarea id="brief-technical-weak-areas" rows="2" placeholder="e.g. System design, DevOps pipelines"></textarea></label>
+                  <label class="field-shell field-shell--full"><span>Weakness story</span><textarea id="brief-weakness-story" rows="2" placeholder="e.g. I sometimes over-explain simple solutions."></textarea></label>
+                  <label class="field-shell field-shell--full"><span>Improvement actions</span><textarea id="brief-improvement-actions" rows="2" placeholder="e.g. Practice STAR answers daily"></textarea></label>
+                </div>
+              </details>
+
+              <label class="toggle-shell field-shell--full" for="brief-use-microphone">
+                <span class="toggle-copy">
+                  <strong>Enable live call listening</strong>
+                  <small>Recommended for Zoom/WhatsApp interviews. Uses your microphone or Stereo Mix when available.</small>
+                </span>
+                <input id="brief-use-microphone" type="checkbox" checked>
+              </label>
+            </div>
+          </section>
+
+        </div>
+
+        <div class="wizard-actions">
+          <button id="wizard-back-button" class="ghost-button" type="button">Back</button>
+          <button id="wizard-next-button" class="secondary-button" type="button">Next</button>
+          <button id="wizard-quick-start-button" class="secondary-button" type="button">Resume Quick Start</button>
+          <button id="wizard-save-button" type="button" data-shortcut="Ctrl+S">&#9889; Create session</button>
+        </div>
+        <div id="microphone-banner" class="info-banner hidden"></div>
+        <p id="wizard-status" class="prompt-status">Load or complete the wizard to teach the AI before the call, then create a live interview session automatically.</p>
+      </section>
+    </section>
+
+    <section id="live-dock" class="control-card app-section" data-section-name="Live Dock">
+      <div class="dock-header">
+        <div>
+          <p class="panel-kicker">Session Dock</p>
+          <h2>Connect a live interview workspace</h2>
+        </div>
+        <div class="dock-badges">
+          <span id="call-state" class="status-pill status-pill--standby">Standby</span>
+          <span id="overlay-status" class="status-pill status-pill--neutral">Idle</span>
+        </div>
+      </div>
+      <div class="dock-premium-strip" aria-label="Session dock value points">
+        <span>Live desktop operator</span>
+        <span>Mobile pairing in one step</span>
+        <span>Saved sessions for fast recovery</span>
+      </div>
+
+      <div class="session-label-row">
+        <label for="session-id">Session ID</label>
+        <div class="session-label-actions">
+          <button id="start-interview-button" class="primary-button start-interview-button" type="button">&#9889; Start Interview</button>
+          <button id="link-device-button" class="dock-secondary-button" type="button">Link Device</button>
+          <button id="generate-session-button" class="dock-secondary-button" type="button">
+            <span class="button-icon" aria-hidden="true">
+              <svg viewBox="0 0 16 16" role="presentation" focusable="false">
+                <path d="M8 3v10M3 8h10"></path>
+              </svg>
+            </span>
+            Generate New
+          </button>
+        </div>
+      </div>
+      <div class="control-row control-row--session-input">
+        <div class="session-input-shell">
+          <input id="session-id" name="session-id" placeholder="paste a saved session id" />
+          <button id="connect-button" class="inline-connect-button" type="button">Connect</button>
+        </div>
+      </div>
+      <p class="session-id-hint">Format: name-company-role-timestamp</p>
+      <p id="pairing-code-line" class="session-id-hint">Link Device: Generate a 6-digit code and enter it in the mobile app.</p>
+      <p id="bridge-lan-hint" class="session-id-hint">Mobile: keep phone and PC on the same Wi‑Fi, then use Link Device.</p>
+      <p id="mobile-connection-badge" class="session-id-hint">📱 Phone: not connected</p>
+      <p id="status-line" class="status-line">Waiting for a session ID.</p>
+
+      <!-- Pairing modal — shown after clicking Link Device -->
+      <div id="pairing-modal" class="pairing-modal hidden" role="dialog" aria-modal="true" aria-label="Link Device">
+        <div class="pairing-modal-card">
+          <button id="pairing-modal-close" class="pairing-modal-close" type="button" aria-label="Close">&#10005;</button>
+          <p class="pairing-modal-kicker">Secure Device Link</p>
+          <h3 class="pairing-modal-title">Link Device</h3>
+          <p class="pairing-modal-hint">Scan the QR code with your mobile app, or enter the 6-digit code manually.</p>
+          <div class="pairing-modal-meta">
+            <span>Private local connection</span>
+            <span>6-digit fallback included</span>
+            <span>Refresh anytime</span>
+          </div>
+          <div id="pairing-qr-wrap" class="pairing-qr-wrap">
+            <div class="pairing-qr-loading">Generating code…</div>
+          </div>
+          <div id="pairing-digits" class="pairing-digits">——————</div>
+          <p id="pairing-expiry" class="pairing-expiry"></p>
+          <div class="pairing-modal-actions">
+            <button id="pairing-copy-btn" class="secondary-button" type="button" disabled>&#128203; Copy code</button>
+            <button id="pairing-refresh-btn" class="ghost-button" type="button">&#8635; New code</button>
+          </div>
+          <p class="pairing-modal-footnote">
+            On your phone: open Career Copilot mobile → tap <strong>Connect to Desktop</strong> → enter code above.
+          </p>
+        </div>
+      </div>
+      <div class="session-dock-note">
+        <strong>Operator model</strong>
+        Career Copilot stays beside Zoom or WhatsApp as the live prompt studio, question radar, and answer engine while the real meeting window keeps the actual call and camera.
+      </div>
+
+      <div class="recent-sessions-block">
+        <div class="recent-sessions-header">
+          <div>
+            <h3>Recent Sessions</h3>
+            <p>Click a saved session to reconnect instantly. Company and role auto-fill from your last briefing.</p>
+          </div>
+          <button id="delete-old-sessions-button" class="ghost-button" type="button">Delete old sessions</button>
+        </div>
+        <div id="recent-sessions" class="recent-sessions-list">
+          <div class="recent-empty-state">
+            <div class="recent-empty-icon" aria-hidden="true">
+              <svg viewBox="0 0 64 64" role="presentation" focusable="false">
+                <circle cx="32" cy="32" r="26"></circle>
+                <path d="M32 21v22M21 32h22"></path>
+              </svg>
+            </div>
+            <h4>No saved sessions yet</h4>
+            <p>Create your first session to start practicing</p>
+            <button id="create-first-session-button" class="empty-state-button" type="button">
+              <span class="button-icon" aria-hidden="true">
+                <svg viewBox="0 0 16 16" role="presentation" focusable="false">
+                  <path d="M8 3v10M3 8h10"></path>
+                </svg>
+              </span>
+              Create First Session
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="answer-console" class="workspace-shell app-section hidden" data-section-name="Answer Console">
+      <div id="snapshot-card" class="hidden"></div>
+      <section class="workspace-column">
+        <article class="panel-card stage-card">
+          <div class="panel-heading">
+            <div>
+              <p class="panel-kicker">Caller Stage</p>
+              <p id="company-name" class="company-name"></p>
+              <h2 id="role-title"></h2>
+            </div>
+            <span id="turn-count" class="mini-stat">0 turns</span>
+          </div>
+
+          <div class="video-stage">
+            <div class="video-screen">
+              <div class="video-aura"></div>
+              <div class="video-copy">
+                <p class="video-label">Reserved video/call panel</p>
+                <h3 id="caller-name">Incoming interviewer slot</h3>
+                <p id="caller-stage-copy" class="video-description">This space is reserved for live caller video, screen-share, or meeting capture. Right now it mirrors the active company and role context.</p>
+                <div class="meeting-plan">
+                  <span id="meeting-source-chip" class="presence-chip">Manual / generic interview</span>
+                  <span id="meeting-capture-chip" class="presence-chip">Companion workspace</span>
+                </div>
+                <p id="camera-layout-copy" class="video-description">Career Copilot runs beside the meeting app so the operator can keep AI guidance visible without replacing the real call window.</p>
+                <div class="presence-row">
+                  <span id="company-chip" class="presence-chip">Company</span>
+                  <span id="role-chip" class="presence-chip">Role</span>
+                  <span id="candidate-chip" class="presence-chip">Candidate</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article class="panel-card transcript-card">
+          <div class="panel-heading">
+            <div>
+              <p class="panel-kicker">Question Radar</p>
+              <h3>Latest interviewer signal</h3>
+            </div>
+            <span id="worker-status" class="mini-stat">unknown</span>
+          </div>
+
+          <h4 id="headline" class="question-headline">Waiting for the next interviewer prompt.</h4>
+          <p id="transcript-summary" class="question-summary">Connect a saved session to show the last detected question, readiness updates, and fallback guidance.</p>
+
+          <div class="timeline-block">
+            <h4>Live timeline</h4>
+            <div id="timeline-list" class="timeline-list"></div>
+          </div>
+        </article>
+      </section>
+
+      <section class="workspace-column workspace-column--aside">
+        <article class="panel-card readiness-card">
+          <div class="panel-heading">
+            <div>
+              <p class="panel-kicker">AI Readiness</p>
+              <h3 id="readiness-title">Standby</h3>
+            </div>
+            <span id="confidence-score" class="confidence-pill">0%</span>
+          </div>
+
+          <p id="readiness-hint" class="support-copy">The assistant will show when it is listening, thinking, or ready to suggest a reply.</p>
+
+          <div class="metrics-grid">
+            <article>
+              <span>Provider</span>
+              <strong id="provider-status" class="status-indicator status-indicator--disconnected">
+                <span class="status-indicator__dot" aria-hidden="true"></span>
+                <span class="status-indicator__label">Not connected</span>
+              </strong>
+            </article>
+            <article>
+              <span>Updated</span>
+              <strong id="updated-at">-</strong>
+            </article>
+            <article>
+              <span>Mode</span>
+              <strong id="workspace-mode" class="status-indicator status-indicator--standby">
+                <span class="status-indicator__dot" aria-hidden="true"></span>
+                <span class="status-indicator__label">standby</span>
+              </strong>
+            </article>
+            <article>
+              <span>Input</span>
+              <strong id="microphone-mode">Scripted preview</strong>
+            </article>
+          </div>
+        </article>
+
+        <article class="panel-card alignment-card">
+          <div class="panel-heading">
+            <div>
+              <p class="panel-kicker">Agent Alignment</p>
+              <h3>What the operator now understands</h3>
+            </div>
+          </div>
+
+          <p class="support-copy">This panel keeps the live AI grounded in the user identity, strongest evidence, meeting source, and response posture that should stay stable during the call.</p>
+
+          <div class="alignment-grid">
+            <article>
+              <span>Role promise</span>
+              <strong id="alignment-identity">Waiting for profile context</strong>
+            </article>
+            <article>
+              <span>Proof anchor</span>
+              <strong id="alignment-proof">Add a strongest skill and evidence</strong>
+            </article>
+            <article>
+              <span>Meeting discipline</span>
+              <strong id="alignment-meeting">Companion workspace mode</strong>
+            </article>
+            <article>
+              <span>Reply posture</span>
+              <strong id="alignment-tone">Simple, calm, credible</strong>
+            </article>
+          </div>
+        </article>
+
+        <article class="panel-card prompt-card">
+          <div class="panel-heading">
+            <div>
+              <p class="panel-kicker">AI Instructions</p>
+              <h3>Operator prompt position</h3>
+            </div>
+          </div>
+
+          <p class="support-copy">Use these fields before or during the call. In this phase they are saved per session in the browser so the workspace has a real prompt area ready for backend wiring.</p>
+
+          <label class="field-label" for="persistent-prompt">Persistent AI brief</label>
+          <textarea id="persistent-prompt" rows="4" placeholder="Example: reply in simple English, stay concise, focus on backend leadership and measurable impact."></textarea>
+
+          <label class="field-label" for="live-prompt">Live steer for the next answer</label>
+          <textarea id="live-prompt" rows="3" placeholder="Example: keep this answer under 30 seconds and avoid sounding defensive."></textarea>
+
+          <div class="prompt-chip-row">
+            <button class="prompt-chip" type="button" data-target="persistent" data-value="Answer in simple English and keep every reply concise.">Simple English</button>
+            <button class="prompt-chip" type="button" data-target="persistent" data-value="Prioritize backend leadership, system design, and measurable impact.">Backend leadership</button>
+            <button class="prompt-chip" type="button" data-target="live" data-value="Keep this answer under 30 seconds.">30 second answer</button>
+            <button class="prompt-chip" type="button" data-target="live" data-value="Sound confident but not arrogant.">Confident tone</button>
+          </div>
+
+          <div class="prompt-actions">
+            <button id="save-prompts-button" class="secondary-button" type="button" data-shortcut="Ctrl+S">Save brief</button>
+            <button id="clear-prompts-button" class="ghost-button" type="button">Clear</button>
+          </div>
+          <p id="prompt-status" class="prompt-status">No operator brief saved yet.</p>
+        </article>
+
+        <article class="panel-card answer-card">
+          <div class="panel-heading">
+            <div>
+              <p class="panel-kicker">Answer Workspace</p>
+              <h3>Primary reply draft</h3>
+            </div>
+          </div>
+
+          <p id="body" class="answer-body">The main suggested reply will appear here when AI is ready.</p>
+
+          <div class="alternatives-block">
+            <h4>Alternative replies</h4>
+            <div id="alternatives-list" class="alternatives-list"></div>
+          </div>
+
+          <div class="actions-block">
+            <h4>Live controls</h4>
+            <div id="action-grid" class="action-grid"></div>
+          </div>
+        </article>
+
+        <article class="panel-card history-card">
+          <div class="panel-heading">
+            <div>
+              <p class="panel-kicker">Operational History</p>
+              <h3>Safety and session timeline</h3>
+            </div>
+            <span id="history-status" class="status-pill status-pill--neutral">No alerts</span>
+          </div>
+
+          <p class="support-copy">This feed keeps the operator honest about what the session actually did: armed state changes, listening transitions, answer-ready moments, and any fallback interventions.</p>
+
+          <div id="history-list" class="history-list">
+            <article class="history-item history-item--empty">
+              <strong>No activity yet</strong>
+              <span>Connect a session to inspect its latest safety and workflow events.</span>
+            </article>
+          </div>
+        </article>
+      </section>
+    </section>
+  </main>
+
+{% endblock %}
+
+{% block extra_scripts %}
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+{% endblock %}

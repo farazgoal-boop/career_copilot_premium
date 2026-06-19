@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Career Copilot Premium — User Manual</title>
+  <style>
+    body { font-family: "Segoe UI", Arial, sans-serif; line-height: 1.6; color: #1f2937; max-width: 820px; margin: 0 auto; padding: 32px 24px; }
+    h1 { color: #4338ca; border-bottom: 3px solid #4338ca; padding-bottom: 8px; }
+    h2 { color: #312e81; margin-top: 2rem; }
+    code, pre { background: #f3f4f6; border-radius: 6px; }
+    code { padding: 2px 6px; }
+    pre { padding: 12px; overflow-x: auto; }
+    ol, ul { padding-left: 1.4rem; }
+    .tip { background: #eef2ff; border-left: 4px solid #6366f1; padding: 12px 16px; margin: 16px 0; }
+  </style>
+</head>
+<body>
+  <h1>Career Copilot Premium — User Manual</h1>
+  <p>Version 1.0.0 · Windows desktop + mobile companion</p>
+
+  <h2>1. USB portable use (recommended)</h2>
+  <ol>
+    <li>Copy the whole project folder to a USB drive.</li>
+    <li>Ensure <code>portable.flag</code> is in the same folder as <code>career-copilot.exe</code>. Optional: copy <code>.env.example</code> to <code>.env</code> for Mistral API.</li>
+    <li>On any laptop, double-click <strong>START_PREMIUM.bat</strong> — nothing installs to AppData.</li>
+    <li>Sessions and profiles save under <code>data\</code> on the USB.</li>
+  </ol>
+
+  <h2>2. Installation (Setup.exe)</h2>
+  <ol>
+    <li>Run <strong>CareerCopilotPremium_Setup_v1.0.0.exe</strong> and follow the wizard.</li>
+    <li>Launch <strong>Career Copilot Premium</strong> from the Start Menu or desktop shortcut.</li>
+    <li>The dashboard opens at <code>http://127.0.0.1:5000</code>.</li>
+    <li>Install <strong>Ollama</strong> (see <code>docs/requirements/DOWNLOAD-OLLAMA.txt</code>) and run <code>ollama pull llama3.2:1b</code>.</li>
+    <li>Optional: copy <code>.env.example</code> to <code>.env</code> and set <code>MISTRAL_API_KEY</code> (see <code>docs/requirements/DOWNLOAD-MISTRAL.txt</code>).</li>
+  </ol>
+
+  <h2>3. First-time activation</h2>
+  <ol>
+    <li>Enter your license activation code on the first screen.</li>
+    <li>Complete onboarding: name, target role, and resume PDF or product description.</li>
+    <li>Click <strong>Create Session</strong> — you are redirected to the dashboard.</li>
+  </ol>
+
+  <h2>4. One-click session start</h2>
+  <ol>
+    <li>Open the dashboard briefing wizard.</li>
+    <li>Click <strong>Resume Quick Start</strong> after uploading or pasting your resume.</li>
+    <li>Or call <code>POST /api/session/quick-start</code> to restart from your latest saved profile.</li>
+  </ol>
+  <div class="tip">Press <strong>F2</strong> or click <strong>Listen</strong> in the overlay during Zoom/WhatsApp calls. The app captures interviewer speech and writes a script you can read in your accent.</div>
+
+  <h2>5. Using the overlay during an interview</h2>
+  <ol>
+    <li>Start a session from the dashboard (<strong>Resume Quick Start</strong> or <strong>Create Session</strong>).</li>
+    <li>Join your Zoom/WhatsApp call. Keep Career Copilot overlay beside the meeting window.</li>
+    <li>When the interviewer asks a question, press <strong>F2</strong> or click <strong>Listen F2</strong> in the overlay.</li>
+    <li>Read the <strong>Suggested Answer</strong> in your own accent. Use <strong>Copy Answer</strong> if needed.</li>
+    <li>Fallback: type the question in <strong>Manual Input</strong> and press <strong>Enter</strong>.</li>
+    <li>Press <strong>F3</strong> to show or hide the overlay.</li>
+  </ol>
+  <p>For best call capture on Windows, enable <strong>Stereo Mix</strong> in Sound Settings (Recording tab). Otherwise the app uses your microphone.</p>
+
+  <h2>6. Connect your phone</h2>
+  <ol>
+    <li>Ensure phone and PC are on the same Wi‑Fi network.</li>
+    <li>On the dashboard, open <strong>Link Device</strong> and note the 6-digit pairing code and bridge URL (port <code>8765</code>).</li>
+    <li>Enter the bridge URL shown under <strong>Bridge status</strong> in the mobile app.</li>
+    <li>Enter the pairing code on your phone to connect.</li>
+  </ol>
+  <p>If pairing fails, check Windows Firewall allows Career Copilot on private networks and verify the bridge URL is not <code>127.0.0.1</code> on the phone.</p>
+
+  <h2>7. Troubleshooting</h2>
+  <ul>
+    <li><strong>No AI answer:</strong> Ensure Ollama is running (<code>ollama serve</code>) or set <code>MISTRAL_API_KEY</code> in <code>.env</code>, then restart.</li>
+    <li><strong>Live listen not working:</strong> Allow microphone permission in Windows Settings. Enable Stereo Mix for Zoom/WhatsApp call audio.</li>
+    <li><strong>Session creation error:</strong> Upload a resume or paste a product description in onboarding.</li>
+    <li><strong>Mobile won’t connect:</strong> Confirm bridge is running; try the LAN IP from Bridge status, not localhost.</li>
+    <li><strong>Logs:</strong> Check <code>logs/startup-error.log</code> next to the executable.</li>
+  </ul>
+
+  <p><em>Print this page to PDF from your browser (Ctrl+P → Save as PDF) for offline reference.</em></p>
+</body>
+</html>

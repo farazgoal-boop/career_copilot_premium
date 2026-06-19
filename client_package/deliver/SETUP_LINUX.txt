@@ -1,0 +1,5 @@
+1. Open the Linux folder in Terminal.
+2. Run: chmod +x install_linux.sh START_PREMIUM.sh
+3. Run: ./install_linux.sh (installs Python, audio tools, and dependencies).
+4. Add your Mistral API key to .env or enter it in the first-run setup window.
+5. Run: ./START_PREMIUM.sh — then press F2 to listen during interviews.

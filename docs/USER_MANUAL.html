@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Career Copilot Premium — User Manual</title>
+  <style>
+    body { font-family: "Segoe UI", Arial, sans-serif; line-height: 1.65; color: #1f2937; max-width: 900px; margin: 0 auto; padding: 32px 24px; }
+    h1 { color: #4338ca; border-bottom: 3px solid #4338ca; padding-bottom: 8px; }
+    h2 { color: #312e81; margin-top: 2rem; }
+    h3 { color: #4338ca; margin-top: 1.2rem; }
+    code, pre { background: #f3f4f6; border-radius: 6px; }
+    code { padding: 2px 6px; }
+    pre { padding: 12px; overflow-x: auto; }
+    ol, ul { padding-left: 1.4rem; }
+    .tip { background: #eef2ff; border-left: 4px solid #6366f1; padding: 12px 16px; margin: 16px 0; }
+    .warn { background: #fff7ed; border-left: 4px solid #f97316; padding: 12px 16px; margin: 16px 0; }
+    table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+    th, td { border: 1px solid #e5e7eb; padding: 8px 10px; text-align: left; }
+    th { background: #f9fafb; }
+  </style>
+</head>
+<body>
+  <h1>Career Copilot Premium — User Manual</h1>
+  <p>Version 1.0.0 · Windows · macOS · Linux · Android · Freelancer interview assistant</p>
+
+  <h2>Section 1 — What is Career Copilot Premium?</h2>
+  <p>Career Copilot Premium is a live interview assistant for freelancers. It listens to interviewer questions (or accepts typed input), generates concise AI answer scripts via Mistral, and shows them in a discreet desktop overlay while you speak naturally on Zoom, Google Meet, or WhatsApp.</p>
+  <ul>
+    <li><strong>Desktop overlay</strong> — always-on-top answer panel (F2 listen, F3 hide/show)</li>
+    <li><strong>Web dashboard</strong> — session control, briefing wizard, mobile pairing</li>
+    <li><strong>Android companion</strong> — view questions/answers and send manual prompts</li>
+  </ul>
+
+  <h2>Section 2 — Windows Installation</h2>
+  <ol>
+    <li>Download and run <strong>CareerCopilotPremium_Setup_v1.0.0.exe</strong>.</li>
+    <li>Launch <strong>Career Copilot Premium</strong> from the Start Menu.</li>
+    <li>On first launch, the setup window asks for your free <strong>Mistral API key</strong>.</li>
+    <li>Click <strong>Get Free Key</strong> → sign up at <a href="https://console.mistral.ai/">console.mistral.ai</a>.</li>
+    <li>Paste the key → click <strong>Verify &amp; Save</strong>.</li>
+    <li>The overlay and browser dashboard open automatically at <code>http://127.0.0.1:5000</code>.</li>
+  </ol>
+  <div class="tip">Screenshot guide: (1) Installer welcome screen → (2) First-run API key dialog → (3) Dashboard Command Deck → (4) Overlay with Suggested Answer panel.</div>
+
+  <h2>Section 3 — macOS Installation</h2>
+  <ol>
+    <li>Unzip the client package and open the <code>mac/</code> folder.</li>
+    <li>Terminal: <code>chmod +x install_mac.sh START_PREMIUM.sh</code></li>
+    <li>Run <code>./install_mac.sh</code> (installs Python, BlackHole audio driver, dependencies).</li>
+    <li>Add <code>MISTRAL_API_KEY</code> to <code>.env</code> or use the first-run setup window.</li>
+    <li>Run <code>./START_PREMIUM.sh</code> — browser opens to the dashboard.</li>
+  </ol>
+
+  <h2>Section 4 — Linux Installation</h2>
+  <ol>
+    <li>Open the <code>linux/</code> folder from the client ZIP.</li>
+    <li><code>chmod +x install_linux.sh START_PREMIUM.sh</code></li>
+    <li><code>./install_linux.sh</code> (installs Python, PortAudio, PulseAudio loopback).</li>
+    <li>Add <code>MISTRAL_API_KEY</code> to <code>.env</code>.</li>
+    <li><code>./START_PREMIUM.sh</code></li>
+  </ol>
+
+  <h2>Section 5 — Android Installation</h2>
+  <ol>
+    <li>Copy <strong>CareerCopilotPremium.apk</strong> to your phone.</li>
+    <li>Allow <strong>Install unknown apps</strong> if Android prompts.</li>
+    <li>Install and open the app.</li>
+    <li>Ensure phone and PC are on the same Wi‑Fi.</li>
+    <li>On desktop: click <strong>Link Device</strong> → scan QR or enter the 6-digit code.</li>
+    <li>Mobile shows current question + AI answer; you can also send manual questions.</li>
+  </ol>
+
+  <h2>Section 6 — Getting a Free Mistral API Key</h2>
+  <ol>
+    <li>Go to <a href="https://console.mistral.ai/">console.mistral.ai</a></li>
+    <li>Sign up for a free account</li>
+    <li>Open <strong>API Keys</strong> → <strong>Create new key</strong></li>
+    <li>Copy the key and paste it in the app setup screen (or <code>.env</code> as <code>MISTRAL_API_KEY=your_key</code>)</li>
+    <li>Click <strong>Verify &amp; Save</strong> — you only do this once per computer</li>
+  </ol>
+
+  <h2>Section 7 — Creating Your First Session</h2>
+  <ol>
+    <li>Upload your resume PDF in onboarding, or paste a product/service description.</li>
+    <li>Enter your name, target company, and role.</li>
+    <li>Click <strong>Create Session</strong> (or <strong>Start Interview</strong> for one-click from saved profile).</li>
+    <li>Success message appears when the session is live.</li>
+    <li>Recent Sessions list shows status: Running / Stopped / New.</li>
+  </ol>
+
+  <h2>Section 8 — Using During an Interview</h2>
+  <ol>
+    <li>Start your Zoom, Meet, or WhatsApp call.</li>
+    <li>Press <strong>F2</strong> (or click <strong>Listen F2</strong>) when the interviewer asks a question.</li>
+    <li>Read the <strong>Suggested Answer</strong> in your own voice and accent.</li>
+    <li>Use <strong>Copy Answer</strong> if you need the text elsewhere.</li>
+    <li>Backup: type the question in <strong>Manual Input</strong> and press Enter.</li>
+    <li>Press <strong>F3</strong> to hide or show the overlay.</li>
+  </ol>
+
+  <h2>Section 9 — Language Settings</h2>
+  <p>In the overlay <strong>Language Settings</strong> panel:</p>
+  <table>
+    <tr><th>Setting</th><th>Purpose</th></tr>
+    <tr><td>Listen Language</td><td>Language the interviewer speaks (used for speech recognition on F2)</td></tr>
+    <tr><td>Reply Language</td><td>Language for the AI answer script</td></tr>
+  </table>
+  <p><strong>Example:</strong> Arabic client → Listen = Arabic, Reply = English. The app transcribes Arabic speech and generates English answer scripts.</p>
+  <p>Supported: English, Arabic, Urdu, French, Spanish, Hindi, Turkish.</p>
+
+  <h2>Section 10 — Audio Setup Guide</h2>
+  <h3>Windows</h3>
+  <ul>
+    <li><strong>Stereo Mix:</strong> Settings → Sound → Recording → enable Stereo Mix.</li>
+    <li><strong>VB-Cable (recommended):</strong> <a href="https://vb-audio.com/Cable/">vb-audio.com/Cable</a> — set CABLE Output as recording device.</li>
+  </ul>
+  <h3>macOS</h3>
+  <ul>
+    <li><code>brew install blackhole-2ch</code> — route meeting audio through BlackHole.</li>
+  </ul>
+  <h3>Linux</h3>
+  <ul>
+    <li><code>pactl load-module module-loopback</code> — captures speaker/monitor output.</li>
+  </ul>
+  <p>Overlay status bar shows: Mic Ready, Speaker Capture, or No Audio.</p>
+
+  <h2>Section 11 — Troubleshooting</h2>
+  <table>
+    <tr><th>Problem</th><th>Solution</th></tr>
+    <tr><td>App not opening</td><td>Check <code>logs/startup_error.log</code>. Install <a href="https://aka.ms/vs/17/release/vc_redist.x64.exe">Visual C++ Redistributable</a> on Windows.</td></tr>
+    <tr><td>No audio</td><td>Enable Stereo Mix or install VB-Cable / BlackHole / PulseAudio loopback.</td></tr>
+    <tr><td>API error</td><td>Verify <code>MISTRAL_API_KEY</code> in <code>.env</code>. Overlay shows API status.</td></tr>
+    <tr><td>Port conflict</td><td>App auto-switches from 5000 to 5001 if busy.</td></tr>
+    <tr><td>Overlay not visible</td><td>Press F3 to show. Check single overlay window (not duplicate).</td></tr>
+    <tr><td>STT failed</td><td>Message: "Could not hear clearly, please type manually" — use Manual Input.</td></tr>
+    <tr><td>Mobile won't connect</td><td>Use LAN IP from Bridge status, not <code>127.0.0.1</code> on phone.</td></tr>
+  </table>
+
+  <div class="warn">Never share your <code>.env</code> file or Mistral API key. The client package ships only <code>.env.example</code>.</div>
+
+  <p><em>Career Copilot Premium v1.0.0 — Support: see SETUP_GUIDE_*.txt in your client package.</em></p>
+</body>
+</html>

@@ -1,0 +1,5 @@
+1. Open the Windows folder.
+2. Double-click CareerCopilotPremium_Setup_v1.0.0.exe.
+3. Follow the installer, then launch Career Copilot Premium.
+4. Enter your free Mistral API key when asked (get one at console.mistral.ai).
+5. Press F2 during interviews to listen; F3 to hide or show the overlay.

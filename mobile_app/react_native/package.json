@@ -1,0 +1,24 @@
+{
+  "name": "career-copilot-mobile",
+  "version": "0.2.1",
+  "private": true,
+  "scripts": {
+    "android": "react-native run-android",
+    "android:release": "cd android && gradle assembleRelease",
+    "android:bundle": "cd android && gradle bundleRelease",
+    "start": "react-native start",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@react-native-async-storage/async-storage": "^1.24.0",
+    "react": "18.2.0",
+    "react-native": "0.74.5",
+    "react-native-camera-kit": "^18.0.0"
+  },
+  "devDependencies": {
+    "@react-native/metro-config": "0.74.85",
+    "@types/react": "18.2.66",
+    "@types/react-native": "0.73.0",
+    "typescript": "5.5.4"
+  }
+}

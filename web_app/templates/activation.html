@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %}Activate Career Copilot Premium{% endblock %}
+
+{% block body_class %}activation-view{% endblock %}
+
+{% block extra_head %}
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #08111a;
+      --panel: rgba(9, 18, 29, 0.92);
+      --line: rgba(120, 170, 215, 0.24);
+      --text: #f4f8fb;
+      --muted: #9fb2c5;
+      --accent: #f0b24d;
+      --danger: #ff7b7b;
+    }
+    * { box-sizing: border-box; }
+    .activation-shell {
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+    .panel {
+      width: min(720px, 100%);
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      padding: 28px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+    }
+    h1 { margin: 0 0 10px; font-size: 32px; }
+    p { color: var(--muted); line-height: 1.6; }
+    .card {
+      margin-top: 20px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.02);
+    }
+    .label { color: var(--muted); font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; }
+    .code {
+      margin-top: 8px;
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      word-break: break-word;
+    }
+    input {
+      width: 100%;
+      margin-top: 8px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text);
+      padding: 14px 16px;
+      font-size: 16px;
+    }
+    button {
+      margin-top: 16px;
+      border: 0;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #f0b24d, #ffcf76);
+      color: #11161c;
+      padding: 14px 18px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .error { color: var(--danger); min-height: 24px; }
+    .success { color: #90ee90; min-height: 24px; }
+  </style>
+{% endblock %}
+
+{% block content %}
+  <div class="activation-shell">
+  <main class="panel">
+    <h1>Activate This Computer</h1>
+    <p>Career Copilot Premium is locked to one desktop machine. Send the request code below to the seller, then paste the activation code you receive.</p>
+
+    <section class="card">
+      <div class="label">Computer</div>
+      <div class="code" id="machine-name">{{ license_status.machine_name if license_status else '' }}</div>
+    </section>
+
+    <section class="card">
+      <div class="label">Request Code</div>
+      <div class="code" id="request-code">{{ license_status.request_code if license_status else '' }}</div>
+    </section>
+
+    <section class="card">
+      <label class="label" for="activation-code">Activation Code</label>
+      <input id="activation-code" type="text" placeholder="ACT-XXXX-XXXX-XXXX-XXXX-XXXX" autocomplete="off">
+      <button id="activate-button" type="button">Activate Desktop</button>
+      <p id="activation-error" class="error"></p>
+      <p id="activation-success" class="success"></p>
+    </section>
+  </main>
+  </div>
+
+  <script>
+    const activateButton = document.getElementById('activate-button');
+    const activationInput = document.getElementById('activation-code');
+    const errorEl = document.getElementById('activation-error');
+    const successEl = document.getElementById('activation-success');
+
+    activateButton?.addEventListener('click', async () => {
+      errorEl.textContent = '';
+      successEl.textContent = '';
+      activateButton.disabled = true;
+      activateButton.textContent = 'Activating...';
+
+      try {
+        const response = await fetch('/api/license/activate', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({activation_code: activationInput.value}),
+        });
+        const payload = await response.json();
+        if (!response.ok) {
+          throw new Error(payload.error || `Activation failed: ${response.status}`);
+        }
+        successEl.textContent = 'Activation successful. Opening Career Copilot Premium...';
+        window.showToast?.('Activation successful. Opening Career Copilot Premium...', 'success');
+        window.setTimeout(() => {
+          window.location.href = '/';
+        }, 700);
+      } catch (error) {
+        errorEl.textContent = String(error);
+        window.showToast?.(String(error), 'error');
+      } finally {
+        activateButton.disabled = false;
+        activateButton.textContent = 'Activate Desktop';
+      }
+    });
+  </script>
+{% endblock %}

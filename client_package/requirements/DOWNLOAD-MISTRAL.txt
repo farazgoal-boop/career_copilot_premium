@@ -1,0 +1,17 @@
+Mistral API — Optional Cloud Fallback
+=====================================
+
+Use this if Ollama is not installed or you prefer cloud AI.
+
+1. Create account: https://console.mistral.ai
+
+2. Create an API key in the console.
+
+3. Copy .env.example to .env next to career-copilot.exe
+
+4. Edit .env and set:
+   MISTRAL_API_KEY=your_key_here
+
+5. Restart Career Copilot Premium.
+
+Mistral is used automatically when Ollama is unavailable.

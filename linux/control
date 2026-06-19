@@ -1,0 +1,9 @@
+Package: career-copilot-premium
+Version: VERSION
+Section: utils
+Priority: optional
+Architecture: amd64
+Maintainer: Muhammad Faraz <farazautomation@gmail.com>
+Description: Career Copilot Premium
+ AI-powered live interview assistant that listens during video calls
+ and generates real-time answer suggestions using Mistral AI.

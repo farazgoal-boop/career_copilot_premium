@@ -1,0 +1,70 @@
+# Git Ignore
+
+# Python virtual environments
+venv311/
+venv/
+.venv/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyc
+
+# Local secrets and editor state
+.env
+.env.*
+.flask_secret_key
+.vscode/
+
+# Client/build output folders (never commit)
+ready to client/
+DELIVER_TO_CLIENT/
+
+# Node / mobile build deps
+node_modules/
+**/node_modules/
+
+# Whisper model weights (download at build time, not in git)
+installers/windows/assets/whisper/
+*.pt
+
+# Generated build artifacts
+build/
+dist/
+.playwright-smoke-runner/
+mobile_app/react_native/android/.gradle/
+mobile_app/react_native/android/app/build/
+mobile_app/react_native/node_modules/
+tools/gradle/*.zip
+.tools/
+
+# Local runtime data
+backups/
+temp_backup/
+temp_restore/
+logs/
+data/cache/
+data/interview_sessions/
+data/user_profiles/
+
+# Large binaries — distribute via Gumroad/GitHub Releases, not git
+*.exe
+*.zip
+*.dll
+*.pt
+*.apk
+dist/
+build/
+CC_Releases/
+installers/windows/assets/OllamaSetup.exe
+installers/windows/assets/vc_redist.x64.exe
+
+# Cross-platform PyInstaller / packaging artifacts (Mac + Linux CI)
+*.spec.bak
+AppDir/
+debian-pkg/
+*.dmg
+*.AppImage
+*.deb
+appimagetool-x86_64.AppImage
+macos/Info.plist.built
