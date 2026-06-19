@@ -147,8 +147,13 @@ jobs:
 
           cp linux/career-copilot-premium.desktop debian-pkg/usr/share/applications/
 
-          if [ -f "assets/icon.png" ]; then
-            cp assets/icon.png debian-pkg/usr/share/icons/hicolor/256x256/apps/career-copilot-premium.png
+          ICON_SRC=""
+          if [ -f "assets/icon.png" ]; then ICON_SRC="assets/icon.png"
+          elif [ -f "icon.png" ]; then ICON_SRC="icon.png"
+          elif [ -f "installers/windows/assets/app_icon.png" ]; then ICON_SRC="installers/windows/assets/app_icon.png"
+          fi
+          if [ -n "$ICON_SRC" ]; then
+            cp "$ICON_SRC" debian-pkg/usr/share/icons/hicolor/256x256/apps/career-copilot-premium.png
           fi
 
           dpkg-deb --build --root-owner-group debian-pkg CareerCopilotPremium-linux.deb
@@ -177,12 +182,20 @@ jobs:
           cp linux/career-copilot-premium.desktop AppDir/
           cp linux/career-copilot-premium.desktop AppDir/usr/share/applications/
 
-          if [ -f "assets/icon.png" ]; then
-            cp assets/icon.png AppDir/usr/share/icons/hicolor/256x256/apps/career-copilot-premium.png
-            cp assets/icon.png AppDir/career-copilot-premium.png
+          ICON_SRC=""
+          if [ -f "assets/icon.png" ]; then ICON_SRC="assets/icon.png"
+          elif [ -f "icon.png" ]; then ICON_SRC="icon.png"
+          elif [ -f "installers/windows/assets/app_icon.png" ]; then ICON_SRC="installers/windows/assets/app_icon.png"
+          fi
+          if [ -n "$ICON_SRC" ]; then
+            cp "$ICON_SRC" AppDir/usr/share/icons/hicolor/256x256/apps/career-copilot-premium.png
+            cp "$ICON_SRC" AppDir/career-copilot-premium.png
+            cp "$ICON_SRC" AppDir/.DirIcon
           fi
 
-          ARCH=x86_64 ./appimagetool-x86_64.AppImage AppDir CareerCopilotPremium-linux.AppImage
+          export ARCH=x86_64
+          export APPIMAGE_EXTRACT_AND_RUN=1
+          ./appimagetool-x86_64.AppImage --no-appstream AppDir CareerCopilotPremium-linux.AppImage
 
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
