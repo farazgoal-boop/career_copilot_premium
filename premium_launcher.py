@@ -175,14 +175,39 @@ def _run_overlay_event_loop(services: PremiumRuntime, qt_app: "QtApplication") -
         else:
             window.show()
             window.raise_()
+            window.activateWindow()
 
-    listen_shortcut = QShortcut(QKeySequence("F2"), window)
-    listen_shortcut.activated.connect(window._on_live_listen)
-    listen_shortcut.setContext(Qt.ApplicationShortcut)
+    # Use a QObject signal so keyboard callbacks (background thread) safely
+    # dispatch onto the Qt main thread before touching any Qt widget.
+    class _HotkeySignals(QObject):
+        listen_triggered = Signal()
+        toggle_triggered = Signal()
 
-    visibility_shortcut = QShortcut(QKeySequence("F3"), window)
-    visibility_shortcut.activated.connect(toggle_overlay_visibility)
-    visibility_shortcut.setContext(Qt.ApplicationShortcut)
+    _hotkey_signals = _HotkeySignals()
+    _hotkey_signals.listen_triggered.connect(window._on_live_listen)
+    _hotkey_signals.toggle_triggered.connect(toggle_overlay_visibility)
+
+    _using_global_hotkeys = False
+    try:
+        import keyboard as _kb  # type: ignore[import-not-found]
+        _kb.add_hotkey("f2", _hotkey_signals.listen_triggered.emit)
+        _kb.add_hotkey("f3", _hotkey_signals.toggle_triggered.emit)
+        _using_global_hotkeys = True
+    except Exception:
+        pass
+
+    if not _using_global_hotkeys:
+        # Fallback: Qt application shortcuts (work only when a Qt window has focus)
+        listen_shortcut = QShortcut(QKeySequence("F2"), window)
+        listen_shortcut.activated.connect(window._on_live_listen)
+        listen_shortcut.setContext(Qt.ApplicationShortcut)
+        visibility_shortcut = QShortcut(QKeySequence("F3"), window)
+        visibility_shortcut.activated.connect(toggle_overlay_visibility)
+        visibility_shortcut.setContext(Qt.ApplicationShortcut)
+
+    from runtime_paths import overlay_show_flag_path as _overlay_flag_path_fn
+    _overlay_flag = _overlay_flag_path_fn()
+    _overlay_flag.parent.mkdir(parents=True, exist_ok=True)
 
     poll_in_flight = {"active": False}
     poll_signals = SessionPollSignals()
@@ -223,6 +248,17 @@ def _run_overlay_event_loop(services: PremiumRuntime, qt_app: "QtApplication") -
             runtime.controller.update(build_listening_overlay())
 
     def poll_session_updates() -> None:
+        # Check for overlay-show flag written by POST /api/overlay/show.
+        # This runs on the Qt main thread (QTimer callback) so show() is safe here.
+        if _overlay_flag.exists():
+            try:
+                _overlay_flag.unlink(missing_ok=True)
+            except OSError:
+                pass
+            window.show()
+            window.raise_()
+            window.activateWindow()
+
         if poll_in_flight["active"]:
             return
         poll_in_flight["active"] = True
@@ -271,6 +307,10 @@ def _run_overlay_event_loop(services: PremiumRuntime, qt_app: "QtApplication") -
     print("[premium] Career Copilot Premium is running.")
     print(f"[premium] Dashboard: {services.dashboard_url}")
     print(f"[premium] Data folder: {status['data_root']}")
+    if _using_global_hotkeys:
+        print("[premium] F2 / F3: global system hotkeys (work even when overlay is hidden).")
+    else:
+        print("[premium] F2 / F3: Qt application shortcuts (require overlay focus).")
     print("[premium] Press F2 or click Listen in the overlay to capture interviewer speech.")
     print("[premium] Press F3 to show or hide the overlay. Manual Input still works for typed questions.")
 

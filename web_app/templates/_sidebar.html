@@ -68,6 +68,17 @@
 
     <div class="sidebar-divider" style="margin:4px 0;"></div>
 
+    <button class="sidebar-item sidebar-item--btn" id="sidebar-open-overlay-btn" type="button" aria-label="Open Overlay">
+      <span class="sidebar-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+          <line x1="3" y1="9" x2="21" y2="9"/>
+          <line x1="9" y1="21" x2="9" y2="9"/>
+        </svg>
+      </span>
+      <span class="sidebar-label">Open Overlay</span>
+    </button>
+
     <button class="sidebar-item sidebar-item--btn" type="button" onclick="window.openPairingModal?.()" aria-label="Link Device">
       <span class="sidebar-icon">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
@@ -114,5 +125,24 @@
   sidebar.querySelectorAll('.sidebar-item[data-path]').forEach(function (item) {
     if (item.dataset.path === path) item.classList.add('is-active');
   });
+
+  /* Open Overlay button — writes a flag file the overlay's poll timer picks up */
+  var overlayBtn = document.getElementById('sidebar-open-overlay-btn');
+  if (overlayBtn) {
+    overlayBtn.addEventListener('click', function () {
+      fetch('/api/overlay/show', { method: 'POST' })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (d.ok) {
+            window.showToast?.('Overlay opening…', 'success');
+          } else {
+            window.showToast?.(d.error || 'Could not open overlay.', 'error');
+          }
+        })
+        .catch(function () {
+          window.showToast?.('Could not reach dashboard.', 'error');
+        });
+    });
+  }
 })();
 </script>

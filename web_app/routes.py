@@ -354,6 +354,24 @@ def register_routes(app: Flask) -> None:
             current_app.logger.exception("Failed to save Mistral key")
             return jsonify({"ok": False, "error": str(exc)}), 500
 
+    @app.post("/api/overlay/show")
+    def overlay_show() -> Response:
+        """Signal the desktop overlay to become visible.
+
+        Writes a flag file that the overlay's poll timer picks up within
+        ~4 seconds and calls window.show() + raise_() + activateWindow().
+        Works even when the overlay is hidden and Qt has no focus.
+        """
+        try:
+            from runtime_paths import overlay_show_flag_path
+            flag = overlay_show_flag_path()
+            flag.parent.mkdir(parents=True, exist_ok=True)
+            flag.touch()
+            return jsonify({"ok": True, "message": "Overlay show requested."})
+        except Exception as exc:
+            current_app.logger.exception("overlay/show flag write failed")
+            return jsonify({"ok": False, "error": str(exc)}), 500
+
     @app.post("/api/resume/extract")
     def resume_extract() -> Response:
         """Accept a resume file upload and return extracted text.

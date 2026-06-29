@@ -193,6 +193,10 @@ def license_state_path(data_root: Path | None = None) -> Path:
     return cache_root(data_root) / "license_state.json"
 
 
+def overlay_show_flag_path(data_root: Path | None = None) -> Path:
+    return cache_root(data_root) / "overlay_show.flag"
+
+
 def _decode_env_text(raw_bytes: bytes) -> str:
     """Decode .env bytes safely (handles UTF-8, UTF-16, and stray nulls)."""
     if not raw_bytes:

@@ -925,7 +925,7 @@ if QT_AVAILABLE:
                 self._a_box.setText("No active session. Open the dashboard and click Create Session first.")
                 self._pill.setText("ERROR")
                 self._pill.setStyleSheet(self._pill_style(STYLE['red'], "rgba(248,81,73,0.12)"))
-                self.show()
+                self.show_and_focus()
                 return
 
             self.current_session_id = session_id
@@ -948,8 +948,7 @@ if QT_AVAILABLE:
             self._a_box.setText("Capturing call audio and generating your script...")
             self._pill.setText("LISTENING")
             self._pill.setStyleSheet(self._pill_style(STYLE['yellow'], "rgba(210,153,34,0.12)"))
-            self.show()
-            self.raise_()
+            self.show_and_focus()
 
             import threading
 
@@ -1012,7 +1011,7 @@ if QT_AVAILABLE:
             self._a_box.setText(f"Error: {hint}")
             self._pill.setText("ERROR")
             self._pill.setStyleSheet(self._pill_style(STYLE['red'], "rgba(248,81,73,0.12)"))
-            self.show()
+            self.show_and_focus()
 
         def _on_manual_send(self):
             txt = self._inp.text().strip()
@@ -1107,8 +1106,7 @@ if QT_AVAILABLE:
             self._pill.setText("READY")
             self._pill.setStyleSheet(self._pill_style(STYLE['green'], "rgba(63,185,80,0.12)"))
             self._refresh_history()
-            self.show()
-            self.raise_()
+            self.show_and_focus()
 
         def _apply_manual_error(self, question: str, message: str) -> None:
             hint = message.strip() or "Unknown error"
@@ -1125,7 +1123,7 @@ if QT_AVAILABLE:
             self._q_box.setText(f"Q: {question}")
             self._pill.setText("ERROR")
             self._pill.setStyleSheet(self._pill_style(STYLE['red'], "rgba(248,81,73,0.12)"))
-            self.show()
+            self.show_and_focus()
 
         def _toggle_stealth(self):
             self._stealth = not self._stealth
@@ -1156,6 +1154,17 @@ if QT_AVAILABLE:
         def _tbar_release(self, e):
             self._drag_pos = QPoint()
             self._save_overlay_position()
+
+        def closeEvent(self, event):
+            # Ignore close events (Alt+F4, window.close(), etc.) and hide instead.
+            # This keeps the widget and its QShortcut parents alive so F2/F3 keep working.
+            event.ignore()
+            self.hide()
+
+        def show_and_focus(self) -> None:
+            self.show()
+            self.raise_()
+            self.activateWindow()
 
 
     class SettingsWindow(QWidget):
