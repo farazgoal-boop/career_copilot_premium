@@ -1,455 +1,381 @@
 {% extends "base.html" %}
 
-{% block title %}Career Copilot Live Session{% endblock %}
+{% block title %}Live Session – Career Copilot{% endblock %}
+
+{% block header %}{% endblock %}
 
 {% block body_class %}live-session-view{% endblock %}
 
 {% block extra_head %}
-  <style>
-    :root {
-      --bg: #0f0f0f;
-      --panel: #171717;
-      --panel-strong: #1d1d1d;
-      --line: rgba(255, 255, 255, 0.08);
-      --text: #ffffff;
-      --muted: #b9b9c2;
-      --accent: #6366f1;
-      --accent-soft: rgba(99, 102, 241, 0.16);
-      --ready: #14b8a6;
-      --listening: #22c55e;
-      --processing: #f59e0b;
-      --shadow: 0 30px 70px rgba(0, 0, 0, 0.38);
-    }
+<style>
+  :root {
+    --bg: #0f0f0f;
+    --panel: #171717;
+    --line: rgba(255, 255, 255, 0.08);
+    --text: #ffffff;
+    --muted: #b9b9c2;
+    --accent: #6366f1;
+    --ready: #14b8a6;
+    --listening: #22c55e;
+    --processing: #f59e0b;
+    --danger: #ef4444;
+  }
 
-    * { box-sizing: border-box; }
+  *, *::before, *::after { box-sizing: border-box; }
 
-    .shell {
-      width: min(1120px, calc(100% - 32px));
-      margin: 0 auto;
-      padding: 28px 0 40px;
-    }
+  body.live-session-view .premium-main { padding: 0; }
 
-    .topbar {
-      display: flex;
-      justify-content: space-between;
-      gap: 16px;
-      align-items: center;
-      margin-bottom: 20px;
-    }
+  .ls-shell {
+    width: min(640px, calc(100% - 32px));
+    margin: 0 auto;
+    padding: 24px 0 56px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-height: 100vh;
+  }
 
-    .eyebrow {
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 0.18em;
-      font-size: 0.76rem;
-      margin: 0 0 8px;
-    }
+  /* ── Topbar ── */
+  .ls-topbar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
 
-    h1 {
-      margin: 0;
-      font-size: clamp(1.8rem, 4vw, 2.8rem);
-    }
+  .ls-home-link {
+    font-size: 0.86rem;
+    color: var(--muted);
+    text-decoration: none;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
 
-    .session-chip {
-      padding: 10px 14px;
-      border: 1px solid var(--line);
-      border-radius: 999px;
-      background: rgba(255, 255, 255, 0.04);
-      color: var(--muted);
-      font-size: 0.92rem;
-    }
+  .ls-home-link:hover { color: var(--text); }
 
-    .grid {
-      display: grid;
-      grid-template-columns: 1.55fr 0.85fr;
-      gap: 20px;
-    }
+  .ls-status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+  }
 
-    .single-view-grid {
-      grid-template-columns: 1.1fr 1.2fr;
-      align-items: start;
-    }
+  /* status-dot class names are set by JS: "status-dot listening" etc. — keep these */
+  .status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex: 0 0 auto;
+  }
 
-    .card {
-      border: 1px solid var(--line);
-      background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.015));
-      border-radius: 28px;
-      box-shadow: var(--shadow);
-    }
+  .status-dot.listening {
+    background: var(--listening);
+    box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.18);
+    animation: ls-pulse 1.8s ease-in-out infinite;
+  }
 
-    .hero-card {
-      padding: 26px;
-      margin-bottom: 20px;
-      background: linear-gradient(145deg, rgba(14, 165, 164, 0.12), rgba(23, 23, 23, 0.95));
-    }
+  .status-dot.processing {
+    background: var(--processing);
+    box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.18);
+  }
 
-    .left-stack,
-    .right-stack {
-      display: grid;
-      gap: 20px;
-    }
+  .status-dot.ready {
+    background: var(--ready);
+    box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.18);
+  }
 
-    .stage-card,
-    .composer-card {
-      padding: 24px;
-    }
+  @keyframes ls-pulse {
+    0%, 100% { box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.18); }
+    50%       { box-shadow: 0 0 0 7px rgba(34, 197, 94, 0.05); }
+  }
 
-    .stage-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 16px;
-    }
+  #status-label {
+    font-size: 0.88rem;
+    font-weight: 600;
+  }
 
-    .stage-tag {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      border: 1px solid var(--line);
-      border-radius: 999px;
-      padding: 8px 12px;
-      font-size: 0.84rem;
-      color: var(--muted);
-      background: rgba(255, 255, 255, 0.04);
-    }
+  .ls-session-chip {
+    font-size: 0.76rem;
+    color: var(--muted);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 5px 12px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 
-    .call-stage-box {
-      border: 1px solid var(--line);
-      border-radius: 22px;
-      background: radial-gradient(circle at 18% 10%, rgba(14, 165, 164, 0.2), rgba(23, 23, 23, 0.94));
-      padding: 18px;
-      display: grid;
-      gap: 14px;
-    }
+  /* ── Question ── */
+  .ls-question {
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.025);
+    padding: 14px 18px;
+  }
 
-    .meeting-preview {
-      border: 1px dashed rgba(255, 255, 255, 0.2);
-      border-radius: 16px;
-      min-height: 150px;
-      display: grid;
-      place-items: center;
-      color: #d5f2ef;
-      text-align: center;
-      padding: 14px;
-      font-size: 0.95rem;
-      line-height: 1.5;
-      background: rgba(8, 14, 20, 0.56);
-    }
+  .ls-question-eyebrow {
+    margin: 0 0 5px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+  }
 
-    .speech-grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 12px;
-    }
+  #interviewer-text {
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1.55;
+    white-space: pre-wrap;
+  }
 
-    .speech-bubble {
-      border: 1px solid var(--line);
-      border-radius: 16px;
-      padding: 12px 14px;
-      background: rgba(8, 14, 20, 0.62);
-    }
+  #interviewer-text.placeholder { color: var(--muted); font-style: italic; }
 
-    .speech-bubble h4 {
-      margin: 0 0 8px;
-      font-size: 0.85rem;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: #9ce3dc;
-    }
+  /* ── Answer — the main element ── */
+  .ls-answer-wrap {
+    border: 1px solid var(--line);
+    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.02);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    min-height: 200px;
+  }
 
-    .speech-bubble p {
-      margin: 0;
-      color: #e7f7f4;
-      min-height: 48px;
-      line-height: 1.45;
-      white-space: pre-wrap;
-    }
+  #answer-body {
+    font-size: clamp(1.18rem, 2.4vw, 1.55rem);
+    line-height: 1.72;
+    white-space: pre-wrap;
+    margin: 0;
+  }
 
-    .speech-bubble p.placeholder {
-      color: var(--muted);
-      font-style: italic;
-    }
+  #answer-body.placeholder {
+    color: var(--muted);
+    font-size: 1rem;
+    font-style: italic;
+  }
 
-    .composer-card textarea {
-      width: 100%;
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      padding: 12px;
-      font: inherit;
-      color: var(--text);
-      background: rgba(8, 14, 20, 0.75);
-      resize: vertical;
-      min-height: 90px;
-      margin: 10px 0 12px;
-    }
+  .ls-answer-footer {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
 
-    .composer-actions {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      flex-wrap: wrap;
-    }
+  /* Alternative answer chips — rendered by JS into #alternatives */
+  #alternatives {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    flex: 1;
+  }
 
-    .steer-status {
-      margin: 10px 0 0;
-      color: var(--muted);
-      font-size: 0.9rem;
-      min-height: 20px;
-    }
+  /* .pill class is added by JS */
+  .pill {
+    border: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 999px;
+    color: var(--text);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.84rem;
+    line-height: 1.35;
+    padding: 7px 13px;
+    text-align: left;
+  }
 
-    .status-row {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      margin-bottom: 16px;
-    }
+  .pill:hover { background: rgba(255, 255, 255, 0.09); }
 
-    .status-dot {
-      width: 16px;
-      height: 16px;
-      border-radius: 50%;
-      box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.03);
-      flex: 0 0 auto;
-    }
+  #copy-button {
+    border: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 999px;
+    color: var(--text);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.86rem;
+    padding: 7px 16px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
 
-    .status-dot.listening { background: var(--listening); }
-    .status-dot.processing { background: var(--processing); }
-    .status-dot.ready { background: var(--ready); }
+  #copy-button:hover { background: rgba(255, 255, 255, 0.1); }
 
-    .status-label {
-      font-size: clamp(1.4rem, 3vw, 2.4rem);
-      font-weight: 700;
-    }
+  /* ── Quick-action chips ── */
+  .ls-action-chips {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
 
-    .status-hint {
-      color: var(--muted);
-      font-size: 1rem;
-      line-height: 1.6;
-      margin: 0;
-    }
+  .ls-chip {
+    border: 1px solid rgba(99, 102, 241, 0.35);
+    background: rgba(99, 102, 241, 0.08);
+    border-radius: 999px;
+    color: var(--text);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.92rem;
+    font-weight: 500;
+    padding: 10px 22px;
+  }
 
-    .answer-card,
-    .controls-card,
-    .meta-card {
-      padding: 24px;
-    }
+  .ls-chip:hover {
+    background: rgba(99, 102, 241, 0.18);
+    border-color: rgba(99, 102, 241, 0.6);
+  }
 
-    .answer-header,
-    .controls-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 18px;
-    }
+  .ls-chip:disabled { opacity: 0.5; cursor: wait; }
 
-    h2, h3 {
-      margin: 0;
-      font-size: 1.2rem;
-    }
+  /* ── Live steer ── */
+  .ls-steer-wrap {
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.02);
+    overflow: hidden;
+  }
 
-    .answer-body {
-      min-height: 180px;
-      padding: 22px;
-      border-radius: 22px;
-      background: var(--panel-strong);
-      border: 1px solid var(--line);
-      font-size: clamp(1.15rem, 2vw, 1.6rem);
-      line-height: 1.7;
-      white-space: pre-wrap;
-    }
+  #live-steer-input {
+    width: 100%;
+    border: 0;
+    border-bottom: 1px solid var(--line);
+    padding: 13px 16px;
+    font-family: inherit;
+    font-size: 0.95rem;
+    color: var(--text);
+    background: transparent;
+    resize: none;
+    min-height: 70px;
+    outline: none;
+    display: block;
+  }
 
-    .answer-body.placeholder {
-      color: var(--muted);
-      font-size: 1.05rem;
-    }
+  #live-steer-input::placeholder { color: var(--muted); }
 
-    .actions {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
+  .ls-steer-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 16px;
+  }
 
-    button {
-      border: 0;
-      border-radius: 999px;
-      min-height: 46px;
-      padding: 0 18px;
-      font: inherit;
-      cursor: pointer;
-      transition: transform 160ms ease, opacity 160ms ease;
-    }
+  #steer-status {
+    color: var(--muted);
+    font-size: 0.82rem;
+    flex: 1;
+    margin: 0;
+    min-height: 18px;
+  }
 
-    button:hover { transform: translateY(-1px); }
-    button:disabled { opacity: 0.5; cursor: wait; }
+  #send-live-steer {
+    border: 0;
+    background: var(--accent);
+    color: #fff;
+    border-radius: 999px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 8px 20px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
 
-    .button-primary {
-      background: var(--accent);
-      color: white;
-      box-shadow: 0 14px 24px rgba(14, 165, 164, 0.25);
-    }
+  #send-live-steer:hover { background: #5254d1; }
+  #send-live-steer:disabled { opacity: 0.55; cursor: wait; }
 
-    .button-secondary {
-      background: rgba(255,255,255,0.06);
-      color: white;
-      border: 1px solid var(--line);
-    }
+  /* ── End session ── */
+  .ls-end-wrap {
+    padding-top: 8px;
+    display: flex;
+    justify-content: center;
+  }
 
-    .pill-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
+  .ls-end-btn {
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    background: transparent;
+    border-radius: 999px;
+    color: #ef4444;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.92rem;
+    font-weight: 600;
+    padding: 12px 32px;
+  }
 
-    .pill {
-      padding: 12px 16px;
-      border-radius: 999px;
-      border: 1px solid rgba(14, 165, 164, 0.34);
-      background: var(--accent-soft);
-      color: var(--text);
-      cursor: pointer;
-      line-height: 1.35;
-    }
+  .ls-end-btn:hover {
+    background: rgba(239, 68, 68, 0.08);
+    border-color: rgba(239, 68, 68, 0.65);
+  }
 
-    .pill:hover {
-      border-color: rgba(14, 165, 164, 0.62);
-    }
-
-    .meta-list {
-      display: grid;
-      gap: 14px;
-    }
-
-    .meta-row {
-      padding: 14px 16px;
-      border-radius: 18px;
-      background: rgba(255,255,255,0.03);
-      border: 1px solid var(--line);
-    }
-
-    .meta-row strong {
-      display: block;
-      font-size: 0.84rem;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 6px;
-    }
-
-    .meta-row span {
-      line-height: 1.5;
-    }
-
-    @media (max-width: 920px) {
-      .grid,
-      .single-view-grid { grid-template-columns: 1fr; }
-      .topbar { align-items: flex-start; flex-direction: column; }
-    }
-  </style>
+  /* Hidden infrastructure — JS writes to these elements */
+  .ls-infra { display: none !important; }
+</style>
 {% endblock %}
 
 {% block content %}
-  <main class="shell">
-    <div class="topbar">
-      <div>
-        <p class="eyebrow">Live Companion Screen</p>
-        <h1>Call Session View</h1>
-      </div>
-      <div class="session-chip">Session: {{ session_id }}</div>
+<div class="ls-shell">
+
+  <!-- Topbar: back link · status dot · session ID -->
+  <div class="ls-topbar">
+    <a href="/" class="ls-home-link">&#8592; Sessions</a>
+    <div class="ls-status-indicator">
+      <span id="status-dot" class="status-dot processing"></span>
+      <span id="status-label">Processing</span>
     </div>
+    <span class="ls-session-chip" title="{{ session_id }}">{{ session_id }}</span>
+  </div>
 
-    <section class="hero-card card js-data-card is-loading">
-      <div class="status-row">
-        <span id="status-dot" class="status-dot processing"></span>
-        <div>
-          <div id="status-label" class="status-label">Processing...</div>
-          <p id="status-hint" class="status-hint">Waiting for the next live update from the session.</p>
-        </div>
-      </div>
-    </section>
+  <!-- Transcript / question -->
+  <div class="ls-question">
+    <p class="ls-question-eyebrow">Question</p>
+    <p id="interviewer-text" class="placeholder">Waiting for interviewer&hellip;</p>
+  </div>
 
-    <section class="grid single-view-grid">
-      <div class="left-stack">
-        <section class="stage-card card js-data-card is-loading">
-          <div class="stage-header">
-            <div>
-              <h2>Call Overlap Workspace</h2>
-              <p class="status-hint">Single view for interviewer context, your spoken line, and AI reply guidance.</p>
-            </div>
-            <span class="stage-tag">Companion overlap mode</span>
-          </div>
+  <!-- Suggested answer — largest element on screen -->
+  <div class="ls-answer-wrap js-data-card is-loading">
+    <div id="answer-body" class="placeholder">Waiting for a question to be captured.</div>
+    <div class="ls-answer-footer">
+      <div id="alternatives"></div>
+      <button id="copy-button" type="button">Copy</button>
+    </div>
+  </div>
 
-          <div class="call-stage-box">
-            <div class="meeting-preview">Keep Zoom/WhatsApp call window visible behind or beside this panel for true one-screen operation.<br><strong>Recommended default:</strong> Preset B (70/30 split) - caller window 70%, Career Copilot 30%.</div>
-            <div class="speech-grid">
-              <article class="speech-bubble">
-                <h4>Interviewer Said</h4>
-                <p id="interviewer-text" class="placeholder">Waiting for interviewer prompt...</p>
-              </article>
-              <article class="speech-bubble">
-                <h4>You Said</h4>
-                <p id="user-text" class="placeholder">Your spoken response will appear here for separation.</p>
-              </article>
-            </div>
-          </div>
-        </section>
+  <!-- Quick-action chips -->
+  <div class="ls-action-chips">
+    <button id="fallback-simple" type="button" class="ls-chip">Shorter</button>
+    <button id="fallback-emergency" type="button" class="ls-chip">1-liner</button>
+  </div>
 
-        <section class="composer-card card js-data-card is-loading">
-          <h3>Live Input to AI</h3>
-          <p class="status-hint">Type a quick steer in the same view to adjust the next generated reply without switching screens.</p>
-          <textarea id="live-steer-input" placeholder="Example: keep next answer under 25 seconds and focus on delivery speed."></textarea>
-          <div class="composer-actions">
-            <button id="send-live-steer" class="button-primary" type="button">Send Input</button>
-          </div>
-          <p id="steer-status" class="steer-status">No live input sent yet.</p>
-        </section>
+  <!-- Live steer input -->
+  <div class="ls-steer-wrap">
+    <textarea id="live-steer-input" placeholder="Type a steer or additional context&hellip;" rows="3"></textarea>
+    <div class="ls-steer-footer">
+      <p id="steer-status"></p>
+      <button id="send-live-steer" type="button">Send</button>
+    </div>
+  </div>
 
-        <section class="answer-card card js-data-card is-loading">
-          <div class="answer-header">
-            <h2>Main Reply</h2>
-            <button id="copy-button" class="button-secondary" type="button">Copy</button>
-          </div>
-          <div id="answer-body" class="answer-body placeholder">Waiting for the operator to capture a question and prepare the next answer.</div>
-        </section>
+  <!-- End session -->
+  <div class="ls-end-wrap">
+    <button class="ls-end-btn" type="button" onclick="window.location.href='/'">End session</button>
+  </div>
 
-        <section class="controls-card card js-data-card is-loading" style="margin-top:20px;">
-          <div class="controls-header">
-            <h3>Alternative Replies</h3>
-          </div>
-          <div id="alternatives" class="pill-list"></div>
-          <div class="actions" style="margin-top: 20px;">
-            <button id="fallback-simple" class="button-primary" type="button">Simpler</button>
-            <button id="fallback-emergency" class="button-secondary" type="button">Emergency 1-liner</button>
-          </div>
-        </section>
-      </div>
+  <!-- Hidden infrastructure: JS references these elements but they are not shown -->
+  <div class="ls-infra" aria-hidden="true">
+    <p id="status-hint"></p>
+    <p id="user-text"></p>
+    <span id="meta-profile"></span>
+    <span id="meta-target"></span>
+    <span id="meta-worker"></span>
+    <span id="meta-updated"></span>
+  </div>
 
-      <div class="right-stack">
-        <aside class="meta-card card js-data-card is-loading">
-          <h3 style="margin-bottom:18px;">Session Context</h3>
-          <div class="meta-list">
-            <div class="meta-row">
-              <strong>Profile</strong>
-              <span id="meta-profile">-</span>
-            </div>
-            <div class="meta-row">
-              <strong>Target</strong>
-              <span id="meta-target">-</span>
-            </div>
-            <div class="meta-row">
-              <strong>Worker Status</strong>
-              <span id="meta-worker">-</span>
-            </div>
-            <div class="meta-row">
-              <strong>Last Updated</strong>
-              <span id="meta-updated">-</span>
-            </div>
-          </div>
-        </aside>
-      </div>
-    </section>
-  </main>
+</div>
 {% endblock %}
 
 {% block extra_scripts %}
