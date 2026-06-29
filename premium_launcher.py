@@ -205,6 +205,10 @@ def _run_overlay_event_loop(services: PremiumRuntime, qt_app: "QtApplication") -
         visibility_shortcut.activated.connect(toggle_overlay_visibility)
         visibility_shortcut.setContext(Qt.ApplicationShortcut)
 
+    from runtime_paths import overlay_show_flag_path as _overlay_flag_path_fn
+    _overlay_flag = _overlay_flag_path_fn()
+    _overlay_flag.parent.mkdir(parents=True, exist_ok=True)
+
     poll_in_flight = {"active": False}
     poll_signals = SessionPollSignals()
 
@@ -244,6 +248,17 @@ def _run_overlay_event_loop(services: PremiumRuntime, qt_app: "QtApplication") -
             runtime.controller.update(build_listening_overlay())
 
     def poll_session_updates() -> None:
+        # Check for overlay-show flag written by POST /api/overlay/show.
+        # This runs on the Qt main thread (QTimer callback) so show() is safe here.
+        if _overlay_flag.exists():
+            try:
+                _overlay_flag.unlink(missing_ok=True)
+            except OSError:
+                pass
+            window.show()
+            window.raise_()
+            window.activateWindow()
+
         if poll_in_flight["active"]:
             return
         poll_in_flight["active"] = True
