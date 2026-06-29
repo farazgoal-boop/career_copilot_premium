@@ -4,229 +4,21 @@
 
 {% block header %}{% endblock %}
 
-{% block body_class %}settings-view{% endblock %}
+{% block body_class %}settings-view has-sidebar{% endblock %}
 
 {% block extra_head %}
 <style>
   *, *::before, *::after { box-sizing: border-box; }
-
   body.settings-view .premium-main { padding: 0; }
-
-  /* ── Shell ── */
-  .st-shell {
-    width: min(480px, calc(100% - 48px));
-    margin: 0 auto;
-    padding: 32px 0 64px;
-    display: flex;
-    flex-direction: column;
-    gap: 32px;
-  }
-
-  /* ── Top bar ── */
-  .st-topbar {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-  }
-
-  .st-home-link {
-    font-size: 0.86rem;
-    color: var(--premium-muted);
-    text-decoration: none;
-    flex-shrink: 0;
-  }
-
-  .st-home-link:hover { color: var(--premium-text); }
-
-  .st-title {
-    font-size: 0.86rem;
-    font-weight: 600;
-    color: var(--premium-muted);
-  }
-
-  /* ── Section group ── */
-  .st-group {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .st-group-label {
-    font-size: 0.72rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--premium-muted);
-    margin: 0 0 8px 4px;
-  }
-
-  /* ── Row ── */
-  .st-row {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 16px;
-    padding: 14px 16px;
-    border-radius: 14px;
-    background: rgba(255, 255, 255, 0.025);
-    border: 1px solid transparent;
-  }
-
-  .st-row--link {
-    text-decoration: none;
-    color: var(--premium-text);
-    cursor: pointer;
-  }
-
-  .st-row--link:hover {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: var(--premium-line);
-  }
-
-  .st-row-left {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    min-width: 0;
-  }
-
-  .st-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    flex: 0 0 auto;
-    background: rgba(255, 255, 255, 0.15);
-  }
-
-  .st-dot--ok  { background: #22c55e; box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15); }
-  .st-dot--err { background: #ef4444; box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12); }
-  .st-dot--warn { background: #f59e0b; box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.12); }
-
-  .st-row-text {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    min-width: 0;
-  }
-
-  .st-row-name {
-    font-size: 0.93rem;
-    font-weight: 500;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .st-row-hint {
-    font-size: 0.82rem;
-    color: var(--premium-muted);
-    line-height: 1.45;
-  }
-
-  .st-row-right {
-    flex-shrink: 0;
-    color: var(--premium-muted);
-    font-size: 0.84rem;
-  }
-
-  .st-chevron {
-    color: var(--premium-muted);
-    font-size: 1.1rem;
-    flex-shrink: 0;
-    line-height: 1;
-  }
-
-  /* ── Loading skeleton row ── */
-  .st-row--loading .st-row-name {
-    width: 120px;
-    height: 14px;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.08);
-    animation: st-pulse 1.4s ease-in-out infinite;
-  }
-
-  .st-row--loading .st-row-hint {
-    width: 200px;
-    height: 11px;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.05);
-    margin-top: 4px;
-    animation: st-pulse 1.4s ease-in-out infinite 0.2s;
-  }
-
-  @keyframes st-pulse {
-    0%, 100% { opacity: 0.5; }
-    50%       { opacity: 1; }
-  }
-
-  /* ── Cleanup button ── */
-  .st-cleanup-btn {
-    width: 100%;
-    border: 1px solid var(--premium-line);
-    background: transparent;
-    color: var(--premium-text);
-    border-radius: 14px;
-    font: inherit;
-    font-size: 0.92rem;
-    padding: 14px 16px;
-    text-align: left;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-  }
-
-  .st-cleanup-btn:hover {
-    background: rgba(255, 255, 255, 0.04);
-  }
-
-  .st-cleanup-btn:disabled {
-    opacity: 0.5;
-    cursor: wait;
-  }
-
-  .st-cleanup-result {
-    font-size: 0.84rem;
-    color: var(--premium-muted);
-    padding: 0 4px;
-    min-height: 20px;
-  }
 </style>
 {% endblock %}
 
 {% block content %}
+{% include '_sidebar.html' %}
 <div class="st-shell">
 
-  <!-- Top bar -->
   <div class="st-topbar">
-    <a href="/" class="st-home-link">&#8592; Home</a>
     <span class="st-title">Settings</span>
-  </div>
-
-  <!-- Profile -->
-  <div class="st-group">
-    <p class="st-group-label">Profile</p>
-    <a href="/onboarding" class="st-row st-row--link">
-      <div class="st-row-left">
-        <div class="st-row-text">
-          <span class="st-row-name">Resume &amp; identity</span>
-          <span class="st-row-hint">Update your name, target role, or resume</span>
-        </div>
-      </div>
-      <span class="st-chevron" aria-hidden="true">›</span>
-    </a>
-  </div>
-
-  <!-- System status — populated by JS from /api/system/preflight -->
-  <div class="st-group">
-    <p class="st-group-label">System</p>
-    <div id="st-checks-list">
-      <!-- skeleton rows while loading -->
-      <div class="st-row st-row--loading"><div class="st-dot"></div><div class="st-row-text"><span class="st-row-name">&nbsp;</span><span class="st-row-hint">&nbsp;</span></div></div>
-      <div class="st-row st-row--loading"><div class="st-dot"></div><div class="st-row-text"><span class="st-row-name">&nbsp;</span><span class="st-row-hint">&nbsp;</span></div></div>
-      <div class="st-row st-row--loading"><div class="st-dot"></div><div class="st-row-text"><span class="st-row-name">&nbsp;</span><span class="st-row-hint">&nbsp;</span></div></div>
-    </div>
   </div>
 
   <!-- Session management -->
@@ -249,51 +41,8 @@
 (function () {
   'use strict';
 
-  var checksList = document.getElementById('st-checks-list');
   var cleanupBtn = document.getElementById('st-cleanup-btn');
   var cleanupResult = document.getElementById('st-cleanup-result');
-
-  function dotClass(ok, id) {
-    if (ok) return 'st-dot st-dot--ok';
-    if (id === 'loopback' || id === 'ollama' || id === 'mistral') return 'st-dot st-dot--warn';
-    return 'st-dot st-dot--err';
-  }
-
-  function escapeHtml(s) {
-    return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  }
-
-  function renderChecks(checks) {
-    if (!checks || !checks.length) {
-      checksList.innerHTML = '<div class="st-row"><div class="st-row-text"><span class="st-row-name" style="color:var(--premium-muted)">Could not load system status.</span></div></div>';
-      return;
-    }
-    checksList.innerHTML = '';
-    checks.forEach(function (c) {
-      var row = document.createElement('div');
-      row.className = 'st-row';
-      row.innerHTML =
-        '<div class="st-row-left">' +
-          '<div class="' + dotClass(c.ok, c.id) + '"></div>' +
-          '<div class="st-row-text">' +
-            '<span class="st-row-name">' + escapeHtml(c.label) + '</span>' +
-            (c.hint ? '<span class="st-row-hint">' + escapeHtml(c.hint) + '</span>' : '') +
-          '</div>' +
-        '</div>' +
-        '<span class="st-row-right">' + (c.ok ? 'OK' : '—') + '</span>';
-      checksList.appendChild(row);
-    });
-  }
-
-  async function loadPreflight() {
-    try {
-      var resp = await fetch('/api/system/preflight', { headers: { Accept: 'application/json' } });
-      var data = await resp.json();
-      renderChecks(data.checks || []);
-    } catch (e) {
-      checksList.innerHTML = '<div class="st-row"><div class="st-row-text"><span class="st-row-name" style="color:var(--premium-muted)">Could not reach system status endpoint.</span></div></div>';
-    }
-  }
 
   cleanupBtn.addEventListener('click', async function () {
     cleanupBtn.disabled = true;
@@ -312,8 +61,6 @@
       cleanupBtn.disabled = false;
     }
   });
-
-  loadPreflight();
 })();
 </script>
 {% endblock %}

@@ -4,9 +4,10 @@
 
 {% block header %}{% endblock %}
 
-{% block body_class %}home-view{% endblock %}
+{% block body_class %}home-view has-sidebar{% endblock %}
 
 {% block content %}
+{% include '_sidebar.html' %}
 <div class="home-shell">
 
   <div class="home-topbar">

@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}Profile – Career Copilot Premium{% endblock %}
+
+{% block header %}{% endblock %}
+
+{% block body_class %}profile-view has-sidebar{% endblock %}
+
+{% block extra_head %}
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  body.profile-view .premium-main { padding: 0; }
+</style>
+{% endblock %}
+
+{% block content %}
+{% include '_sidebar.html' %}
+<div class="st-shell">
+
+  <div class="st-topbar">
+    <span class="st-title">Profile</span>
+  </div>
+
+  <div class="st-group">
+    <p class="st-group-label">Identity</p>
+    <a href="/onboarding" class="st-row st-row--link">
+      <div class="st-row-left">
+        <div class="st-row-text">
+          <span class="st-row-name">Resume &amp; identity</span>
+          <span class="st-row-hint">Update your name, target role, or resume</span>
+        </div>
+      </div>
+      <span class="st-chevron" aria-hidden="true">›</span>
+    </a>
+  </div>
+
+</div>
+{% endblock %}

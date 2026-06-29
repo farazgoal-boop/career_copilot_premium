@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}System Status – Career Copilot Premium{% endblock %}
+
+{% block header %}{% endblock %}
+
+{% block body_class %}system-status-view has-sidebar{% endblock %}
+
+{% block extra_head %}
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  body.system-status-view .premium-main { padding: 0; }
+</style>
+{% endblock %}
+
+{% block content %}
+{% include '_sidebar.html' %}
+<div class="st-shell">
+
+  <div class="st-topbar">
+    <span class="st-title">System Status</span>
+  </div>
+
+  <div class="st-group">
+    <p class="st-group-label">System</p>
+    <div id="st-checks-list">
+      <div class="st-row st-row--loading"><div class="st-dot"></div><div class="st-row-text"><span class="st-row-name">&nbsp;</span><span class="st-row-hint">&nbsp;</span></div></div>
+      <div class="st-row st-row--loading"><div class="st-dot"></div><div class="st-row-text"><span class="st-row-name">&nbsp;</span><span class="st-row-hint">&nbsp;</span></div></div>
+      <div class="st-row st-row--loading"><div class="st-dot"></div><div class="st-row-text"><span class="st-row-name">&nbsp;</span><span class="st-row-hint">&nbsp;</span></div></div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+(function () {
+  'use strict';
+
+  var checksList = document.getElementById('st-checks-list');
+
+  function dotClass(ok, id) {
+    if (ok) return 'st-dot st-dot--ok';
+    if (id === 'loopback' || id === 'ollama' || id === 'mistral') return 'st-dot st-dot--warn';
+    return 'st-dot st-dot--err';
+  }
+
+  function escapeHtml(s) {
+    return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function renderChecks(checks) {
+    if (!checks || !checks.length) {
+      checksList.innerHTML = '<div class="st-row"><div class="st-row-text"><span class="st-row-name" style="color:var(--premium-muted)">Could not load system status.</span></div></div>';
+      return;
+    }
+    checksList.innerHTML = '';
+    checks.forEach(function (c) {
+      var row = document.createElement('div');
+      row.className = 'st-row';
+      row.innerHTML =
+        '<div class="st-row-left">' +
+          '<div class="' + dotClass(c.ok, c.id) + '"></div>' +
+          '<div class="st-row-text">' +
+            '<span class="st-row-name">' + escapeHtml(c.label) + '</span>' +
+            (c.hint ? '<span class="st-row-hint">' + escapeHtml(c.hint) + '</span>' : '') +
+          '</div>' +
+        '</div>' +
+        '<span class="st-row-right">' + (c.ok ? 'OK' : '—') + '</span>';
+      checksList.appendChild(row);
+    });
+  }
+
+  fetch('/api/system/preflight', { headers: { Accept: 'application/json' } })
+    .then(function (r) { return r.json(); })
+    .then(function (d) { renderChecks(d.checks || []); })
+    .catch(function () {
+      checksList.innerHTML = '<div class="st-row"><div class="st-row-text"><span class="st-row-name" style="color:var(--premium-muted)">Could not reach system status endpoint.</span></div></div>';
+    });
+})();
+</script>
+{% endblock %}

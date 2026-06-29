@@ -83,6 +83,18 @@ def register_routes(app: Flask) -> None:
     def settings_page() -> str:
         return render_template("settings.html")
 
+    @app.get("/sessions")
+    def sessions_list() -> str:
+        return render_template("sessions.html")
+
+    @app.get("/profile")
+    def profile_page() -> str:
+        return render_template("profile.html")
+
+    @app.get("/system-status")
+    def system_status_page() -> str:
+        return render_template("system_status.html")
+
     @app.get("/session/<session_id>/live")
     def live_session(session_id: str) -> Response | str:
         from mobile_app.live_bridge import build_live_bridge_payload_for_session

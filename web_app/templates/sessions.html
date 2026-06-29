@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}Sessions – Career Copilot Premium{% endblock %}
+
+{% block header %}{% endblock %}
+
+{% block body_class %}sessions-view has-sidebar{% endblock %}
+
+{% block extra_head %}
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  body.sessions-view .premium-main { padding: 0; }
+</style>
+{% endblock %}
+
+{% block content %}
+{% include '_sidebar.html' %}
+<div class="st-shell">
+
+  <div class="st-topbar">
+    <span class="st-title">Sessions</span>
+  </div>
+
+  <div class="st-group">
+    <p class="st-group-label">Recent</p>
+    <div id="sessions-list">
+      <div class="st-row st-row--loading"><div class="st-dot"></div><div class="st-row-text"><span class="st-row-name">&nbsp;</span><span class="st-row-hint">&nbsp;</span></div></div>
+      <div class="st-row st-row--loading"><div class="st-dot"></div><div class="st-row-text"><span class="st-row-name">&nbsp;</span><span class="st-row-hint">&nbsp;</span></div></div>
+      <div class="st-row st-row--loading"><div class="st-dot"></div><div class="st-row-text"><span class="st-row-name">&nbsp;</span><span class="st-row-hint">&nbsp;</span></div></div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+(function () {
+  'use strict';
+
+  var list = document.getElementById('sessions-list');
+
+  function relativeTime(iso) {
+    if (!iso) return '';
+    try {
+      var diff = Date.now() - new Date(iso).getTime();
+      var m = Math.floor(diff / 60000);
+      if (m < 2) return 'just now';
+      if (m < 60) return m + 'm ago';
+      var h = Math.floor(m / 60);
+      if (h < 24) return h + 'h ago';
+      return Math.floor(h / 24) + 'd ago';
+    } catch (e) { return ''; }
+  }
+
+  function escapeHtml(s) {
+    return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function render(sessions) {
+    if (!sessions || !sessions.length) {
+      list.innerHTML = '<div class="st-row"><div class="st-row-text"><span class="st-row-name" style="color:var(--premium-muted)">No sessions yet.</span></div></div>';
+      return;
+    }
+    list.innerHTML = '';
+    sessions.forEach(function (s) {
+      var a = document.createElement('a');
+      a.href = '/session/' + encodeURIComponent(s.session_id) + '/live';
+      a.className = 'st-row st-row--link';
+      var name = escapeHtml((s.profile_name || '') + (s.company_name ? ' · ' + s.company_name : ''));
+      var role = escapeHtml(s.role_title || '');
+      var time = escapeHtml(relativeTime(s.updated_at));
+      a.innerHTML =
+        '<div class="st-row-left">' +
+          '<div class="st-row-text">' +
+            '<span class="st-row-name">' + (name || 'Session') + '</span>' +
+            (role ? '<span class="st-row-hint">' + role + (time ? ' · ' + time : '') + '</span>' : (time ? '<span class="st-row-hint">' + time + '</span>' : '')) +
+          '</div>' +
+        '</div>' +
+        '<span class="st-chevron">›</span>';
+      list.appendChild(a);
+    });
+  }
+
+  fetch('/api/sessions/recent', { headers: { Accept: 'application/json' } })
+    .then(function (r) { return r.json(); })
+    .then(function (d) { render(d.sessions || []); })
+    .catch(function () {
+      list.innerHTML = '<div class="st-row"><div class="st-row-text"><span class="st-row-name" style="color:var(--premium-muted)">Could not load sessions.</span></div></div>';
+    });
+})();
+</script>
+{% endblock %}
