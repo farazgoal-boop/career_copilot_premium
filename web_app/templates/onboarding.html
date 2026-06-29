@@ -34,7 +34,20 @@
     font-size: 0.86rem;
     font-weight: 600;
     color: var(--premium-muted);
+    flex: 1;
+    text-align: center;
   }
+
+  .ob-back-link {
+    font-size: 0.86rem;
+    color: var(--premium-muted);
+    text-decoration: none;
+    white-space: nowrap;
+    flex-shrink: 0;
+    min-width: 56px;
+  }
+
+  .ob-back-link:hover { color: var(--premium-text); }
 
   .ob-progress {
     display: flex;
@@ -225,7 +238,8 @@
 <div class="ob-shell">
 
   <div class="ob-topbar">
-    <span class="ob-brand">Career Copilot Premium</span>
+    <a href="{{ url_for('dashboard') }}" class="ob-back-link">← Home</a>
+    <span class="ob-brand">Setup</span>
     <div class="ob-progress" aria-label="Setup progress">
       <span class="ob-dot active" data-step-pill="0"></span>
       <span class="ob-dot" data-step-pill="1"></span>
@@ -297,7 +311,7 @@
 
       <div class="ob-actions">
         <a id="continue-dashboard-button" class="ob-btn ob-btn--primary" href="{{ url_for('dashboard') }}">Go to home</a>
-        <a id="connect-mobile-button" class="ob-btn ob-btn--secondary" href="{{ url_for('dashboard') }}">Link mobile</a>
+        <button id="connect-mobile-button" class="ob-btn ob-btn--secondary" type="button" onclick="window.openPairingModal?.()">Link mobile</button>
       </div>
     </section>
 
@@ -379,7 +393,6 @@
             throw new Error(payload.error || 'Could not create session.');
           }
 
-          connectButton.href = payload.connect_mobile_url || connectButton.href;
           continueButton.href = payload.dashboard_url || continueButton.href;
           window.showToast?.('Session created.', 'success');
           showStep(2);

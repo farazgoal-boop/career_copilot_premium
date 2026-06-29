@@ -312,6 +312,25 @@
     border-color: rgba(239, 68, 68, 0.65);
   }
 
+  /* ── Page title ── */
+  .ls-page-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    margin: 0 0 4px;
+  }
+
+  /* ── Session chip label prefix ── */
+  .ls-session-chip::before {
+    content: "ID\00a0";
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    opacity: 0.5;
+  }
+
   /* Hidden infrastructure — JS writes to these elements */
   .ls-infra { display: none !important; }
 </style>
@@ -324,11 +343,12 @@
   <div class="ls-topbar">
     <a href="/" class="ls-home-link">&#8592; Sessions</a>
     <div class="ls-status-indicator">
-      <span id="status-dot" class="status-dot processing"></span>
-      <span id="status-label">Processing</span>
+      <span id="status-dot" class="status-dot ready"></span>
+      <span id="status-label">Ready</span>
     </div>
     <span class="ls-session-chip" title="{{ session_id }}">{{ session_id }}</span>
   </div>
+  <h1 class="ls-page-title">Live Session</h1>
 
   <!-- Transcript / question -->
   <div class="ls-question">
@@ -408,7 +428,7 @@
         if (overlayStatus.includes('answer_ready') || overlayStatus.includes('ready')) {
           return {
             tone: 'ready',
-            label: 'Answer Ready',
+            label: 'Answer ready',
             hint: payload?.overlay?.headline || 'AI reply is ready to deliver.',
           };
         }
@@ -419,9 +439,16 @@
             hint: payload?.readiness?.hint || 'The assistant is listening for the next question.',
           };
         }
+        if (overlayStatus.includes('armed') || overlayStatus.includes('idle') || !overlayStatus) {
+          return {
+            tone: 'ready',
+            label: 'Ready',
+            hint: payload?.readiness?.hint || 'Session is active and ready to assist.',
+          };
+        }
         return {
           tone: 'processing',
-          label: 'Processing...',
+          label: 'Waiting...',
           hint: payload?.readiness?.hint || 'The assistant is thinking through the next response.',
         };
       }

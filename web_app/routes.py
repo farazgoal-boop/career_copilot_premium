@@ -172,7 +172,7 @@ def register_routes(app: Flask) -> None:
                 {
                     "ok": True,
                     "session_id": session_id,
-                    "connect_mobile_url": "/dashboard#command-deck",
+                    "connect_mobile_url": "/settings",
                     "dashboard_url": "/dashboard",
                     "bridge_hint": _bridge_base_url(),
                 }

@@ -45,6 +45,27 @@
 
   <div id="premium-toast-host" class="premium-toast-host" aria-live="polite" aria-atomic="true"></div>
 
+  <!-- Mobile pairing modal — available on every page -->
+  <div id="pairing-modal" class="pairing-modal hidden" role="dialog" aria-modal="true" aria-label="Link mobile device">
+    <div class="pairing-modal-card">
+      <button id="pairing-modal-close" class="pairing-modal-close" type="button" aria-label="Close">&#10005;</button>
+      <p class="pairing-modal-kicker">Mobile</p>
+      <h2 class="pairing-modal-title">Link Device</h2>
+      <p class="pairing-modal-hint">Scan this QR code with the Career Copilot app on your phone, or enter the code manually.</p>
+      <div id="pairing-qr-wrap" class="pairing-qr-wrap">
+        <div class="pairing-qr-loading">Generating&hellip;</div>
+      </div>
+      <div id="pairing-digits" class="pairing-digits"></div>
+      <p id="pairing-expiry" class="pairing-expiry"></p>
+      <div class="pairing-modal-actions">
+        <button id="pairing-copy-btn" class="pairing-btn pairing-btn--secondary" type="button" disabled>Copy code</button>
+        <button id="pairing-refresh-btn" class="pairing-btn pairing-btn--ghost" type="button">New code</button>
+      </div>
+      <p class="pairing-modal-footnote">The code expires after a few minutes. Tap &ldquo;New code&rdquo; to refresh it.</p>
+    </div>
+  </div>
+  <script src="{{ url_for('static', filename='js/pairing.js') }}"></script>
+
   <script>
     (() => {
       const host = document.getElementById('premium-toast-host');
