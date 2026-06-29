@@ -1,4 +1,20 @@
 <aside class="sidebar" id="sidebar" aria-label="Main navigation">
+
+  <!-- Header: always visible in both collapsed and expanded states -->
+  <div class="sidebar-header">
+    <div class="sidebar-logo-icon" aria-hidden="true">CC</div>
+    <span class="sidebar-logo-text">Career Copilot</span>
+    <button class="sidebar-pin" id="sidebar-pin" aria-label="Pin sidebar open" title="Pin sidebar open">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+        <line x1="12" y1="17" x2="12" y2="22"/>
+        <path d="M5 17h14v-1.5L17 12V7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v5L5 15.5V17z"/>
+        <line x1="9" y1="6" x2="15" y2="6"/>
+      </svg>
+    </button>
+  </div>
+
+  <div class="sidebar-divider"></div>
+
   <nav class="sidebar-nav">
 
     <a href="/dashboard" class="sidebar-item" data-path="/dashboard" aria-label="Home">
@@ -55,11 +71,33 @@
 <script>
 (function () {
   var sidebar = document.getElementById('sidebar');
-  if (!sidebar) return;
+  var pinBtn = document.getElementById('sidebar-pin');
+  if (!sidebar || !pinBtn) return;
 
   /* expand/collapse: mouse only — no keyboard listeners */
-  sidebar.addEventListener('mouseenter', function () { sidebar.classList.add('is-open'); });
-  sidebar.addEventListener('mouseleave', function () { sidebar.classList.remove('is-open'); });
+  sidebar.addEventListener('mouseenter', function () {
+    sidebar.classList.add('is-open');
+  });
+  sidebar.addEventListener('mouseleave', function () {
+    /* only collapse if not pinned */
+    if (!sidebar.classList.contains('is-pinned')) {
+      sidebar.classList.remove('is-open');
+    }
+  });
+
+  /* pin toggle — locks sidebar open until unpinned */
+  pinBtn.addEventListener('click', function (e) {
+    e.stopPropagation();
+    var nowPinned = sidebar.classList.toggle('is-pinned');
+    pinBtn.classList.toggle('is-pinned', nowPinned);
+    pinBtn.setAttribute('aria-label', nowPinned ? 'Unpin sidebar' : 'Pin sidebar open');
+    pinBtn.setAttribute('title', nowPinned ? 'Unpin sidebar' : 'Pin sidebar open');
+    if (nowPinned) {
+      sidebar.classList.add('is-open');
+    }
+    /* when unpinning: mouse is still inside sidebar (user just clicked),
+       so mouseleave will handle collapse naturally when they move away */
+  });
 
   /* active state */
   var path = window.location.pathname.replace(/\/+$/, '') || '/dashboard';
