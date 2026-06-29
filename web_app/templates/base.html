@@ -8,23 +8,22 @@
   {% block extra_head %}{% endblock %}
 </head>
 <body class="premium-layout {% block body_class %}{% endblock %}">
+  {% block header %}
   <header class="premium-navbar">
     <a class="premium-navbar__brand" href="{{ url_for('dashboard') }}">
       <div class="premium-navbar__logo">CC</div>
       <div class="premium-navbar__wordmark">
         <strong>Career Copilot Premium</strong>
-        <span>Operator Control Room</span>
       </div>
     </a>
-
     <div class="premium-navbar__actions">
       <div class="premium-status">
         <span class="premium-status__dot premium-status__dot--{{ 'online' if session_online|default(false) else 'offline' }}"></span>
-        <span>{{ session_status_label|default('Session Offline') }}</span>
+        <span>{{ session_status_label|default('Session offline') }}</span>
       </div>
-      <a class="premium-cta" href="{{ connect_mobile_url if connect_mobile_url is defined else url_for('dashboard') ~ '#command-deck' }}">Connect Mobile</a>
     </div>
   </header>
+  {% endblock %}
 
   <main class="premium-main">
     {% block content %}{% endblock %}
