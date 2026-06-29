@@ -353,9 +353,6 @@ body.home-view .premium-main {
 }
 
 .home-shell {
-  width: min(720px, calc(100% - 48px));
-  margin: 0 auto;
-  padding: 32px 24px 64px;
   display: flex;
   flex-direction: column;
   min-height: calc(100vh - 80px);
@@ -521,6 +518,22 @@ body.home-view .premium-main {
    SETTINGS / PROFILE / SESSIONS / SYSTEM-STATUS SHARED ROWS
    (st-* classes used across settings, profile, sessions, system-status pages)
    ───────────────────────────────────────────────────────────────────────────── */
+
+.page-content {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 48px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.settings-card {
+  border-radius: 12px;
+  padding: 20px 24px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
 
 .st-shell {
   width: min(720px, calc(100% - 48px));
@@ -706,8 +719,8 @@ body.has-sidebar .premium-main {
   bottom: 0;
   width: 56px;
   z-index: 40;
-  background: rgba(10, 10, 10, 0.94);
-  border-right: 1px solid var(--premium-line);
+  background: #121214;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(20px);
   display: flex;
   flex-direction: column;
@@ -745,6 +758,9 @@ body.has-sidebar .premium-main {
   font-size: 0.68rem;
   letter-spacing: -0.04em;
   flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  object-fit: cover;
 }
 
 .sidebar-logo-text {
@@ -799,8 +815,9 @@ body.has-sidebar .premium-main {
 .sidebar-divider {
   flex-shrink: 0;
   height: 1px;
-  background: var(--premium-line);
-  margin: 0 12px 4px;
+  background: rgba(255, 255, 255, 0.08);
+  width: 100%;
+  margin: 0;
 }
 
 .sidebar-nav {
@@ -809,14 +826,16 @@ body.has-sidebar .premium-main {
   flex-direction: column;
   justify-content: flex-start;
   padding: 8px 0;
-  gap: 2px;
+  gap: 10px;
 }
 
 .sidebar-item {
   display: flex;
   align-items: center;
-  height: 44px;
-  padding: 0 16px;
+  height: 40px;
+  padding: 0 8px;
+  margin: 0 8px;
+  border-radius: 8px;
   text-decoration: none;
   color: var(--premium-muted);
   white-space: nowrap;
@@ -826,12 +845,12 @@ body.has-sidebar .premium-main {
 
 .sidebar-item:hover {
   color: var(--premium-text);
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .sidebar-item.is-active {
   color: var(--premium-accent);
-  background: rgba(99, 102, 241, 0.1);
+  background: rgba(99, 102, 241, 0.12);
 }
 
 .sidebar-icon {
