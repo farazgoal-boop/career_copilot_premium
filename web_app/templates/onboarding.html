@@ -1,90 +1,312 @@
 {% extends "base.html" %}
 
-{% block title %}Career Copilot Premium Onboarding{% endblock %}
+{% block title %}Setup – Career Copilot Premium{% endblock %}
+
+{% block header %}{% endblock %}
 
 {% block body_class %}onboarding-view{% endblock %}
 
 {% block extra_head %}
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/onboarding.css') }}">
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+
+  body.onboarding-view .premium-main { padding: 0; }
+
+  /* ── Shell ── */
+  .ob-shell {
+    width: min(480px, calc(100% - 48px));
+    margin: 0 auto;
+    padding: 32px 0 64px;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    min-height: 100vh;
+  }
+
+  /* ── Top bar ── */
+  .ob-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .ob-brand {
+    font-size: 0.86rem;
+    font-weight: 600;
+    color: var(--premium-muted);
+  }
+
+  .ob-progress {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+
+  /* data-step-pill elements — JS toggles .active and .complete on these */
+  .ob-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.12);
+    transition: background 240ms, box-shadow 240ms;
+  }
+
+  .ob-dot.active {
+    background: var(--premium-accent);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.22);
+  }
+
+  .ob-dot.complete {
+    background: rgba(99, 102, 241, 0.45);
+  }
+
+  /* ── Steps — JS needs .step / .step.active for show/hide ── */
+  .ob-step { display: none; }
+
+  .ob-step.active {
+    display: block;
+    animation: ob-rise 200ms ease;
+  }
+
+  @keyframes ob-rise {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── Step header ── */
+  .ob-step-num {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--premium-muted);
+    margin: 0 0 10px;
+  }
+
+  .ob-step-title {
+    font-size: clamp(1.6rem, 4vw, 2.1rem);
+    font-weight: 700;
+    line-height: 1.1;
+    margin: 0 0 10px;
+  }
+
+  .ob-step-sub {
+    color: var(--premium-muted);
+    line-height: 1.6;
+    margin: 0 0 24px;
+    font-size: 0.95rem;
+  }
+
+  /* ── Form fields ── */
+  .ob-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .ob-fields label {
+    display: block;
+  }
+
+  .ob-fields label span {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 0.88rem;
+    color: var(--premium-muted);
+  }
+
+  .ob-fields input,
+  .ob-fields textarea {
+    width: 100%;
+    padding: 14px 16px;
+    border-radius: 14px;
+    border: 1px solid var(--premium-line);
+    background: rgba(0, 0, 0, 0.35);
+    color: var(--premium-text);
+    font: inherit;
+    font-size: 0.95rem;
+    outline: none;
+    display: block;
+  }
+
+  .ob-fields input:focus,
+  .ob-fields textarea:focus {
+    border-color: rgba(99, 102, 241, 0.5);
+  }
+
+  .ob-fields textarea {
+    min-height: 130px;
+    resize: vertical;
+  }
+
+  .ob-fields .upload-label {
+    display: block;
+    padding: 16px;
+    border-radius: 16px;
+    border: 1px dashed rgba(99, 102, 241, 0.45);
+    background: rgba(99, 102, 241, 0.07);
+    cursor: pointer;
+  }
+
+  .ob-fields .upload-label input[type="file"] {
+    margin-top: 10px;
+    border: 0;
+    background: transparent;
+    padding: 0;
+    font-size: 0.88rem;
+    color: var(--premium-muted);
+  }
+
+  .ob-note {
+    margin-top: 8px;
+    font-size: 0.84rem;
+    color: var(--premium-muted);
+  }
+
+  /* ── Error banner ── */
+  .ob-error {
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--premium-danger);
+    font-size: 0.92rem;
+  }
+
+  /* ── Buttons ── */
+  .ob-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+  }
+
+  .ob-actions--split {
+    justify-content: space-between;
+  }
+
+  .ob-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px;
+    padding: 0 24px;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    text-decoration: none;
+    font: inherit;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .ob-btn--primary {
+    background: var(--premium-accent);
+    color: #fff;
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.22);
+    background-image: none;
+  }
+
+  .ob-btn--primary:hover { background: #5254d1; background-image: none; }
+  .ob-btn--primary:disabled { opacity: 0.6; cursor: wait; box-shadow: none; }
+
+  .ob-btn--secondary {
+    border-color: var(--premium-line);
+    background: transparent;
+    color: var(--premium-text);
+  }
+
+  .ob-btn--secondary:hover { background: rgba(255, 255, 255, 0.05); }
+</style>
 {% endblock %}
 
 {% block content %}
-  <main class="onboarding-shell">
-    <header class="onboarding-hero">
-      <p class="eyebrow">Setup</p>
-      <h1>Three steps to your live operator</h1>
-      <p>Add your profile once. Career Copilot remembers it for every client call on Zoom or WhatsApp.</p>
-    </header>
+<div class="ob-shell">
 
-    <section class="onboarding-card">
-      <div class="onboarding-stepper stepper" aria-label="Onboarding steps">
-        <div class="step-pill active" data-step-pill="0">1. Context</div>
-        <div class="step-pill" data-step-pill="1">2. Identity</div>
-        <div class="step-pill" data-step-pill="2">3. Connect</div>
+  <div class="ob-topbar">
+    <span class="ob-brand">Career Copilot Premium</span>
+    <div class="ob-progress" aria-label="Setup progress">
+      <span class="ob-dot active" data-step-pill="0"></span>
+      <span class="ob-dot" data-step-pill="1"></span>
+      <span class="ob-dot" data-step-pill="2"></span>
+    </div>
+  </div>
+
+  {% if error_message %}
+  <div class="ob-error error-banner" role="alert">{{ error_message }}</div>
+  {% endif %}
+
+  <form id="onboarding-form" action="{{ url_for('onboarding') }}" method="post" enctype="multipart/form-data">
+
+    <!-- Step 0: Resume / description -->
+    <section class="ob-step active" data-step="0">
+      <p class="ob-step-num">1 of 3</p>
+      <h1 class="ob-step-title">Your resume</h1>
+      <p class="ob-step-sub">Upload a PDF or describe your role in your own words. Either works.</p>
+
+      <div class="ob-fields">
+        <label class="upload-label">
+          <span>Resume PDF</span>
+          <input id="resume" name="resume" type="file" accept=".pdf,application/pdf">
+          <p class="ob-note">Optional if you fill the description below.</p>
+        </label>
+        <label>
+          <span>Or describe your role</span>
+          <textarea id="product_description" name="product_description" placeholder="Who you help, what you sell, and what makes you stand out."></textarea>
+        </label>
       </div>
 
-      {% if error_message %}
-      <div class="error-banner">{{ error_message }}</div>
-      {% endif %}
-
-      <form id="onboarding-form" action="{{ url_for('onboarding') }}" method="post" enctype="multipart/form-data">
-        <section class="step active" data-step="0">
-          <h2>Your offer or resume</h2>
-          <p class="step-copy">Upload a PDF resume or describe your service in plain language.</p>
-          <div class="field-grid">
-            <label class="field-full upload-card">
-              <span>Resume PDF</span>
-              <input id="resume" name="resume" type="file" accept=".pdf,application/pdf">
-              <div class="note">Optional if you fill the description below.</div>
-            </label>
-            <label class="field-full">
-              <span>Product or service description</span>
-              <textarea id="product_description" name="product_description" placeholder="What you sell, who you help, proof points, and tone for client calls."></textarea>
-            </label>
-          </div>
-          <div class="actions actions--end">
-            <button class="button-primary" type="button" data-next>Continue</button>
-          </div>
-        </section>
-
-        <section class="step" data-step="1">
-          <h2>Your identity</h2>
-          <p class="step-copy">This anchors your profile and live session.</p>
-          <div class="field-grid">
-            <label>
-              <span>Your name</span>
-              <input id="full_name" name="full_name" type="text" placeholder="Your name" required>
-            </label>
-            <label>
-              <span>Target role or product</span>
-              <input id="target_name" name="target_name" type="text" placeholder="e.g. Fiverr SEO package" required>
-            </label>
-            <label class="field-full">
-              <span>Current role (optional)</span>
-              <input id="current_role" name="current_role" type="text" placeholder="e.g. Freelance marketer">
-            </label>
-          </div>
-          <div class="actions">
-            <button class="button-secondary" type="button" data-back>Back</button>
-            <button id="launch-session" class="button-primary" type="submit">Create Session</button>
-          </div>
-        </section>
-
-        <section class="step" data-step="2">
-          <div class="success-card">
-            <p class="eyebrow">Session ready</p>
-            <h2>Connect your phone</h2>
-            <p>Open the mobile app on the same Wi-Fi, tap Auto Fix, or enter the desktop IP shown on your dashboard.</p>
-            <div class="actions">
-              <a id="connect-mobile-button" class="button-primary button-link" href="{{ url_for('dashboard') }}#command-deck">Link Mobile</a>
-              <a id="continue-dashboard-button" class="button-secondary button-link" href="{{ url_for('dashboard') }}">Open Dashboard</a>
-            </div>
-          </div>
-        </section>
-      </form>
+      <div class="ob-actions">
+        <button class="ob-btn ob-btn--primary" type="button" data-next>Continue</button>
+      </div>
     </section>
-  </main>
 
+    <!-- Step 1: Identity -->
+    <section class="ob-step" data-step="1">
+      <p class="ob-step-num">2 of 3</p>
+      <h1 class="ob-step-title">Your profile</h1>
+      <p class="ob-step-sub">This anchors every session and shows up in your session history.</p>
+
+      <div class="ob-fields">
+        <label>
+          <span>Your name</span>
+          <input id="full_name" name="full_name" type="text" placeholder="Your name" required>
+        </label>
+        <label>
+          <span>Target role or product</span>
+          <input id="target_name" name="target_name" type="text" placeholder="e.g. Senior Backend Engineer" required>
+        </label>
+        <label>
+          <span>Current role <span style="opacity:.6;font-weight:400">(optional)</span></span>
+          <input id="current_role" name="current_role" type="text" placeholder="e.g. Software Engineer at Acme">
+        </label>
+      </div>
+
+      <div class="ob-actions ob-actions--split">
+        <button class="ob-btn ob-btn--secondary" type="button" data-back>Back</button>
+        <button id="launch-session" class="ob-btn ob-btn--primary" type="submit">Create session</button>
+      </div>
+    </section>
+
+    <!-- Step 2: Done -->
+    <section class="ob-step" data-step="2">
+      <p class="ob-step-num">Done</p>
+      <h1 class="ob-step-title">You&rsquo;re ready</h1>
+      <p class="ob-step-sub">Your profile is saved. Hit &ldquo;Start session&rdquo; on the home screen whenever you have a call coming up.</p>
+
+      <div class="ob-actions">
+        <a id="continue-dashboard-button" class="ob-btn ob-btn--primary" href="{{ url_for('dashboard') }}">Go to home</a>
+        <a id="connect-mobile-button" class="ob-btn ob-btn--secondary" href="{{ url_for('dashboard') }}">Link mobile</a>
+      </div>
+    </section>
+
+  </form>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
   <script>
     (() => {
       const form = document.getElementById('onboarding-form');
@@ -165,7 +387,7 @@
           window.showToast?.(error.message || 'Could not create session.', 'error');
         } finally {
           launchButton.disabled = false;
-          launchButton.textContent = 'Create Session';
+          launchButton.textContent = 'Create session';
         }
       });
     })();
