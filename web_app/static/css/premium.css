@@ -483,6 +483,10 @@ body.home-view .premium-main {
   color: var(--premium-text);
 }
 
+.home-session-item:not(:last-child) {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
 .home-session-item:hover {
   background: rgba(255, 255, 255, 0.04);
   border-color: var(--premium-line);
@@ -570,6 +574,7 @@ body.home-view .premium-main {
   padding: 20px 24px;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
 }
 
 .st-shell {
@@ -628,15 +633,24 @@ body.home-view .premium-main {
   border: 1px solid transparent;
 }
 
+.st-row:not(:last-child) {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
 .st-row--link {
   text-decoration: none;
   color: var(--premium-text);
   cursor: pointer;
+  transition: background 150ms ease;
 }
 
 .st-row--link:hover {
   background: rgba(255, 255, 255, 0.05);
   border-color: var(--premium-line);
+}
+
+.st-row--link:hover .st-chevron {
+  transform: translateX(2px);
 }
 
 .st-row-left {
@@ -906,6 +920,54 @@ body.has-sidebar .premium-main {
   opacity: 0;
   transform: translateX(-6px);
   /* opacity + transform transition inherited from global * rule */
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   MICRO-INTERACTIONS
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/* home session item — hover transition */
+.home-session-item {
+  transition: background 150ms ease;
+}
+
+.home-session-item:hover .home-session-chevron {
+  transform: translateX(2px);
+}
+
+/* home-session-main grows to push chevron to far right when avatar is present */
+.home-session-main {
+  flex: 1;
+}
+
+/* avatar circle — used on home session list and sessions page */
+.session-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(99, 102, 241, 0.15);
+  color: #818cf8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  flex-shrink: 0;
+  letter-spacing: -0.02em;
+  user-select: none;
+}
+
+/* primary button brightness + press feedback */
+.home-start-btn {
+  transition: filter 150ms ease, transform 100ms ease, box-shadow 200ms ease;
+}
+
+.home-start-btn:hover {
+  filter: brightness(1.08);
+}
+
+.home-start-btn:active {
+  transform: scale(0.98);
 }
 
 .sidebar:hover .sidebar-label,

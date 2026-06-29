@@ -64,6 +64,10 @@
       .replace(/"/g, '&quot;');
   }
 
+  function getInitials(raw) {
+    return (raw || '').split(/[\s·\-]+/).filter(Boolean).slice(0, 2).map(function (w) { return w[0].toUpperCase(); }).join('');
+  }
+
   function renderSessions(sessions) {
     if (!sessions || sessions.length === 0) {
       sessionsList.innerHTML = '<p class="home-sessions-empty">No sessions yet. Start your first session above.</p>';
@@ -74,9 +78,12 @@
       var a = document.createElement('a');
       a.href = '/session/' + encodeURIComponent(s.session_id) + '/live';
       a.className = 'home-session-item';
-      var name = escapeHtml((s.profile_name || '') + (s.company_name ? ' · ' + s.company_name : ''));
+      var rawName = (s.profile_name || '') + (s.company_name ? ' · ' + s.company_name : '');
+      var initials = escapeHtml(getInitials(s.profile_name || rawName));
+      var name = escapeHtml(rawName);
       var time = escapeHtml(relativeTime(s.updated_at));
       a.innerHTML =
+        '<span class="session-avatar" aria-hidden="true">' + (initials || '?') + '</span>' +
         '<span class="home-session-main">' +
           '<span class="home-session-name">' + name + '</span>' +
           (time ? '<span class="home-session-time">' + time + '</span>' : '') +
