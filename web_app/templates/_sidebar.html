@@ -74,15 +74,16 @@
   var pinBtn = document.getElementById('sidebar-pin');
   if (!sidebar || !pinBtn) return;
 
+  function setSidebarOpen(open) {
+    sidebar.classList.toggle('is-open', open);
+    document.body.classList.toggle('sidebar-is-open', open);
+  }
+
   /* expand/collapse: mouse only — no keyboard listeners */
-  sidebar.addEventListener('mouseenter', function () {
-    sidebar.classList.add('is-open');
-  });
+  sidebar.addEventListener('mouseenter', function () { setSidebarOpen(true); });
   sidebar.addEventListener('mouseleave', function () {
     /* only collapse if not pinned */
-    if (!sidebar.classList.contains('is-pinned')) {
-      sidebar.classList.remove('is-open');
-    }
+    if (!sidebar.classList.contains('is-pinned')) setSidebarOpen(false);
   });
 
   /* pin toggle — locks sidebar open until unpinned */
@@ -92,11 +93,8 @@
     pinBtn.classList.toggle('is-pinned', nowPinned);
     pinBtn.setAttribute('aria-label', nowPinned ? 'Unpin sidebar' : 'Pin sidebar open');
     pinBtn.setAttribute('title', nowPinned ? 'Unpin sidebar' : 'Pin sidebar open');
-    if (nowPinned) {
-      sidebar.classList.add('is-open');
-    }
-    /* when unpinning: mouse is still inside sidebar (user just clicked),
-       so mouseleave will handle collapse naturally when they move away */
+    if (nowPinned) setSidebarOpen(true);
+    /* when unpinning: mouse still inside, mouseleave handles collapse */
   });
 
   /* active state */
