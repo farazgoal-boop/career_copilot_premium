@@ -79,6 +79,10 @@ def register_routes(app: Flask) -> None:
             session_status_label="Session Active" if active else "Session Offline",
         )
 
+    @app.get("/settings")
+    def settings_page() -> str:
+        return render_template("settings.html")
+
     @app.get("/session/<session_id>/live")
     def live_session(session_id: str) -> Response | str:
         from mobile_app.live_bridge import build_live_bridge_payload_for_session
