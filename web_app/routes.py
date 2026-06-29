@@ -172,7 +172,7 @@ def register_routes(app: Flask) -> None:
                 {
                     "ok": True,
                     "session_id": session_id,
-                    "connect_mobile_url": "/dashboard#command-deck",
+                    "connect_mobile_url": "/settings",
                     "dashboard_url": "/dashboard",
                     "bridge_hint": _bridge_base_url(),
                 }
@@ -333,6 +333,26 @@ def register_routes(app: Flask) -> None:
         except Exception as error:
             current_app.logger.exception("Session cleanup failed")
             return jsonify({"ok": False, "error": str(error)}), 500
+
+    @app.get("/api/settings/mistral-key")
+    def get_mistral_key_status() -> Response:
+        from desktop_app.mistral_setup import mistral_api_key
+        key = mistral_api_key()
+        return jsonify({"ok": True, "has_key": bool(key)})
+
+    @app.post("/api/settings/mistral-key")
+    def save_mistral_key() -> Response:
+        from desktop_app.mistral_setup import save_mistral_api_key
+        body = request.get_json(force=True, silent=True) or {}
+        key = str(body.get("api_key", "")).strip()
+        if not key:
+            return jsonify({"ok": False, "error": "API key is required."}), 400
+        try:
+            save_mistral_api_key(key)
+            return jsonify({"ok": True, "message": "Mistral API key saved."})
+        except Exception as exc:
+            current_app.logger.exception("Failed to save Mistral key")
+            return jsonify({"ok": False, "error": str(exc)}), 500
 
     @app.post("/api/resume/extract")
     def resume_extract() -> Response:

@@ -17,8 +17,39 @@
 {% include '_sidebar.html' %}
 <div class="page-content">
 
-  <div class="st-topbar">
-    <span class="st-title">Settings</span>
+  <div class="page-header">
+    <a href="/dashboard" class="page-breadcrumb">← Home</a>
+    <h1 class="page-title">Settings</h1>
+  </div>
+
+  <!-- AI & API -->
+  <div class="st-group settings-card">
+    <p class="st-group-label">AI &amp; API</p>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <label for="st-mistral-key" style="font-size:0.85rem;color:var(--premium-muted);">Mistral API key <span style="font-weight:400;">(optional fallback model)</span></label>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input id="st-mistral-key" type="password" autocomplete="off" spellcheck="false"
+               placeholder="Enter Mistral API key…"
+               style="flex:1;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:10px 12px;color:var(--premium-text);font-size:0.9rem;font-family:inherit;outline:none;" />
+        <button id="st-mistral-save" type="button"
+                style="padding:10px 18px;border-radius:8px;font-size:0.88rem;font-weight:600;white-space:nowrap;flex-shrink:0;">
+          Save key
+        </button>
+      </div>
+      <p id="st-mistral-status" style="font-size:0.83rem;color:var(--premium-muted);min-height:18px;margin:0;"></p>
+    </div>
+  </div>
+
+  <!-- Mobile Pairing -->
+  <div class="st-group settings-card">
+    <p class="st-group-label">Mobile</p>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <p style="font-size:0.88rem;color:var(--premium-muted);margin:0;">Link your phone to receive live session alerts and view AI replies on the go.</p>
+      <button type="button" onclick="window.openPairingModal?.()"
+              style="align-self:flex-start;padding:10px 20px;border-radius:8px;font-size:0.9rem;font-weight:600;background:var(--premium-accent);color:#fff;border:none;cursor:pointer;">
+        Link Device
+      </button>
+    </div>
   </div>
 
   <!-- Session management -->
@@ -41,6 +72,55 @@
 (function () {
   'use strict';
 
+  /* ── Mistral API key ── */
+  var mistralInput = document.getElementById('st-mistral-key');
+  var mistralSave = document.getElementById('st-mistral-save');
+  var mistralStatus = document.getElementById('st-mistral-status');
+
+  function setMistralStatus(msg, ok) {
+    mistralStatus.textContent = msg;
+    mistralStatus.style.color = ok === true ? 'var(--premium-success)' : ok === false ? 'var(--premium-danger)' : 'var(--premium-muted)';
+  }
+
+  fetch('/api/settings/mistral-key', { headers: { Accept: 'application/json' } })
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      if (d.has_key) {
+        mistralInput.placeholder = '••••••••  (key saved — enter new key to update)';
+        setMistralStatus('Mistral API key is configured.', true);
+      } else {
+        setMistralStatus('No Mistral API key saved yet.', null);
+      }
+    })
+    .catch(function () { setMistralStatus('Could not check key status.', null); });
+
+  mistralSave.addEventListener('click', async function () {
+    var key = mistralInput.value.trim();
+    if (!key) { setMistralStatus('Enter a key first.', false); return; }
+    mistralSave.disabled = true;
+    setMistralStatus('Saving…', null);
+    try {
+      var resp = await fetch('/api/settings/mistral-key', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ api_key: key }),
+      });
+      var data = await resp.json();
+      if (data.ok) {
+        mistralInput.value = '';
+        mistralInput.placeholder = '••••••••  (key saved — enter new key to update)';
+        setMistralStatus(data.message || 'Saved.', true);
+      } else {
+        setMistralStatus(data.error || 'Failed to save.', false);
+      }
+    } catch (e) {
+      setMistralStatus('Request failed.', false);
+    } finally {
+      mistralSave.disabled = false;
+    }
+  });
+
+  /* ── Session cleanup ── */
   var cleanupBtn = document.getElementById('st-cleanup-btn');
   var cleanupResult = document.getElementById('st-cleanup-result');
 

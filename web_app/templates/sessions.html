@@ -17,8 +17,9 @@
 {% include '_sidebar.html' %}
 <div class="page-content">
 
-  <div class="st-topbar">
-    <span class="st-title">Sessions</span>
+  <div class="page-header">
+    <a href="/dashboard" class="page-breadcrumb">← Home</a>
+    <h1 class="page-title">Sessions</h1>
   </div>
 
   <div class="st-group settings-card">
@@ -57,6 +58,10 @@
     return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
+  function getInitials(raw) {
+    return (raw || '').split(/[\s·\-]+/).filter(Boolean).slice(0, 2).map(function (w) { return w[0].toUpperCase(); }).join('');
+  }
+
   function render(sessions) {
     if (!sessions || !sessions.length) {
       list.innerHTML = '<div class="st-row"><div class="st-row-text"><span class="st-row-name" style="color:var(--premium-muted)">No sessions yet.</span></div></div>';
@@ -67,11 +72,14 @@
       var a = document.createElement('a');
       a.href = '/session/' + encodeURIComponent(s.session_id) + '/live';
       a.className = 'st-row st-row--link';
-      var name = escapeHtml((s.profile_name || '') + (s.company_name ? ' · ' + s.company_name : ''));
+      var rawName = (s.profile_name || '') + (s.company_name ? ' · ' + s.company_name : '');
+      var initials = escapeHtml(getInitials(s.profile_name || rawName));
+      var name = escapeHtml(rawName);
       var role = escapeHtml(s.role_title || '');
       var time = escapeHtml(relativeTime(s.updated_at));
       a.innerHTML =
         '<div class="st-row-left">' +
+          '<span class="session-avatar" aria-hidden="true">' + (initials || '?') + '</span>' +
           '<div class="st-row-text">' +
             '<span class="st-row-name">' + (name || 'Session') + '</span>' +
             (role ? '<span class="st-row-hint">' + role + (time ? ' · ' + time : '') + '</span>' : (time ? '<span class="st-row-hint">' + time + '</span>' : '')) +
