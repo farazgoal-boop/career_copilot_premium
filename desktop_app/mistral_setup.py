@@ -308,14 +308,22 @@ def run_first_time_setup_wizard(qt_app: "QtApplication | None" = None) -> bool:
 def ensure_mistral_api_key_configured(
     on_status: Callable[[str], None] | None = None,
     qt_app: "QtApplication | None" = None,
-) -> bool:
-    """Return True when a valid Mistral key is available."""
+) -> tuple[bool, str]:
+    """Best-effort Mistral setup at startup.
+
+    Never blocks app startup: a key that's present but unreachable (e.g. a
+    network/SSL hiccup) just surfaces a status message — the dashboard's
+    Settings page can retry the same key once the app is running. A missing
+    key opens the onboarding wizard, but declining it still lets the app
+    start (Settings remains reachable, and Ollama can serve as a fallback).
+    """
     if has_mistral_api_key():
         ok, message = validate_mistral_api_key()
-        if ok:
-            return True
         if on_status:
             on_status(message)
+        return ok, message
     if on_status:
-        on_status("API key required — opening setup...")
-    return run_first_time_setup_wizard(qt_app=qt_app)
+        on_status("No Mistral API key yet — opening setup...")
+    if run_first_time_setup_wizard(qt_app=qt_app):
+        return True, "Mistral Connected"
+    return False, "No Mistral API key configured yet — add one anytime from Settings."

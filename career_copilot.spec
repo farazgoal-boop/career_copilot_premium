@@ -10,6 +10,7 @@ import plistlib
 import sys
 from pathlib import Path
 
+import certifi
 from PyInstaller.utils.hooks import collect_all, collect_submodules
 
 IS_DARWIN = sys.platform == "darwin"
@@ -94,6 +95,7 @@ def _build_datas() -> list[tuple[str, str]]:
         entry = _optional_data(src, dest)
         if entry is not None:
             datas.append(entry)
+    datas.append((certifi.where(), "certifi"))
     datas.extend(qt_datas)
     datas.extend(shiboken_datas)
     datas.extend(sounddevice_datas)
@@ -114,6 +116,7 @@ a = Analysis(
     hiddenimports=[
         "flask",
         *collect_submodules("flask"),
+        "certifi",
         "cryptography",
         *collect_submodules("cryptography"),
         "qrcode",

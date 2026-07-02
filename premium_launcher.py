@@ -14,6 +14,19 @@ from typing import TYPE_CHECKING
 
 os.environ.setdefault("CCP_REQUIRE_LICENSE", "1")
 
+if sys.platform == "darwin":
+    # PyInstaller-frozen Python on macOS has no access to the system cert
+    # store, which makes urllib's default HTTPS context fail with
+    # CERTIFICATE_VERIFY_FAILED. Point it at certifi's bundled CA file.
+    import ssl
+
+    import certifi
+
+    _MAC_CAFILE = certifi.where()
+    os.environ.setdefault("SSL_CERT_FILE", _MAC_CAFILE)
+    os.environ.setdefault("REQUESTS_CA_BUNDLE", _MAC_CAFILE)
+    ssl._create_default_https_context = lambda: ssl.create_default_context(cafile=_MAC_CAFILE)
+
 from runtime_paths import (  # noqa: E402
     MOBILE_BRIDGE_PORT,
     PORTABLE_FLAG_FILENAME,
@@ -368,12 +381,11 @@ def main() -> int:
         splash = None
         qt_app.processEvents()
 
-        if not ensure_mistral_api_key_configured(on_status=log_startup, qt_app=qt_app):
-            show_startup_error_dialog(
-                "Mistral API key is required. Get a free key at console.mistral.ai and try again.",
-                qt_app=qt_app,
-            )
-            return 1
+        mistral_ok, mistral_message = ensure_mistral_api_key_configured(
+            on_status=log_startup, qt_app=qt_app
+        )
+        if not mistral_ok:
+            log_startup(f"Continuing without a working Mistral key: {mistral_message}")
 
         if not is_portable_mode():
             print("[premium] Tip: add portable.flag to keep all data on this USB folder.")
