@@ -3,6 +3,7 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
+import sys
 from typing import Protocol
 
 QT_IMPORT_ERROR: str | None = None
@@ -999,10 +1000,15 @@ if QT_AVAILABLE:
                     "Restart Career Copilot Premium, create a session, then press Listen (F2) again."
                 )
             elif "microphone" in hint.casefold() or "recording" in hint.casefold() or "sounddevice" in hint.casefold():
-                hint = (
-                    f"{hint}\n\nEnable microphone permission in Windows Settings > Privacy > Microphone. "
-                    "For Zoom/WhatsApp calls, enable Stereo Mix (Recording devices) or install VB-Cable."
-                )
+                from .audio_handler import _call_audio_hint
+
+                if sys.platform == "win32":
+                    permission_hint = "Enable microphone permission in Windows Settings > Privacy > Microphone."
+                elif sys.platform == "darwin":
+                    permission_hint = "Enable microphone permission in System Settings > Privacy & Security > Microphone."
+                else:
+                    permission_hint = "Enable microphone permission in your system's privacy/sound settings."
+                hint = f"{hint}\n\n{permission_hint} {_call_audio_hint()}"
             elif "no speech" in hint.casefold():
                 hint = (
                     f"{hint}\n\nSpeak clearly near the PC microphone, or type the question in Manual Input."

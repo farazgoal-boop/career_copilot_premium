@@ -148,6 +148,11 @@
     border-color: rgba(99, 102, 241, 0.5);
   }
 
+  .ob-fields textarea[hidden],
+  .ob-fields input[type="hidden"] {
+    display: none;
+  }
+
   .ob-fields textarea {
     min-height: 130px;
     resize: vertical;
@@ -251,7 +256,8 @@
   <div class="ob-error error-banner" role="alert">{{ error_message }}</div>
   {% endif %}
 
-  <form id="onboarding-form" action="{{ url_for('onboarding') }}" method="post" enctype="multipart/form-data">
+  {% set existing_resume = existing_profile.resume if existing_profile else None %}
+  <form id="onboarding-form" action="{{ url_for('onboarding') }}" method="post" enctype="multipart/form-data" {% if existing_resume and existing_resume.extracted_text %}data-has-existing-resume="true"{% endif %}>
 
     <!-- Step 0: Resume / description -->
     <section class="ob-step active" data-step="0">
@@ -263,12 +269,20 @@
         <label class="upload-label">
           <span>Resume PDF</span>
           <input id="resume" name="resume" type="file" accept=".pdf,application/pdf">
+          {% if existing_resume and existing_resume.extracted_text %}
+          <p class="ob-note">Resume on file: {{ existing_resume.filename or "your saved resume" }}. Upload a new file only if you want to replace it.</p>
+          {% else %}
           <p class="ob-note">Optional if you fill the description below.</p>
+          {% endif %}
         </label>
         <label>
           <span>Or describe your role</span>
           <textarea id="product_description" name="product_description" placeholder="Who you help, what you sell, and what makes you stand out."></textarea>
         </label>
+        {% if existing_resume and existing_resume.extracted_text %}
+        <textarea name="existing_resume_text" hidden>{{ existing_resume.extracted_text }}</textarea>
+        <input type="hidden" name="existing_resume_filename" value="{{ existing_resume.filename or '' }}">
+        {% endif %}
       </div>
 
       <div class="ob-actions">
@@ -285,15 +299,15 @@
       <div class="ob-fields">
         <label>
           <span>Your name</span>
-          <input id="full_name" name="full_name" type="text" placeholder="Your name" required>
+          <input id="full_name" name="full_name" type="text" placeholder="Your name" value="{{ existing_profile.identity.full_name if existing_profile else '' }}" required>
         </label>
         <label>
           <span>Target role or product</span>
-          <input id="target_name" name="target_name" type="text" placeholder="e.g. Senior Backend Engineer" required>
+          <input id="target_name" name="target_name" type="text" placeholder="e.g. Senior Backend Engineer" value="{{ existing_profile.target_job.job_title if existing_profile else '' }}" required>
         </label>
         <label>
           <span>Current role <span style="opacity:.6;font-weight:400">(optional)</span></span>
-          <input id="current_role" name="current_role" type="text" placeholder="e.g. Software Engineer at Acme">
+          <input id="current_role" name="current_role" type="text" placeholder="e.g. Software Engineer at Acme" value="{{ existing_profile.identity.current_role if existing_profile else '' }}">
         </label>
       </div>
 
@@ -343,7 +357,8 @@
       function hasSourceContext() {
         const fileInput = document.getElementById('resume');
         const description = document.getElementById('product_description');
-        return (fileInput?.files?.length > 0) || Boolean(description?.value.trim());
+        const hasExisting = form?.dataset.hasExistingResume === 'true';
+        return (fileInput?.files?.length > 0) || Boolean(description?.value.trim()) || hasExisting;
       }
 
       nextButton?.addEventListener('click', () => {

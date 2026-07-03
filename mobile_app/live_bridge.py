@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import html
 import json
 import os
 from http import HTTPStatus
@@ -440,6 +441,20 @@ def confirm_pairing_code(
     }
 
 
+def session_id_for_pairing_code(code: str) -> str | None:
+    """Look up the session bound to a pairing code without consuming it."""
+    normalized_code = _normalize_pairing_code(code)
+    if len(normalized_code) != 6:
+        return None
+
+    now = time.time()
+    disk_records = _read_pairing_codes_from_disk(_pairing_codes_cache_path())
+    record = disk_records.get(normalized_code)
+    if record is None or _is_pairing_code_expired(record, now):
+        return None
+    return record.session_id or None
+
+
 def ensure_live_session_worker(session_id: str, registry_path: str | Path | None = None) -> bool:
     normalized_session_id = str(session_id).strip()
     if not normalized_session_id:
@@ -482,6 +497,14 @@ def create_mobile_bridge_handler(registry_path: str | Path | None = None):
             request_path = _normalized_path(self.path)
             if request_path == "/health":
                 self._send_json(HTTPStatus.OK, {"ok": True})
+                return
+
+            companion_session_id = _parse_companion_path(request_path)
+            if companion_session_id is not None:
+                if not is_machine_licensed():
+                    self._send_license_required()
+                    return
+                self._send_html(HTTPStatus.OK, _render_mobile_companion_html(companion_session_id))
                 return
 
             if request_path == "/sessions":
@@ -699,6 +722,14 @@ def create_mobile_bridge_handler(registry_path: str | Path | None = None):
             self.end_headers()
             self.wfile.write(body)
 
+        def _send_html(self, status: HTTPStatus, markup: str) -> None:
+            body = markup.encode("utf-8")
+            self.send_response(int(status))
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
         def _send_license_required(self) -> None:
             self._send_json(
                 HTTPStatus.FORBIDDEN,
@@ -764,6 +795,136 @@ def _parse_session_path(path: str) -> str | None:
     if len(parts) == 2 and parts[0] == "session":
         return unquote(parts[1])
     return None
+
+
+def _parse_companion_path(path: str) -> str | None:
+    parts = [part for part in path.split("/") if part]
+    if len(parts) == 2 and parts[0] == "m":
+        return unquote(parts[1])
+    return None
+
+
+def _render_mobile_companion_html(session_id: str) -> str:
+    safe_session_id = html.escape(session_id, quote=True)
+    return f"""<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Career Copilot — Live</title>
+<style>
+  * {{ box-sizing: border-box; }}
+  body {{
+    margin: 0;
+    min-height: 100vh;
+    background: #0b0b12;
+    color: #f5f5f7;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    padding: 20px 18px 40px;
+  }}
+  .status-row {{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+  }}
+  .status-pill {{
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: rgba(99, 102, 241, 0.16);
+    color: #a5a8ff;
+  }}
+  .dot {{ width: 8px; height: 8px; border-radius: 50%; background: #6366f1; }}
+  .refresh-btn {{
+    border: 1px solid rgba(255,255,255,0.18);
+    background: transparent;
+    color: #f5f5f7;
+    padding: 8px 14px;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    cursor: pointer;
+  }}
+  .label {{
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #9a9aa8;
+    margin: 22px 0 8px;
+  }}
+  .question {{
+    font-size: 1.05rem;
+    line-height: 1.5;
+    color: #d6d6e0;
+  }}
+  .answer {{
+    font-size: clamp(1.3rem, 5vw, 1.8rem);
+    line-height: 1.4;
+    font-weight: 600;
+    white-space: pre-wrap;
+  }}
+  .empty {{ color: #7a7a88; font-weight: 400; font-size: 1.05rem; }}
+</style>
+</head>
+<body data-session-id="{safe_session_id}">
+  <div class="status-row">
+    <span class="status-pill"><span class="dot"></span><span id="status-label">Connecting</span></span>
+    <button class="refresh-btn" id="refresh-btn" type="button">Refresh</button>
+  </div>
+
+  <div class="label">Question</div>
+  <div class="question" id="question-text">Waiting for the next question&hellip;</div>
+
+  <div class="label">Suggested answer</div>
+  <div class="answer" id="answer-text"><span class="empty">No answer yet.</span></div>
+
+<script>
+(function () {{
+  var sessionId = document.body.getAttribute('data-session-id');
+  var statusLabel = document.getElementById('status-label');
+  var questionEl = document.getElementById('question-text');
+  var answerEl = document.getElementById('answer-text');
+  var refreshBtn = document.getElementById('refresh-btn');
+
+  async function refresh() {{
+    try {{
+      var resp = await fetch('/session/' + encodeURIComponent(sessionId), {{ cache: 'no-store' }});
+      var payload = await resp.json();
+      if (!resp.ok) throw new Error(payload.error || 'Request failed');
+
+      var readiness = payload.readiness || {{}};
+      var overlay = payload.overlay || {{}};
+      var prompts = payload.prompts || {{}};
+
+      statusLabel.textContent = readiness.label || 'Live';
+
+      var question = (prompts.live || '').trim();
+      questionEl.textContent = question || 'Waiting for the next question…';
+
+      var answer = (overlay.body || overlay.headline || '').trim();
+      if (answer) {{
+        answerEl.textContent = answer;
+      }} else {{
+        answerEl.innerHTML = '<span class="empty">No answer yet.</span>';
+      }}
+    }} catch (err) {{
+      statusLabel.textContent = 'Reconnecting';
+    }}
+  }}
+
+  refreshBtn.addEventListener('click', refresh);
+  refresh();
+  setInterval(refresh, 3000);
+}})();
+</script>
+</body>
+</html>"""
 
 
 def _parse_action_path(path: str) -> tuple[str, str] | None:

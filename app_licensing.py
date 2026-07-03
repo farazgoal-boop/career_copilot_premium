@@ -10,7 +10,7 @@ import os
 from pathlib import Path
 import platform
 import re
-import uuid
+import subprocess
 
 try:
     import winreg
@@ -56,9 +56,8 @@ def machine_fingerprint() -> str:
     payload = "|".join(
         item
         for item in [
-            _read_windows_machine_guid(),
+            _read_stable_machine_id(),
             machine_name(),
-            f"{uuid.getnode():012x}",
         ]
         if item
     )
@@ -142,6 +141,17 @@ def _load_license_payload(path: Path) -> dict[str, object]:
         return {}
 
 
+def _read_stable_machine_id() -> str:
+    system = platform.system()
+    if system == "Windows":
+        return _read_windows_machine_guid()
+    if system == "Darwin":
+        return _read_mac_platform_uuid()
+    if system == "Linux":
+        return _read_linux_machine_id()
+    return ""
+
+
 def _read_windows_machine_guid() -> str:
     if winreg is None:
         return ""
@@ -151,6 +161,30 @@ def _read_windows_machine_guid() -> str:
             return str(value).strip()
     except OSError:
         return ""
+
+
+def _read_mac_platform_uuid() -> str:
+    try:
+        output = subprocess.check_output(
+            ["ioreg", "-rd1", "-c", "IOPlatformExpertDevice"],
+            stderr=subprocess.DEVNULL,
+            timeout=5,
+        ).decode("utf-8", errors="ignore")
+    except (OSError, subprocess.SubprocessError):
+        return ""
+    match = re.search(r'"IOPlatformUUID"\s*=\s*"([^"]+)"', output)
+    return match.group(1).strip() if match else ""
+
+
+def _read_linux_machine_id() -> str:
+    for candidate in (Path("/etc/machine-id"), Path("/var/lib/dbus/machine-id")):
+        try:
+            value = candidate.read_text(encoding="utf-8").strip()
+        except OSError:
+            continue
+        if value:
+            return value
+    return ""
 
 
 def _normalize_code(value: str) -> str:

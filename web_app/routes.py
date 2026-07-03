@@ -7,6 +7,7 @@ import json
 import os
 from pathlib import Path
 import re
+import sys
 from urllib.parse import quote, urlsplit
 
 from flask import Flask, Response, current_app, jsonify, redirect, render_template, request, stream_with_context, url_for
@@ -129,19 +130,27 @@ def register_routes(app: Flask) -> None:
                 "onboarding.html",
                 session_online=False,
                 session_status_label="No Active Session",
+                existing_profile=_load_existing_onboarding_profile(),
             )
         full_name = request.form.get("full_name", "").strip()
         target_name = request.form.get("target_name", "").strip()
         current_role = request.form.get("current_role", "").strip()
         resume_file = request.files.get("resume")
         product_description = request.form.get("product_description", "").strip()
+        existing_resume_text = request.form.get("existing_resume_text", "").strip()
+        existing_resume_filename = request.form.get("existing_resume_filename", "").strip()
 
         if not full_name or not target_name:
             if wants_json:
                 return jsonify({"ok": False, "error": "Enter your name and target role."}), 400
             return _render_onboarding_error("Enter your name and target role.")
 
-        resume_payload = _extract_onboarding_resume_payload(resume_file, product_description)
+        resume_payload = _extract_onboarding_resume_payload(
+            resume_file,
+            product_description,
+            existing_resume_text=existing_resume_text,
+            existing_resume_filename=existing_resume_filename,
+        )
         if not resume_payload["text"]:
             if wants_json:
                 return jsonify({"ok": False, "error": "Upload a resume PDF or type a product or service description."}), 400
@@ -220,17 +229,13 @@ def register_routes(app: Flask) -> None:
                 "id": "microphone",
                 "label": "Audio capture",
                 "ok": bool(microphone.get("can_capture")),
-                "hint": str(microphone.get("message", "Check Windows microphone permissions.")),
+                "hint": str(microphone.get("message", _microphone_permission_hint())),
             },
             {
                 "id": "loopback",
-                "label": "Call audio (Stereo Mix)",
+                "label": _call_audio_preflight_label(),
                 "ok": loopback_ok,
-                "hint": (
-                    "Stereo Mix detected — Zoom/WhatsApp call audio can be captured."
-                    if loopback_ok
-                    else "Enable Stereo Mix in Windows Sound settings for call capture. See docs/requirements/STEREO-MIX-SETUP.txt"
-                ),
+                "hint": _call_audio_preflight_hint(ready=loopback_ok),
             },
             {
                 "id": "ollama",
@@ -296,7 +301,8 @@ def register_routes(app: Flask) -> None:
     @app.get("/api/sessions/recent")
     def recent_sessions() -> Response:
         try:
-            entries = list(_load_recent_session_entries(_registry_path()).values())[:6]
+            limit = max(1, min(200, request.args.get("limit", 6, type=int) or 6))
+            entries = list(_load_recent_session_entries(_registry_path()).values())[:limit]
             payload = []
             for entry in entries:
                 payload.append(
@@ -744,18 +750,27 @@ def register_routes(app: Flask) -> None:
         Uses only the Python standard library — no extra dependencies.
         The QR data encodes the deep-link URL that mobile clients can scan.
         """
+        from mobile_app.live_bridge import session_id_for_pairing_code
+
         normalized = "".join(c for c in code if c.isdigit())[:6]
         if len(normalized) != 6:
             return jsonify({"error": "Invalid code"}), 400
 
-        # Build a LAN-reachable bridge URL for the mobile APK rather than a
-        # localhost dashboard URL that only works on the desktop itself.
+        # Build a LAN-reachable bridge URL — the bridge server (unlike the
+        # desktop dashboard, which only binds to localhost) is reachable from
+        # a phone on the same network. Point straight at the no-install
+        # browser companion page so scanning the QR shows live answers
+        # without requiring a native app.
         bridge_base = _pairing_bridge_base_url().rstrip("/")
-        connect_url = (
-            f"{bridge_base}/pairing/confirm"
-            f"?pairingCode={normalized}"
-            f"&bridgeUrl={quote(bridge_base, safe=':/')}"
-        )
+        session_id = session_id_for_pairing_code(normalized)
+        if session_id:
+            connect_url = f"{bridge_base}/m/{quote(session_id, safe='')}"
+        else:
+            connect_url = (
+                f"{bridge_base}/pairing/confirm"
+                f"?pairingCode={normalized}"
+                f"&bridgeUrl={quote(bridge_base, safe=':/')}"
+            )
 
         try:
             import io
@@ -911,6 +926,10 @@ def _resolve_quick_start_profile_directory(body: dict[str, object]) -> Path | No
         if candidate.is_dir():
             return candidate
 
+    return _latest_ready_profile_directory()
+
+
+def _latest_ready_profile_directory() -> Path | None:
     profiles_base = _profiles_root()
     if not profiles_base.exists():
         return None
@@ -925,6 +944,18 @@ def _resolve_quick_start_profile_directory(body: dict[str, object]) -> Path | No
         reverse=True,
     )
     return ready_dirs[0] if ready_dirs else None
+
+
+def _load_existing_onboarding_profile() -> dict[str, object] | None:
+    profile_directory = _latest_ready_profile_directory()
+    if profile_directory is None:
+        return None
+    profile_path = profile_directory / "user_complete_profile.json"
+    try:
+        payload = json.loads(profile_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    return payload if isinstance(payload, dict) else None
 
 
 def load_briefing_helper() -> dict[str, object]:
@@ -1033,7 +1064,12 @@ def _wants_json_response() -> bool:
     return "application/json" in str(request.headers.get("Accept", "")).lower()
 
 
-def _extract_onboarding_resume_payload(resume_file, product_description: str) -> dict[str, str]:
+def _extract_onboarding_resume_payload(
+    resume_file,
+    product_description: str,
+    existing_resume_text: str = "",
+    existing_resume_filename: str = "",
+) -> dict[str, str]:
     filename = ""
     extracted_text = ""
     if resume_file and getattr(resume_file, "filename", ""):
@@ -1058,6 +1094,12 @@ def _extract_onboarding_resume_payload(resume_file, product_description: str) ->
 
         if not extracted_text:
             extracted_text = f"Resume uploaded for {filename}."
+
+    if not extracted_text and not filename:
+        existing_text = existing_resume_text.strip()
+        if existing_text:
+            extracted_text = existing_text
+            filename = existing_resume_filename.strip() or "resume.pdf"
 
     description = product_description.strip()
     if description:
@@ -1277,6 +1319,42 @@ def _microphone_capture_status() -> dict[str, object]:
 microphone_capture_status = _microphone_capture_status
 
 
+def _microphone_permission_hint() -> str:
+    if sys.platform == "win32":
+        return "Check Windows microphone permissions."
+    if sys.platform == "darwin":
+        return "Check System Settings > Privacy & Security > Microphone."
+    return "Check your system's microphone permissions."
+
+
+def _call_audio_preflight_hint(*, ready: bool) -> str:
+    if sys.platform == "win32":
+        return (
+            "Stereo Mix detected — Zoom/WhatsApp call audio can be captured."
+            if ready
+            else "Enable Stereo Mix in Windows Sound settings for call capture. See docs/requirements/STEREO-MIX-SETUP.txt"
+        )
+    if sys.platform == "darwin":
+        return (
+            "Loopback device detected — Zoom/WhatsApp call audio can be captured."
+            if ready
+            else "Install BlackHole (existential.audio/blackhole) and route call output through it for call capture."
+        )
+    return (
+        "Loopback device detected — Zoom/WhatsApp call audio can be captured."
+        if ready
+        else "Route your system's audio output through a PulseAudio/PipeWire monitor source for call capture."
+    )
+
+
+def _call_audio_preflight_label() -> str:
+    if sys.platform == "win32":
+        return "Call audio (Stereo Mix)"
+    if sys.platform == "darwin":
+        return "Call audio (BlackHole)"
+    return "Call audio (loopback)"
+
+
 _OLLAMA_HEALTH_CACHE: dict[str, object] = {"at": 0.0, "ok": False}
 
 
@@ -1323,7 +1401,7 @@ def _probe_microphone_runtime() -> dict[str, object]:
     if not runtime_available:
         message = "Microphone support is not available in this install. Reinstall with audio drivers enabled."
     elif not input_available:
-        message = "No recording device detected. Check Windows microphone permissions."
+        message = f"No recording device detected. {_microphone_permission_hint()}"
     else:
         message = "Live microphone capture is ready."
 

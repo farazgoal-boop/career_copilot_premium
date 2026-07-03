@@ -1,11 +1,11 @@
 [Setup]
 AppName=Career Copilot Premium
-AppVersion=1.0.0
+AppVersion=1.0.6
 AppPublisher=Career Copilot
 DefaultDirName={autopf}\Career Copilot Premium
 DefaultGroupName=Career Copilot Premium
 OutputDir=..\dist\installer
-OutputBaseFilename=CareerCopilotPremium_Setup_v1.0.0
+OutputBaseFilename=CareerCopilotPremium_Setup_v1.0.6
 SetupIconFile=windows\assets\donkey_robot_bw.ico
 UninstallDisplayIcon={app}\career-copilot.exe
 Compression=lzma2

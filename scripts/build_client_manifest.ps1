@@ -53,7 +53,7 @@ if (-not (Test-Path $vtPath)) {
         "===============",
         "",
         "Upload this file to https://www.virustotal.com :",
-        "  installer/CareerCopilotPremium_Setup_v1.0.0.exe",
+        "  installer/CareerCopilotPremium_Setup_v1.0.6.exe",
         "",
         "Paste the public scan link below after upload:",
         "LINK: (pending - upload Setup.exe and paste link here)",
@@ -62,7 +62,7 @@ if (-not (Test-Path $vtPath)) {
     ) | Out-File -FilePath $vtPath -Encoding utf8
 }
 
-$zipPath = Join-Path $projectRoot "CareerCopilotPremium-v1.0.0-CLIENT.zip"
+$zipPath = Join-Path $projectRoot "CareerCopilotPremium-v1.0.6-CLIENT.zip"
 if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
 
 $staging = Join-Path $projectRoot "dist\client-zip-staging"

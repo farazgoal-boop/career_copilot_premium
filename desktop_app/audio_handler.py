@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
+import sys
 import threading
 import time
 from typing import Callable, Protocol
@@ -139,6 +140,30 @@ VIRTUAL_CABLE_KEYWORDS = (
 CALL_AUDIO_KEYWORDS = STEREO_MIX_KEYWORDS + VIRTUAL_CABLE_KEYWORDS + ("speakers",)
 
 
+def _no_input_device_message() -> str:
+    if sys.platform == "win32":
+        return "No input microphone device is available. Windows is not exposing a recording endpoint."
+    if sys.platform == "darwin":
+        return "No input microphone device is available. Check System Settings > Privacy & Security > Microphone."
+    return "No input microphone device is available. Check your system's microphone/sound settings."
+
+
+def _capture_start_failure_message() -> str:
+    if sys.platform == "win32":
+        return "Microphone capture could not start. Check that Windows has an active recording device and microphone permission."
+    if sys.platform == "darwin":
+        return "Microphone capture could not start. Check System Settings > Privacy & Security > Microphone permission for this app."
+    return "Microphone capture could not start. Check your system's microphone permission and active recording device."
+
+
+def _call_audio_hint() -> str:
+    if sys.platform == "win32":
+        return "For Zoom/WhatsApp call audio, enable Stereo Mix or install VB-Cable (vb-audio.com/Cable)."
+    if sys.platform == "darwin":
+        return "For Zoom/WhatsApp call audio, install BlackHole (existential.audio/blackhole) and route call output through it."
+    return "For call audio capture, route your system's audio output through a PulseAudio/PipeWire monitor source."
+
+
 class MicrophoneAudioRecorder:
     """Real microphone or call-audio recorder backed by sounddevice."""
 
@@ -172,9 +197,7 @@ class MicrophoneAudioRecorder:
             return
 
         if self.device_index is None and not _input_device_names():
-            raise RuntimeError(
-                "No input microphone device is available. Windows is not exposing a recording endpoint."
-            )
+            raise RuntimeError(_no_input_device_message())
 
         self._frames = []
         self._started_at = _utc_now_iso()
@@ -202,9 +225,7 @@ class MicrophoneAudioRecorder:
             if self._stream is not None:
                 self._stream.close()
                 self._stream = None
-            raise RuntimeError(
-                "Microphone capture could not start. Check that Windows has an active recording device and microphone permission."
-            ) from error
+            raise RuntimeError(_capture_start_failure_message()) from error
         self._recording = True
 
     def stop_recording(self) -> AudioCapture:
@@ -389,16 +410,13 @@ def microphone_capture_status(*, force_refresh: bool = False) -> dict[str, objec
     if not runtime_available:
         message = "Live microphone capture is unavailable because the sounddevice runtime is not installed."
     elif not input_available:
-        message = "Windows is not exposing a recording endpoint, so live microphone capture is unavailable."
+        message = f"{_no_input_device_message()} Live microphone capture is unavailable."
     elif device_kind == "stereo_mix":
         message = f"Stereo Mix capture ready via {call_source.split(':', 1)[1]}."
     elif device_kind == "virtual_cable":
         message = f"Virtual cable capture ready via {call_source.split(':', 1)[1]}."
     else:
-        message = (
-            "Microphone capture is available. For Zoom/WhatsApp call audio, enable Stereo Mix "
-            "or install VB-Cable (vb-audio.com/Cable)."
-        )
+        message = f"Microphone capture is available. {_call_audio_hint()}"
 
     payload = {
         "runtime_available": runtime_available,

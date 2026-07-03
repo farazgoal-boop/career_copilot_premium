@@ -10,6 +10,121 @@
 <style>
   *, *::before, *::after { box-sizing: border-box; }
   body.sessions-view .premium-main { padding: 0; }
+  /* Wider than the default 760px page-content: a 7-column table needs more
+     room than the single-column settings lists this layout was designed for. */
+  body.sessions-view .page-content { max-width: 980px; }
+
+  .sess-table-wrap {
+    overflow-x: auto;
+  }
+
+  .sess-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 640px;
+  }
+
+  .sess-table thead th {
+    text-align: left;
+    padding: 0 14px 10px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--premium-muted);
+    border-bottom: 1px solid var(--premium-line);
+    white-space: nowrap;
+  }
+
+  .sess-table tbody tr {
+    cursor: pointer;
+    transition: background 150ms ease;
+  }
+
+  .sess-table tbody tr:not(:last-child) td {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .sess-table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .sess-table td {
+    padding: 14px;
+    font-size: 0.88rem;
+    color: var(--premium-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 220px;
+  }
+
+  .sess-table td.sess-col-index,
+  .sess-table td.sess-col-date,
+  .sess-table td.sess-col-duration {
+    color: var(--premium-muted);
+  }
+
+  .sess-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 999px;
+  }
+
+  .sess-status-badge::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+  }
+
+  .sess-status-badge--running { color: #22c55e; background: rgba(34, 197, 94, 0.12); }
+  .sess-status-badge--running::before { background: #22c55e; }
+  .sess-status-badge--new { color: #f59e0b; background: rgba(245, 158, 11, 0.12); }
+  .sess-status-badge--new::before { background: #f59e0b; }
+  .sess-status-badge--stopped { color: var(--premium-muted); background: rgba(255, 255, 255, 0.06); }
+  .sess-status-badge--stopped::before { background: rgba(255, 255, 255, 0.3); }
+
+  .sess-empty {
+    padding: 40px 16px;
+    text-align: center;
+    color: var(--premium-muted);
+    font-size: 0.92rem;
+  }
+
+  .sess-pager {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 16px;
+    margin-top: 16px;
+    font-size: 0.84rem;
+    color: var(--premium-muted);
+  }
+
+  .sess-pager-btn {
+    background: none;
+    border: none;
+    color: var(--premium-text);
+    font: inherit;
+    font-size: 0.84rem;
+    cursor: pointer;
+    padding: 4px 2px;
+  }
+
+  .sess-pager-btn:disabled {
+    color: var(--premium-muted);
+    opacity: 0.4;
+    cursor: default;
+  }
+
+  .sess-pager-btn:not(:disabled):hover {
+    color: var(--premium-accent);
+  }
 </style>
 {% endblock %}
 
@@ -24,10 +139,28 @@
 
   <div class="st-group settings-card">
     <p class="st-group-label">Recent</p>
-    <div id="sessions-list">
-      <div class="st-row st-row--loading"><div class="st-dot"></div><div class="st-row-text"><span class="st-row-name">&nbsp;</span><span class="st-row-hint">&nbsp;</span></div></div>
-      <div class="st-row st-row--loading"><div class="st-dot"></div><div class="st-row-text"><span class="st-row-name">&nbsp;</span><span class="st-row-hint">&nbsp;</span></div></div>
-      <div class="st-row st-row--loading"><div class="st-dot"></div><div class="st-row-text"><span class="st-row-name">&nbsp;</span><span class="st-row-hint">&nbsp;</span></div></div>
+    <div class="sess-table-wrap">
+      <table class="sess-table" id="sessions-table" hidden>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Name</th>
+            <th>Target Company</th>
+            <th>Role</th>
+            <th>Date</th>
+            <th>Duration</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="sessions-tbody"></tbody>
+      </table>
+      <div id="sessions-empty" class="sess-empty" hidden>No sessions yet — start your first session from Home</div>
+      <div id="sessions-loading" class="sess-empty">Loading sessions&hellip;</div>
+    </div>
+    <div class="sess-pager" id="sessions-pager" hidden>
+      <span id="sessions-pager-label"></span>
+      <button class="sess-pager-btn" id="sessions-prev" type="button">‹ Prev</button>
+      <button class="sess-pager-btn" id="sessions-next" type="button">Next ›</button>
     </div>
   </div>
 
@@ -39,62 +172,109 @@
 (function () {
   'use strict';
 
-  var list = document.getElementById('sessions-list');
+  var PAGE_SIZE = 10;
+  var allSessions = [];
+  var currentPage = 0;
 
-  function relativeTime(iso) {
-    if (!iso) return '';
-    try {
-      var diff = Date.now() - new Date(iso).getTime();
-      var m = Math.floor(diff / 60000);
-      if (m < 2) return 'just now';
-      if (m < 60) return m + 'm ago';
-      var h = Math.floor(m / 60);
-      if (h < 24) return h + 'h ago';
-      return Math.floor(h / 24) + 'd ago';
-    } catch (e) { return ''; }
-  }
+  var table = document.getElementById('sessions-table');
+  var tbody = document.getElementById('sessions-tbody');
+  var emptyEl = document.getElementById('sessions-empty');
+  var loadingEl = document.getElementById('sessions-loading');
+  var pager = document.getElementById('sessions-pager');
+  var pagerLabel = document.getElementById('sessions-pager-label');
+  var prevBtn = document.getElementById('sessions-prev');
+  var nextBtn = document.getElementById('sessions-next');
 
   function escapeHtml(s) {
     return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
-  function getInitials(raw) {
-    return (raw || '').split(/[\s·\-]+/).filter(Boolean).slice(0, 2).map(function (w) { return w[0].toUpperCase(); }).join('');
+  function formatDate(iso) {
+    if (!iso) return '—';
+    try {
+      var d = new Date(iso);
+      if (isNaN(d.getTime())) return '—';
+      return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+    } catch (e) {
+      return '—';
+    }
   }
+
+  function statusBadge(status) {
+    var normalized = String(status || 'stopped').toLowerCase();
+    var label = 'Stopped';
+    var modifier = 'stopped';
+    if (normalized === 'running') { label = 'Running'; modifier = 'running'; }
+    else if (normalized === 'new') { label = 'New'; modifier = 'new'; }
+    return '<span class="sess-status-badge sess-status-badge--' + modifier + '">' + label + '</span>';
+  }
+
+  function renderPage() {
+    var totalPages = Math.max(1, Math.ceil(allSessions.length / PAGE_SIZE));
+    currentPage = Math.min(currentPage, totalPages - 1);
+    var start = currentPage * PAGE_SIZE;
+    var pageItems = allSessions.slice(start, start + PAGE_SIZE);
+
+    tbody.innerHTML = pageItems.map(function (s, i) {
+      var name = escapeHtml(s.profile_name) || '—';
+      var company = escapeHtml(s.company_name) || '—';
+      var role = escapeHtml(s.role_title) || '—';
+      return (
+        '<tr data-session-id="' + escapeHtml(s.session_id) + '">' +
+          '<td class="sess-col-index">' + (start + i + 1) + '</td>' +
+          '<td>' + name + '</td>' +
+          '<td>' + company + '</td>' +
+          '<td>' + role + '</td>' +
+          '<td class="sess-col-date">' + formatDate(s.updated_at) + '</td>' +
+          '<td class="sess-col-duration">—</td>' +
+          '<td>' + statusBadge(s.session_status || s.worker_status) + '</td>' +
+        '</tr>'
+      );
+    }).join('');
+
+    Array.prototype.forEach.call(tbody.querySelectorAll('tr'), function (row) {
+      row.addEventListener('click', function () {
+        var id = row.getAttribute('data-session-id');
+        if (id) window.location.href = '/session/' + encodeURIComponent(id) + '/live';
+      });
+    });
+
+    pager.hidden = allSessions.length <= PAGE_SIZE;
+    pagerLabel.textContent = 'Page ' + (currentPage + 1) + ' of ' + totalPages;
+    prevBtn.disabled = currentPage <= 0;
+    nextBtn.disabled = currentPage >= totalPages - 1;
+  }
+
+  prevBtn.addEventListener('click', function () {
+    if (currentPage > 0) { currentPage -= 1; renderPage(); }
+  });
+  nextBtn.addEventListener('click', function () {
+    currentPage += 1;
+    renderPage();
+  });
 
   function render(sessions) {
-    if (!sessions || !sessions.length) {
-      list.innerHTML = '<div class="st-row"><div class="st-row-text"><span class="st-row-name" style="color:var(--premium-muted)">No sessions yet.</span></div></div>';
+    loadingEl.hidden = true;
+    allSessions = sessions || [];
+    if (!allSessions.length) {
+      emptyEl.hidden = false;
+      table.hidden = true;
+      pager.hidden = true;
       return;
     }
-    list.innerHTML = '';
-    sessions.forEach(function (s) {
-      var a = document.createElement('a');
-      a.href = '/session/' + encodeURIComponent(s.session_id) + '/live';
-      a.className = 'st-row st-row--link';
-      var rawName = (s.profile_name || '') + (s.company_name ? ' · ' + s.company_name : '');
-      var initials = escapeHtml(getInitials(s.profile_name || rawName));
-      var name = escapeHtml(rawName);
-      var role = escapeHtml(s.role_title || '');
-      var time = escapeHtml(relativeTime(s.updated_at));
-      a.innerHTML =
-        '<div class="st-row-left">' +
-          '<span class="session-avatar" aria-hidden="true">' + (initials || '?') + '</span>' +
-          '<div class="st-row-text">' +
-            '<span class="st-row-name">' + (name || 'Session') + '</span>' +
-            (role ? '<span class="st-row-hint">' + role + (time ? ' · ' + time : '') + '</span>' : (time ? '<span class="st-row-hint">' + time + '</span>' : '')) +
-          '</div>' +
-        '</div>' +
-        '<span class="st-chevron">›</span>';
-      list.appendChild(a);
-    });
+    emptyEl.hidden = true;
+    table.hidden = false;
+    currentPage = 0;
+    renderPage();
   }
 
-  fetch('/api/sessions/recent', { headers: { Accept: 'application/json' } })
+  fetch('/api/sessions/recent?limit=100', { headers: { Accept: 'application/json' } })
     .then(function (r) { return r.json(); })
     .then(function (d) { render(d.sessions || []); })
     .catch(function () {
-      list.innerHTML = '<div class="st-row"><div class="st-row-text"><span class="st-row-name" style="color:var(--premium-muted)">Could not load sessions.</span></div></div>';
+      loadingEl.hidden = true;
+      emptyEl.hidden = false;
+      emptyEl.textContent = 'Could not load sessions.';
     });
 })();
 </script>
