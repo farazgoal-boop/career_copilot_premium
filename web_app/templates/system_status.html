@@ -22,6 +22,10 @@
     <h1 class="page-title">System Status</h1>
   </div>
 
+  <p style="font-size:0.8rem;color:var(--premium-muted);margin:0;">
+    Only Mistral API key and microphone are needed to use the app. Everything else is optional.
+  </p>
+
   <div class="st-group settings-card">
     <p class="st-group-label">System</p>
     <div id="st-checks-list">
@@ -41,10 +45,16 @@
 
   var checksList = document.getElementById('st-checks-list');
 
-  function dotClass(ok, id) {
-    if (ok) return 'st-dot st-dot--ok';
-    if (id === 'loopback' || id === 'ollama' || id === 'mistral') return 'st-dot st-dot--warn';
-    return 'st-dot st-dot--err';
+  function dotClass(c) {
+    if (c.ok) return 'st-dot st-dot--ok';
+    if (c.severity === 'warn') return 'st-dot st-dot--warn';
+    return 'st-dot';
+  }
+
+  function statusText(c) {
+    if (c.ok) return 'OK';
+    if (c.severity === 'warn') return '—';
+    return 'Optional';
   }
 
   function escapeHtml(s) {
@@ -62,13 +72,13 @@
       row.className = 'st-row';
       row.innerHTML =
         '<div class="st-row-left">' +
-          '<div class="' + dotClass(c.ok, c.id) + '"></div>' +
+          '<div class="' + dotClass(c) + '"></div>' +
           '<div class="st-row-text">' +
             '<span class="st-row-name">' + escapeHtml(c.label) + '</span>' +
             (c.hint ? '<span class="st-row-hint">' + escapeHtml(c.hint) + '</span>' : '') +
           '</div>' +
         '</div>' +
-        '<span class="st-row-right">' + (c.ok ? 'OK' : '—') + '</span>';
+        '<span class="st-row-right">' + statusText(c) + '</span>';
       checksList.appendChild(row);
     });
   }

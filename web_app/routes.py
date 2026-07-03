@@ -218,50 +218,73 @@ def register_routes(app: Flask) -> None:
         ai_ready = ollama_ok or mistral_ok
         loopback_ok = bool(microphone.get("using_loopback"))
         can_go_live = bool(license_ok and microphone.get("can_capture") and ai_ready)
+        microphone_ok = bool(microphone.get("can_capture"))
         checks = [
             {
                 "id": "license",
                 "label": "Desktop activation",
                 "ok": license_ok,
+                "severity": "warn",
                 "hint": "Enter your activation code on first launch." if not license_ok else "Licensed for this computer.",
             },
             {
                 "id": "microphone",
-                "label": "Audio capture",
-                "ok": bool(microphone.get("can_capture")),
-                "hint": str(microphone.get("message", _microphone_permission_hint())),
+                "label": "Microphone",
+                "ok": microphone_ok,
+                "severity": "warn",
+                "hint": (
+                    "Microphone is ready for speech-to-text capture."
+                    if microphone_ok
+                    else f"{microphone.get('message', _microphone_permission_hint())} You can still type questions manually using the text input."
+                ),
             },
             {
                 "id": "loopback",
-                "label": _call_audio_preflight_label(),
+                "label": "Call audio capture (optional)",
                 "ok": loopback_ok,
-                "hint": _call_audio_preflight_hint(ready=loopback_ok),
+                "severity": "info",
+                "hint": (
+                    _call_audio_preflight_hint(ready=True)
+                    if loopback_ok
+                    else (
+                        "Optional — needed only to capture Zoom/WhatsApp call audio directly. "
+                        "The app still works with microphone input for speech-to-text. "
+                        f"{_call_audio_preflight_hint(ready=False)}"
+                    )
+                ),
             },
             {
                 "id": "ollama",
-                "label": "Ollama AI engine",
+                "label": "Local AI engine (optional)",
                 "ok": ollama_ok,
+                "severity": "info",
                 "hint": (
-                    "Ollama is running locally."
+                    "Ollama is running locally — used as fallback when Mistral is unavailable."
                     if ollama_ok
-                    else "Install Ollama and run: ollama pull llama3.2:1b — see docs/requirements/DOWNLOAD-OLLAMA.txt"
+                    else (
+                        "Not required — the app uses Mistral API by default. Install Ollama only if "
+                        "you want offline/local AI backup. ollama pull llama3.2:1b — see "
+                        "docs/requirements/DOWNLOAD-OLLAMA.txt"
+                    )
                 ),
             },
             {
                 "id": "mistral",
-                "label": "Mistral API (optional fallback)",
+                "label": "Mistral API (required)",
                 "ok": mistral_ok,
+                "severity": "warn" if not ollama_ok else "info",
                 "hint": (
                     "Mistral API key configured."
                     if mistral_ok
-                    else "Optional: add MISTRAL_API_KEY to .env — see docs/requirements/DOWNLOAD-MISTRAL.txt"
+                    else "Add MISTRAL_API_KEY in Settings — see docs/requirements/DOWNLOAD-MISTRAL.txt"
                 ),
             },
             {
                 "id": "ai",
                 "label": "AI answer engine ready",
                 "ok": ai_ready,
-                "hint": "Ollama or Mistral must be available to generate live answers.",
+                "severity": "warn",
+                "hint": "Mistral API key or a running Ollama instance must be available to generate live answers.",
             },
         ]
         return jsonify(
@@ -1345,14 +1368,6 @@ def _call_audio_preflight_hint(*, ready: bool) -> str:
         if ready
         else "Route your system's audio output through a PulseAudio/PipeWire monitor source for call capture."
     )
-
-
-def _call_audio_preflight_label() -> str:
-    if sys.platform == "win32":
-        return "Call audio (Stereo Mix)"
-    if sys.platform == "darwin":
-        return "Call audio (BlackHole)"
-    return "Call audio (loopback)"
 
 
 _OLLAMA_HEALTH_CACHE: dict[str, object] = {"at": 0.0, "ok": False}
