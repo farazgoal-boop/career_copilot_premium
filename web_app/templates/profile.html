@@ -22,13 +22,23 @@
     <h1 class="page-title">Profile</h1>
   </div>
 
+  {% set identity = existing_profile.identity if existing_profile else None %}
+  {% set target_job = existing_profile.target_job if existing_profile else None %}
+  {% set resume = existing_profile.resume if existing_profile else None %}
   <div class="st-group settings-card">
     <p class="st-group-label">Identity</p>
     <a href="/onboarding" class="st-row st-row--link">
       <div class="st-row-left">
         <div class="st-row-text">
+          {% if identity and identity.full_name %}
+          <span class="st-row-name">{{ identity.full_name }}</span>
+          <span class="st-row-hint">
+            {{ target_job.job_title if target_job else '' }}{% if resume and resume.filename %} · {{ resume.filename }}{% endif %}
+          </span>
+          {% else %}
           <span class="st-row-name">Resume &amp; identity</span>
-          <span class="st-row-hint">Update your name, target role, or resume</span>
+          <span class="st-row-hint">Add your name, target role, or resume</span>
+          {% endif %}
         </div>
       </div>
       <span class="st-chevron" aria-hidden="true">›</span>

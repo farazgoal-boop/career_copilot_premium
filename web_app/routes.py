@@ -90,7 +90,7 @@ def register_routes(app: Flask) -> None:
 
     @app.get("/profile")
     def profile_page() -> str:
-        return render_template("profile.html")
+        return render_template("profile.html", existing_profile=_load_existing_onboarding_profile())
 
     @app.get("/system-status")
     def system_status_page() -> str:
