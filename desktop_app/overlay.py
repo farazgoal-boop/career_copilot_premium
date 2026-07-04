@@ -631,15 +631,18 @@ if QT_AVAILABLE:
             )
 
         def _build_status_labels(self) -> tuple[bool, str, bool, str]:
-            from .mistral_setup import mistral_connection_status
+            from .mistral_setup import mistral_connection_status, ollama_connection_status
             from .audio_handler import microphone_capture_status
 
-            ok, message = mistral_connection_status()
-            api_text = (
-                "API: Mistral Connected"
-                if ok
-                else f"API: Key missing — {message}"
-            )
+            mistral_ok, mistral_message = mistral_connection_status()
+            ollama_ok, _ollama_message = ollama_connection_status()
+            ok = mistral_ok or ollama_ok
+            if mistral_ok:
+                api_text = "API: Mistral Connected"
+            elif ollama_ok:
+                api_text = "API: Ollama Connected (local)"
+            else:
+                api_text = f"API: Key missing — {mistral_message}"
             mic_status = microphone_capture_status()
             call_source = str(mic_status.get("call_audio_source") or "")
             device_name = call_source.split(":", 1)[1] if ":" in call_source else ""

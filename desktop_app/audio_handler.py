@@ -445,7 +445,14 @@ def audio_status_label(call_source: str | None = None) -> str:
     if kind == "stereo_mix":
         return "Speaker Capture (Stereo Mix)"
     if kind == "virtual_cable":
-        return "Speaker Capture (VB-Cable)"
+        lowered = source.casefold()
+        if "blackhole" in lowered:
+            label = "BlackHole"
+        elif "pulseaudio" in lowered or "monitor" in lowered:
+            label = "PulseAudio Monitor"
+        else:
+            label = "VB-Cable"
+        return f"Speaker Capture ({label})"
     if kind == "microphone" and source != "microphone":
         return "Microphone Ready"
     if kind == "microphone":

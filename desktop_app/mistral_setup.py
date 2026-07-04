@@ -139,6 +139,28 @@ def mistral_connection_status() -> tuple[bool, str]:
     return True, "Mistral key saved"
 
 
+_OLLAMA_STATUS_CACHE: dict[str, object] = {"at": 0.0, "ok": False}
+
+
+def ollama_connection_status() -> tuple[bool, str]:
+    """Cheap, cached, platform-agnostic Ollama reachability check for UI status bars."""
+    age = time.time() - float(_OLLAMA_STATUS_CACHE.get("at", 0.0))
+    if age < 20.0:
+        ok = bool(_OLLAMA_STATUS_CACHE.get("ok", False))
+        return ok, ("Ollama running locally" if ok else "Ollama not reachable")
+
+    ok = False
+    try:
+        req = request.Request("http://127.0.0.1:11434/api/tags", method="GET")
+        with request.urlopen(req, timeout=1.5) as response:
+            ok = int(response.status) == 200
+    except (OSError, TimeoutError, error.URLError, ValueError):
+        ok = False
+    _OLLAMA_STATUS_CACHE["at"] = time.time()
+    _OLLAMA_STATUS_CACHE["ok"] = ok
+    return ok, ("Ollama running locally" if ok else "Ollama not reachable")
+
+
 def refresh_mistral_validation_async(force: bool = False) -> None:
     """Validate Mistral API key in a background thread (overlay-safe)."""
     if not has_mistral_api_key():

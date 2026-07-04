@@ -43,7 +43,11 @@ Name: "{commondesktop}\Career Copilot Premium"; Filename: "{app}\career-copilot.
 
 [Run]
 Filename: "{app}\installers\vc_redist.x64.exe"; Parameters: "/install /quiet /norestart"; StatusMsg: "Installing Microsoft Visual C++ Runtime (one-time)..."; Flags: waituntilterminated; Check: VCRedistBundled
+Filename: "netsh.exe"; Parameters: "advfirewall firewall add rule name=""Career Copilot Premium"" dir=in action=allow program=""{app}\career-copilot.exe"" enable=yes profile=any"; StatusMsg: "Allowing mobile pairing through Windows Firewall..."; Flags: runhidden
 Filename: "{app}\career-copilot.exe"; Description: "Launch Career Copilot Premium"; Flags: nowait postinstall skipifsilent
+
+[UninstallRun]
+Filename: "netsh.exe"; Parameters: "advfirewall firewall delete rule name=""Career Copilot Premium"" program=""{app}\career-copilot.exe"""; Flags: runhidden
 
 [Code]
 function VCRedistBundled: Boolean;
