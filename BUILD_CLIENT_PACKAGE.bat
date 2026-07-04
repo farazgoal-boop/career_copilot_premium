@@ -156,6 +156,7 @@ if exist "%ROOT%\docs\USER_GUIDE.md" copy /Y "%ROOT%\docs\USER_GUIDE.md" "%ROOT%
 if exist "%ROOT%\docs\INSTALL.md" copy /Y "%ROOT%\docs\INSTALL.md" "%ROOT%\ready to client\docs\" >nul
 if exist "%ROOT%\docs\USER_MANUAL.html" copy /Y "%ROOT%\docs\USER_MANUAL.html" "%ROOT%\ready to client\docs\" >nul
 if exist "%ROOT%\installers\windows\assets\user_manual.html" copy /Y "%ROOT%\installers\windows\assets\user_manual.html" "%ROOT%\ready to client\docs\" >nul
+if exist "%ROOT%\docs\Career-Copilot-Premium-Mac-Install-Guide.pdf" copy /Y "%ROOT%\docs\Career-Copilot-Premium-Mac-Install-Guide.pdf" "%ROOT%\ready to client\docs\" >nul
 
 echo [7/7] SHA256 manifest + final ZIP...
 powershell -NoProfile -ExecutionPolicy Bypass -File "%ROOT%\scripts\build_client_manifest.ps1" -PackageDir "%ROOT%\ready to client"
