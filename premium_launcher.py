@@ -160,10 +160,19 @@ def _run_overlay_event_loop(services: PremiumRuntime, qt_app: "QtApplication") -
     )
 
     if not qt_runtime_available():
-        print(qt_runtime_error_message())
+        from desktop_app.startup_utils import show_startup_error_dialog
+
         webbrowser.open(services.dashboard_url)
         print(f"[premium] Dashboard ready: {services.dashboard_url}")
         print("[premium] Overlay unavailable — install PySide6 in the project venv.")
+        show_startup_error_dialog(
+            f"{qt_runtime_error_message()}\n\n"
+            "The floating overlay window and F2/F3 hotkeys will not be available "
+            "this session — only the browser dashboard will work.\n\n"
+            "Fix: open Terminal in the app folder and run:\n"
+            "python3 -m pip install --force-reinstall PySide6",
+            qt_app=qt_app,
+        )
         try:
             while True:
                 time.sleep(3600)

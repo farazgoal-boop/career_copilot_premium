@@ -208,6 +208,7 @@ def register_routes(app: Flask) -> None:
     @app.get("/api/system/preflight")
     def system_preflight() -> Response:
         from desktop_app.audio_handler import microphone_capture_status as audio_mic_status
+        from desktop_app.overlay import qt_runtime_available, qt_runtime_error_message
         from runtime_paths import load_env_file
 
         load_env_file()
@@ -219,6 +220,7 @@ def register_routes(app: Flask) -> None:
         loopback_ok = bool(microphone.get("using_loopback"))
         can_go_live = bool(license_ok and microphone.get("can_capture") and ai_ready)
         microphone_ok = bool(microphone.get("can_capture"))
+        overlay_ok = qt_runtime_available()
         checks = [
             {
                 "id": "license",
@@ -236,6 +238,21 @@ def register_routes(app: Flask) -> None:
                     "Microphone is ready for speech-to-text capture."
                     if microphone_ok
                     else f"{microphone.get('message', _microphone_permission_hint())} You can still type questions manually using the text input."
+                ),
+            },
+            {
+                "id": "overlay",
+                "label": "Floating overlay window",
+                "ok": overlay_ok,
+                "severity": "warn",
+                "hint": (
+                    "Overlay window and F2/F3 hotkeys are ready."
+                    if overlay_ok
+                    else (
+                        f"{qt_runtime_error_message()} The floating panel and F2/F3 hotkeys "
+                        "will not work until this is fixed. Try: python3 -m pip install "
+                        "--force-reinstall PySide6"
+                    )
                 ),
             },
             {
