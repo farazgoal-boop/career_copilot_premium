@@ -333,6 +333,48 @@
 
   /* Hidden infrastructure — JS writes to these elements */
   .ls-infra { display: none !important; }
+
+  /* ── Browser Mic (Beta) ── */
+  .ls-browser-mic {
+    display: flex;
+    justify-content: center;
+  }
+
+  #browser-mic-toggle {
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 10px 24px;
+    white-space: nowrap;
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+
+  #browser-mic-toggle:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* grey = idle */
+  #browser-mic-toggle.mic-idle {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: var(--line);
+    color: var(--text);
+  }
+  #browser-mic-toggle.mic-idle:hover { background: rgba(255, 255, 255, 0.1); }
+
+  /* green = listening */
+  #browser-mic-toggle.mic-listening {
+    background: rgba(34, 197, 94, 0.15);
+    border-color: rgba(34, 197, 94, 0.6);
+    color: #22c55e;
+  }
+
+  /* red = error */
+  #browser-mic-toggle.mic-error {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.6);
+    color: #ef4444;
+  }
 </style>
 {% endblock %}
 
@@ -378,6 +420,11 @@
       <p id="steer-status"></p>
       <button id="send-live-steer" type="button">Send</button>
     </div>
+  </div>
+
+  <!-- Browser Mic (Beta): install-free alternative to the desktop overlay's F2 mic capture -->
+  <div class="ls-browser-mic">
+    <button id="browser-mic-toggle" type="button">Start Browser Mic</button>
   </div>
 
   <!-- End session -->
@@ -648,4 +695,6 @@
       window.setInterval(refresh, 3000);
     })();
   </script>
+  <script>window.SESSION_ID = {{ session_id|tojson }};</script>
+  <script src="{{ url_for('static', filename='js/browser_mic.js') }}"></script>
 {% endblock %}
