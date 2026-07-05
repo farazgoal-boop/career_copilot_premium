@@ -34,8 +34,10 @@ from runtime_paths import (  # noqa: E402
     default_bridge_base_url,
     get_dashboard_port,
     install_root_is_readonly,
+    instance_lock_path,
     is_portable_mode,
     load_env_file,
+    overlay_show_flag_path,
     portable_status_payload,
     repo_root,
 )
@@ -70,6 +72,71 @@ def _wait_for_dashboard(host: str, port: int, timeout_seconds: float = 15.0) -> 
         except (OSError, TimeoutError, urllib.error.URLError):
             time.sleep(0.25)
     return False
+
+
+def _is_pid_alive(pid: int) -> bool:
+    if pid <= 0:
+        return False
+    if sys.platform == "win32":
+        import ctypes
+
+        PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+        handle = ctypes.windll.kernel32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, pid)
+        if handle:
+            ctypes.windll.kernel32.CloseHandle(handle)
+            return True
+        return False
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    except OSError:
+        return False
+    return True
+
+
+def _read_instance_lock() -> dict | None:
+    try:
+        payload = json.loads(instance_lock_path().read_text(encoding="utf-8"))
+        return payload if isinstance(payload, dict) else None
+    except (OSError, json.JSONDecodeError):
+        return None
+
+
+def _write_instance_lock(port: int) -> None:
+    try:
+        path = instance_lock_path()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(
+            json.dumps({"pid": os.getpid(), "port": port}),
+            encoding="utf-8",
+        )
+    except OSError:
+        pass
+
+
+def _clear_instance_lock() -> None:
+    try:
+        instance_lock_path().unlink(missing_ok=True)
+    except OSError:
+        pass
+
+
+def _reactivate_running_instance(existing: dict) -> None:
+    """Bring an already-running instance's dashboard/overlay to the front instead
+    of silently doing nothing (the previous behavior when the icon was double-clicked
+    while a prior, still-alive instance was hidden in the background)."""
+    port = existing.get("port") or get_dashboard_port()
+    print(f"[premium] Career Copilot Premium is already running (pid {existing.get('pid')}). Reopening...")
+    webbrowser.open(f"http://127.0.0.1:{port}")
+    try:
+        flag = overlay_show_flag_path()
+        flag.parent.mkdir(parents=True, exist_ok=True)
+        flag.touch()
+    except OSError:
+        pass
 
 
 class PremiumRuntime:
@@ -144,7 +211,7 @@ class PremiumRuntime:
 def _run_overlay_event_loop(services: PremiumRuntime, qt_app: "QtApplication") -> int:
     from PySide6.QtCore import QObject, QTimer, Qt, Signal
     from PySide6.QtGui import QKeySequence, QShortcut
-    from PySide6.QtWidgets import QApplication
+    from PySide6.QtWidgets import QApplication, QMenu, QStyle, QSystemTrayIcon
 
     class SessionPollSignals(QObject):
         payload_ready = Signal(str, object)
@@ -226,6 +293,39 @@ def _run_overlay_event_loop(services: PremiumRuntime, qt_app: "QtApplication") -
         visibility_shortcut = QShortcut(QKeySequence("F3"), window)
         visibility_shortcut.activated.connect(toggle_overlay_visibility)
         visibility_shortcut.setContext(Qt.ApplicationShortcut)
+
+    # System tray icon: the overlay's own close button only hides the window
+    # (see TransparentOverlayWindow.closeEvent) so the process would otherwise
+    # keep running invisibly with no way to actually quit it.
+    tray = None
+    if QSystemTrayIcon.isSystemTrayAvailable():
+        tray = QSystemTrayIcon(qt_app)
+        tray.setIcon(qt_app.style().standardIcon(QStyle.StandardPixmap.SP_ComputerIcon))
+        tray.setToolTip("Career Copilot Premium")
+
+        tray_menu = QMenu()
+        open_action = tray_menu.addAction("Open Dashboard")
+        open_action.triggered.connect(lambda: webbrowser.open(services.dashboard_url))
+        show_action = tray_menu.addAction("Show Overlay")
+        show_action.triggered.connect(lambda: (window.show(), window.raise_(), window.activateWindow()))
+        tray_menu.addSeparator()
+        quit_action = tray_menu.addAction("Quit Career Copilot Premium")
+
+        def _quit_app() -> None:
+            tray.hide()
+            qt_app.quit()
+
+        quit_action.triggered.connect(_quit_app)
+        tray.setContextMenu(tray_menu)
+
+        def _on_tray_activated(reason: "QSystemTrayIcon.ActivationReason") -> None:
+            if reason == QSystemTrayIcon.ActivationReason.Trigger:
+                window.show()
+                window.raise_()
+                window.activateWindow()
+
+        tray.activated.connect(_on_tray_activated)
+        tray.show()
 
     from runtime_paths import overlay_show_flag_path as _overlay_flag_path_fn
     _overlay_flag = _overlay_flag_path_fn()
@@ -360,6 +460,15 @@ def main() -> int:
         os.environ["DASHBOARD_PORT"] = str(args.port)
 
     configure_runtime_environment()
+
+    # If a previous launch is still alive in the background (e.g. the overlay
+    # was hidden, not quit), reopen its dashboard/overlay instead of silently
+    # doing nothing — this is what made the app icon look broken on relaunch.
+    existing = _read_instance_lock()
+    if existing and _is_pid_alive(int(existing.get("pid", -1) or -1)):
+        _reactivate_running_instance(existing)
+        return 0
+
     from desktop_app.mistral_setup import ensure_mistral_api_key_configured
     from desktop_app.startup_utils import (
         close_splash,
@@ -385,6 +494,8 @@ def main() -> int:
                 qt_app=qt_app,
             )
             return 1
+
+        _write_instance_lock(get_dashboard_port())
 
         close_splash(splash)
         splash = None
@@ -419,6 +530,7 @@ def main() -> int:
         return 1
     finally:
         close_splash(splash)
+        _clear_instance_lock()
 
 
 if __name__ == "__main__":

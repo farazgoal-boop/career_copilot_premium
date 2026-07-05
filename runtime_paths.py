@@ -197,6 +197,10 @@ def overlay_show_flag_path(data_root: Path | None = None) -> Path:
     return cache_root(data_root) / "overlay_show.flag"
 
 
+def instance_lock_path(data_root: Path | None = None) -> Path:
+    return cache_root(data_root) / "app_instance.lock"
+
+
 def _decode_env_text(raw_bytes: bytes) -> str:
     """Decode .env bytes safely (handles UTF-8, UTF-16, and stray nulls)."""
     if not raw_bytes:
