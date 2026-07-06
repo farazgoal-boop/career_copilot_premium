@@ -439,6 +439,60 @@
 
   #manual-question-submit:hover { background: rgba(255, 255, 255, 0.1); }
   #manual-question-submit:disabled { opacity: 0.5; cursor: wait; }
+
+  /* ── Live transcript log: collapsed by default, muted, does not compete with the main answer ── */
+  .ls-transcript-log {
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.015);
+    padding: 4px 14px;
+  }
+
+  .ls-transcript-log summary {
+    cursor: pointer;
+    padding: 8px 0;
+    font-size: 0.8rem;
+    color: var(--muted);
+    font-weight: 600;
+    list-style: none;
+  }
+
+  .ls-transcript-log summary::-webkit-details-marker { display: none; }
+
+  .ls-transcript-log summary::before {
+    content: "▸ ";
+  }
+
+  .ls-transcript-log[open] summary::before {
+    content: "▾ ";
+  }
+
+  .ls-transcript-log-body {
+    max-height: 220px;
+    overflow-y: auto;
+    padding: 4px 0 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .ls-transcript-log-entry {
+    font-size: 0.78rem;
+    line-height: 1.5;
+    color: var(--muted);
+    border-top: 1px solid var(--line);
+    padding-top: 8px;
+  }
+
+  .ls-transcript-log-entry:first-child { border-top: 0; padding-top: 0; }
+
+  .ls-transcript-log-time {
+    font-size: 0.7rem;
+    opacity: 0.7;
+    margin-right: 4px;
+  }
+
+  .ls-transcript-log-entry strong { color: var(--text); }
 </style>
 {% endblock %}
 
@@ -496,6 +550,14 @@
     </div>
   </div>
 
+  <!-- Live transcript log: running Q&A history, collapsed by default so it stays out of the way -->
+  <details class="ls-transcript-log">
+    <summary>Session transcript (<span id="transcript-log-count">0</span>)</summary>
+    <div id="transcript-log-body" class="ls-transcript-log-body">
+      <p class="ls-transcript-log-entry">No questions captured yet.</p>
+    </div>
+  </details>
+
   <!-- End session -->
   <div class="ls-end-wrap">
     <button class="ls-end-btn" type="button" onclick="window.location.href='/'">End session</button>
@@ -538,6 +600,8 @@
       const metaUpdated = document.getElementById('meta-updated');
       const manualQuestionInput = document.getElementById('manual-question-input');
       const manualQuestionSubmit = document.getElementById('manual-question-submit');
+      const transcriptLogBody = document.getElementById('transcript-log-body');
+      const transcriptLogCount = document.getElementById('transcript-log-count');
       const dataCards = Array.from(document.querySelectorAll('.js-data-card'));
       let latestPersistentPrompt = String(initialPayload?.prompts?.persistent || '');
 
@@ -663,6 +727,50 @@
         metaUpdated.textContent = snapshot.updated_at || '-';
       }
 
+      function formatLogTime(isoString) {
+        const parsed = new Date(isoString);
+        if (Number.isNaN(parsed.getTime())) return '';
+        return parsed.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      }
+
+      function setTranscriptLog(payload) {
+        const entries = Array.isArray(payload?.snapshot?.transcript_log) ? payload.snapshot.transcript_log : [];
+        transcriptLogCount.textContent = String(entries.length);
+
+        if (!entries.length) {
+          transcriptLogBody.innerHTML = '<p class="ls-transcript-log-entry">No questions captured yet.</p>';
+          return;
+        }
+
+        transcriptLogBody.innerHTML = '';
+        entries.forEach((entry) => {
+          const row = document.createElement('div');
+          row.className = 'ls-transcript-log-entry';
+          const time = formatLogTime(entry?.at);
+          const question = String(entry?.text || '').trim() || '-';
+          const answer = String(entry?.answer || '').trim() || '-';
+
+          if (time) {
+            const timeSpan = document.createElement('span');
+            timeSpan.className = 'ls-transcript-log-time';
+            timeSpan.textContent = `[${time}]`;
+            row.appendChild(timeSpan);
+          }
+          const qLabel = document.createElement('strong');
+          qLabel.textContent = 'Q:';
+          row.appendChild(qLabel);
+          row.appendChild(document.createTextNode(` ${question}`));
+          row.appendChild(document.createElement('br'));
+          const aLabel = document.createElement('strong');
+          aLabel.textContent = 'A:';
+          row.appendChild(aLabel);
+          row.appendChild(document.createTextNode(` ${answer}`));
+
+          transcriptLogBody.appendChild(row);
+        });
+        transcriptLogBody.scrollTop = transcriptLogBody.scrollHeight;
+      }
+
       function render(payload) {
         dataCards.forEach((card) => card.classList.remove('is-loading'));
         latestPersistentPrompt = String(payload?.prompts?.persistent || latestPersistentPrompt || '');
@@ -671,6 +779,7 @@
         setAnswer(payload);
         setAlternatives(payload);
         setMeta(payload);
+        setTranscriptLog(payload);
       }
 
       async function sendLiveSteer() {

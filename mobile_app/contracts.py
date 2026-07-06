@@ -69,6 +69,7 @@ class MobileBridgeSnapshot:
     actions: list[MobileBridgeAction]
     required_permissions: list[str]
     updated_at: str
+    transcript_log: list[dict[str, str]] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, object]:
         return asdict(self)
@@ -108,4 +109,14 @@ class MobileBridgeSnapshot:
             actions=[MobileBridgeAction.from_dict(dict(item)) for item in payload.get("actions", []) if isinstance(item, dict)],
             required_permissions=[str(item) for item in payload.get("required_permissions", []) or []],
             updated_at=str(payload.get("updated_at", "")),
+            transcript_log=[
+                {
+                    "text": str(item.get("text", "") or ""),
+                    "answer": str(item.get("answer", "") or ""),
+                    "at": str(item.get("at", "") or ""),
+                    "source": str(item.get("source", "") or ""),
+                }
+                for item in payload.get("transcript_log", [])
+                if isinstance(item, dict)
+            ],
         )

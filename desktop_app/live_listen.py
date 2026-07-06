@@ -145,6 +145,7 @@ def _finalize_live_capture(
         transcript_log.append(
             {
                 "text": transcript,
+                "answer": suggested_answer,
                 "at": _utc_now_iso(),
                 "source": audio_capture.source,
             }
