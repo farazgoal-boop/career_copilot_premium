@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 
 from .answer_builder import AnswerEngine, build_answer_engine, generate_answer_with_languages
@@ -139,6 +140,16 @@ def _finalize_live_capture(
     )
 
     existing_state = load_registered_session_state(session_id, registry_path)
+    transcript_log = list(existing_state.get("transcript_log", []) or [])
+    if not _transcript_missing(transcript):
+        transcript_log.append(
+            {
+                "text": transcript,
+                "at": _utc_now_iso(),
+                "source": audio_capture.source,
+            }
+        )
+
     update_registered_session_state(
         session_id,
         {
@@ -152,6 +163,7 @@ def _finalize_live_capture(
             "confidence_score": confidence_score,
             "last_answer": suggested_answer,
             "last_transcript": transcript,
+            "transcript_log": transcript_log,
             "audio_source": audio_capture.source,
             "listen_language": listen_language or get_listen_language_code(),
             "reply_language": reply_language or get_reply_language_code(),
@@ -196,3 +208,7 @@ def _load_strategy_pack_for_session(
         company_name=str(entry.get("company_name", "Target Company") or "Target Company"),
         role_title=str(entry.get("role_title", "Target Role") or "Target Role"),
     )
+
+
+def _utc_now_iso() -> str:
+    return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
