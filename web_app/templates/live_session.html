@@ -337,7 +337,9 @@
   /* ── Browser Mic (Beta) ── */
   .ls-browser-mic {
     display: flex;
-    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
   }
 
   #browser-mic-toggle {
@@ -354,7 +356,7 @@
 
   #browser-mic-toggle:disabled { opacity: 0.5; cursor: not-allowed; }
 
-  /* grey = idle */
+  /* grey = idle/ready */
   #browser-mic-toggle.mic-idle {
     background: rgba(255, 255, 255, 0.05);
     border-color: var(--line);
@@ -362,11 +364,19 @@
   }
   #browser-mic-toggle.mic-idle:hover { background: rgba(255, 255, 255, 0.1); }
 
-  /* green = listening */
+  /* green = listening, pulses to read as "live" */
   #browser-mic-toggle.mic-listening {
     background: rgba(34, 197, 94, 0.15);
     border-color: rgba(34, 197, 94, 0.6);
     color: #22c55e;
+    animation: mic-pulse 1.8s ease-in-out infinite;
+  }
+
+  /* amber = processing (transcript sent, awaiting AI answer) */
+  #browser-mic-toggle.mic-processing {
+    background: rgba(245, 158, 11, 0.15);
+    border-color: rgba(245, 158, 11, 0.6);
+    color: var(--processing);
   }
 
   /* red = error */
@@ -375,6 +385,60 @@
     border-color: rgba(239, 68, 68, 0.6);
     color: #ef4444;
   }
+
+  @keyframes mic-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.35); }
+    50%      { box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); }
+  }
+
+  #mic-compat-message {
+    display: none;
+    font-size: 0.82rem;
+    color: var(--muted);
+    text-align: center;
+    max-width: 420px;
+  }
+
+  /* ── Manual question fallback (always available, mic or not) ── */
+  .ls-manual-question {
+    width: 100%;
+    max-width: 420px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  #manual-question-input {
+    width: 100%;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.02);
+    padding: 10px 14px;
+    font-family: inherit;
+    font-size: 0.88rem;
+    color: var(--text);
+    resize: none;
+    min-height: 44px;
+    outline: none;
+  }
+
+  #manual-question-input::placeholder { color: var(--muted); }
+
+  #manual-question-submit {
+    align-self: center;
+    border: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 999px;
+    color: var(--text);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.86rem;
+    font-weight: 600;
+    padding: 7px 20px;
+  }
+
+  #manual-question-submit:hover { background: rgba(255, 255, 255, 0.1); }
+  #manual-question-submit:disabled { opacity: 0.5; cursor: wait; }
 </style>
 {% endblock %}
 
@@ -425,6 +489,11 @@
   <!-- Browser Mic (Beta): install-free alternative to the desktop overlay's F2 mic capture -->
   <div class="ls-browser-mic">
     <button id="browser-mic-toggle" type="button">Start Browser Mic</button>
+    <p id="mic-compat-message">Voice input requires Chrome or Edge. You can still type questions in the box below.</p>
+    <div class="ls-manual-question">
+      <textarea id="manual-question-input" placeholder="Type the interviewer's question here&hellip;" rows="2"></textarea>
+      <button id="manual-question-submit" type="button">Submit question</button>
+    </div>
   </div>
 
   <!-- End session -->
@@ -467,6 +536,8 @@
       const metaTarget = document.getElementById('meta-target');
       const metaWorker = document.getElementById('meta-worker');
       const metaUpdated = document.getElementById('meta-updated');
+      const manualQuestionInput = document.getElementById('manual-question-input');
+      const manualQuestionSubmit = document.getElementById('manual-question-submit');
       const dataCards = Array.from(document.querySelectorAll('.js-data-card'));
       let latestPersistentPrompt = String(initialPayload?.prompts?.persistent || '');
 
@@ -687,9 +758,40 @@
         }
       });
 
+      async function submitManualQuestion() {
+        const questionText = String(manualQuestionInput.value || '').trim();
+        if (!questionText) {
+          window.showToast?.('Type a question before submitting', 'info');
+          return;
+        }
+        manualQuestionSubmit.disabled = true;
+        const previous = manualQuestionSubmit.textContent;
+        manualQuestionSubmit.textContent = 'Sending...';
+        try {
+          const response = await fetch(`/api/session/${encodeURIComponent(sessionId)}/transcript`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ transcript: questionText }),
+          });
+          const payload = await response.json();
+          if (!response.ok || !payload.ok) {
+            throw new Error(payload.error || `Question submit failed: ${response.status}`);
+          }
+          manualQuestionInput.value = '';
+          window.showToast?.('Question submitted', 'success');
+          await refresh();
+        } catch (error) {
+          window.showToast?.(error instanceof Error ? error.message : 'Question submit failed', 'error');
+        } finally {
+          manualQuestionSubmit.disabled = false;
+          manualQuestionSubmit.textContent = previous;
+        }
+      }
+
       fallbackSimple.addEventListener('click', () => postAction('fallback_simple', fallbackSimple));
       fallbackEmergency.addEventListener('click', () => postAction('fallback_emergency', fallbackEmergency));
       sendLiveSteerButton.addEventListener('click', sendLiveSteer);
+      manualQuestionSubmit.addEventListener('click', submitManualQuestion);
 
       render(initialPayload);
       window.setInterval(refresh, 3000);
