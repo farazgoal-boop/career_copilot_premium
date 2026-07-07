@@ -267,6 +267,7 @@ def generate_answer_with_languages(
     engine: AnswerEngine,
     listen_language: str | None = None,
     reply_language: str | None = None,
+    visual_context_entries: list[dict[str, object]] | None = None,
 ) -> AnswerResult:
     from .language_config import get_listen_language_code, get_reply_language_code, language_label_for_code
 
@@ -279,6 +280,7 @@ def generate_answer_with_languages(
         strategy_pack=strategy_pack,
         listen_language=language_label_for_code(listen_code),
         reply_language=language_label_for_code(reply_code),
+        visual_context_entries=visual_context_entries,
     )
     if isinstance(engine, ChainedAnswerEngine):
         for child in engine.engines:
@@ -487,6 +489,7 @@ def _build_language_aware_prompt(
     strategy_pack: StrategyPack,
     listen_language: str,
     reply_language: str,
+    visual_context_entries: list[dict[str, object]] | None = None,
 ) -> str:
     overlap = len(set(_tokenize(transcript)) & set(_tokenize(matched_question.question)))
     reference_block = ""
@@ -496,6 +499,7 @@ def _build_language_aware_prompt(
             f"- {matched_question.suggested_answer}\n"
             f"- {strategy_pack.answer_templates.why_should_we_hire_you}\n"
         )
+    visual_block = _build_visual_context_block(visual_context_entries)
     return (
         "You are a live interview coach. Write the candidate's spoken reply.\n"
         f"Interviewer question ({listen_language}): \"{transcript}\"\n"
@@ -507,7 +511,28 @@ def _build_language_aware_prompt(
         "- First person, confident, natural speech, 50-90 words.\n"
         "- Use the candidate's real experience from the talking points when relevant.\n"
         f"{reference_block}"
+        f"{visual_block}"
         "Respond with only the answer text. No labels, no quotes."
+    )
+
+
+def _build_visual_context_block(visual_context_entries: list[dict[str, object]] | None) -> str:
+    if not visual_context_entries:
+        return ""
+    lines: list[str] = []
+    for entry in visual_context_entries:
+        description = str(entry.get("description", "") or "").strip()
+        if not description:
+            continue
+        filename = str(entry.get("filename", "") or "reference image")
+        lines.append(f"- {filename}: {description}")
+    if not lines:
+        return ""
+    return (
+        "\nReference images uploaded by the candidate "
+        "(mention one only if it is directly relevant to the question):\n"
+        + "\n".join(lines)
+        + "\n"
     )
 
 

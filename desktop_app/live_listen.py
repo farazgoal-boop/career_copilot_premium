@@ -21,6 +21,7 @@ from .runtime_controller import (
 )
 from .stt_engine import STTEngine, build_stt_engine
 from .strategy_generator import StrategyPack, load_strategy_pack
+from .visual_context import load_visual_context_manifest
 
 
 @dataclass
@@ -47,6 +48,7 @@ def run_live_listen_cycle(
     profile_directory = Path(str(entry["profile_directory"]))
     strategy_path = profile_directory / "strategy_pack.json"
     strategy_pack = _load_strategy_pack_for_session(profile_directory, strategy_path, entry)
+    visual_context_entries = load_visual_context_manifest(profile_directory)
 
     runtime_config = load_runtime_config()
     listen_code = listen_language or get_listen_language_code()
@@ -83,6 +85,7 @@ def run_live_listen_cycle(
         answer_engine=answer_engine,
         listen_language=listen_code,
         reply_language=reply_code,
+        visual_context_entries=visual_context_entries,
     )
 
 
@@ -95,6 +98,7 @@ def _finalize_live_capture(
     answer_engine: AnswerEngine,
     listen_language: str | None = None,
     reply_language: str | None = None,
+    visual_context_entries: list[dict[str, object]] | None = None,
 ) -> LiveListenResult:
     transcript_result = stt_engine.transcribe(audio_capture)
     raw_transcript = transcript_result.transcript.strip()
@@ -125,6 +129,7 @@ def _finalize_live_capture(
             answer_engine,
             listen_language=listen_language or get_listen_language_code(),
             reply_language=reply_language or get_reply_language_code(),
+            visual_context_entries=visual_context_entries,
         )
         suggested_answer = answer_result.suggested_answer
         alternatives = answer_result.alternatives
