@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 
 from .answer_builder import AnswerEngine, build_answer_engine, generate_answer_with_languages
@@ -18,8 +19,10 @@ from .runtime_controller import (
     load_registered_session_state,
     update_registered_session_state,
 )
+from .session_types import DEFAULT_SESSION_TYPE, normalize_session_type
 from .stt_engine import STTEngine, build_stt_engine
-from .strategy_generator import StrategyPack, load_strategy_pack
+from .strategy_generator import StrategyPack
+from .visual_context import load_visual_context_manifest
 
 
 @dataclass
@@ -44,8 +47,9 @@ def run_live_listen_cycle(
     """Capture call audio (or use provided transcript), transcribe, and generate overlay answer."""
     entry = find_session_registry_entry(session_id, registry_path)
     profile_directory = Path(str(entry["profile_directory"]))
-    strategy_path = profile_directory / "strategy_pack.json"
-    strategy_pack = _load_strategy_pack_for_session(profile_directory, strategy_path, entry)
+    session_type = normalize_session_type(load_registered_session_state(session_id, registry_path).get("session_type"))
+    strategy_pack = _build_strategy_pack_for_session(profile_directory, entry, session_type)
+    visual_context_entries = load_visual_context_manifest(profile_directory)
 
     runtime_config = load_runtime_config()
     listen_code = listen_language or get_listen_language_code()
@@ -82,6 +86,8 @@ def run_live_listen_cycle(
         answer_engine=answer_engine,
         listen_language=listen_code,
         reply_language=reply_code,
+        visual_context_entries=visual_context_entries,
+        session_type=session_type,
     )
 
 
@@ -94,6 +100,8 @@ def _finalize_live_capture(
     answer_engine: AnswerEngine,
     listen_language: str | None = None,
     reply_language: str | None = None,
+    visual_context_entries: list[dict[str, object]] | None = None,
+    session_type: str = DEFAULT_SESSION_TYPE,
 ) -> LiveListenResult:
     transcript_result = stt_engine.transcribe(audio_capture)
     raw_transcript = transcript_result.transcript.strip()
@@ -124,6 +132,8 @@ def _finalize_live_capture(
             answer_engine,
             listen_language=listen_language or get_listen_language_code(),
             reply_language=reply_language or get_reply_language_code(),
+            visual_context_entries=visual_context_entries,
+            session_type=session_type,
         )
         suggested_answer = answer_result.suggested_answer
         alternatives = answer_result.alternatives
@@ -139,6 +149,17 @@ def _finalize_live_capture(
     )
 
     existing_state = load_registered_session_state(session_id, registry_path)
+    transcript_log = list(existing_state.get("transcript_log", []) or [])
+    if not _transcript_missing(transcript):
+        transcript_log.append(
+            {
+                "text": transcript,
+                "answer": suggested_answer,
+                "at": _utc_now_iso(),
+                "source": audio_capture.source,
+            }
+        )
+
     update_registered_session_state(
         session_id,
         {
@@ -152,6 +173,7 @@ def _finalize_live_capture(
             "confidence_score": confidence_score,
             "last_answer": suggested_answer,
             "last_transcript": transcript,
+            "transcript_log": transcript_log,
             "audio_source": audio_capture.source,
             "listen_language": listen_language or get_listen_language_code(),
             "reply_language": reply_language or get_reply_language_code(),
@@ -180,14 +202,14 @@ def build_listening_state_for_session(session_id: str, registry_path: str | Path
     return build_listening_overlay()
 
 
-def _load_strategy_pack_for_session(
+def _build_strategy_pack_for_session(
     profile_directory: Path,
-    strategy_path: Path,
     entry: dict[str, object],
+    session_type: str,
 ) -> StrategyPack:
-    if strategy_path.exists():
-        return load_strategy_pack(strategy_path)
-
+    """Always regenerate fresh -- session_type (and company/role) can differ between
+    two sessions on the same profile, so a cached strategy_pack.json would silently
+    serve stale, wrong-type content."""
     profile = load_completed_profile(profile_directory / PROFILE_FILENAME)
     from .strategy_generator import generate_strategy_pack
 
@@ -195,4 +217,9 @@ def _load_strategy_pack_for_session(
         profile,
         company_name=str(entry.get("company_name", "Target Company") or "Target Company"),
         role_title=str(entry.get("role_title", "Target Role") or "Target Role"),
+        session_type=session_type,
     )
+
+
+def _utc_now_iso() -> str:
+    return datetime.now(timezone.utc).replace(microsecond=0).isoformat()

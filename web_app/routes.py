@@ -117,6 +117,46 @@ def register_routes(app: Flask) -> None:
             session_status_label="Session Live",
         )
 
+    @app.get("/session/<session_id>/report")
+    def session_report(session_id: str) -> Response | str:
+        from desktop_app.runtime_controller import load_registered_session_state
+        from desktop_app.session_types import session_type_label
+
+        try:
+            state = load_registered_session_state(session_id, _registry_path())
+        except KeyError as error:
+            return jsonify({"error": _display_error(error)}), 404
+
+        return render_template(
+            "session_report.html",
+            session_id=session_id,
+            state=state,
+            session_type_label=session_type_label(state.get("session_type")),
+            session_online=False,
+            session_status_label="Session Ended",
+        )
+
+    @app.get("/api/session/<session_id>/recording")
+    def session_recording_playback(session_id: str) -> Response:
+        from flask import send_file
+
+        from desktop_app.runtime_controller import load_registered_session_state
+
+        try:
+            state = load_registered_session_state(session_id, _registry_path())
+        except KeyError as error:
+            return jsonify({"error": _display_error(error)}), 404
+
+        recording_path = str(state.get("recording_path", "") or "")
+        if not recording_path:
+            return jsonify({"error": "No recording available for this session."}), 404
+
+        path = Path(recording_path)
+        if not path.exists():
+            return jsonify({"error": "Recording file missing on disk."}), 404
+
+        return send_file(path, mimetype=str(state.get("recording_mime_type", "") or "audio/webm"))
+
     @app.route("/onboarding", methods=["GET", "POST"])
     def onboarding() -> Response | str:
         wants_json = (
@@ -352,6 +392,8 @@ def register_routes(app: Flask) -> None:
                         "company_name": str(entry.get("company_name", "")),
                         "role_title": str(entry.get("role_title", "")),
                         "meeting_source": str(entry.get("meeting_source", "Manual / generic interview") or "Manual / generic interview"),
+                        "session_type": str(entry.get("session_type", "job_interview") or "job_interview"),
+                        "session_ended": bool(entry.get("session_ended", False)),
                         "worker_status": str(entry.get("worker_status", "stopped") or "stopped"),
                         "session_status": _normalize_session_status(str(entry.get("worker_status", "stopped") or "stopped")),
                         "updated_at": str(entry.get("updated_at", "")),
@@ -463,6 +505,62 @@ def register_routes(app: Flask) -> None:
 
         return jsonify({"filename": filename, "text": text, "skills": skills_hint})
 
+    @app.get("/api/visual-context")
+    def visual_context_list() -> Response:
+        from desktop_app.visual_context import MAX_IMAGES_PER_PROFILE, load_visual_context_manifest
+
+        profile_directory = _latest_ready_profile_directory()
+        if profile_directory is None:
+            return jsonify({"ok": True, "images": [], "max_images": MAX_IMAGES_PER_PROFILE})
+
+        entries = load_visual_context_manifest(profile_directory)
+        images = [_visual_context_public_entry(entry) for entry in entries]
+        return jsonify({"ok": True, "images": images, "max_images": MAX_IMAGES_PER_PROFILE})
+
+    @app.post("/api/visual-context")
+    def visual_context_upload() -> Response:
+        from desktop_app.visual_context import ImageValidationError, add_visual_context_image
+
+        profile_directory = _latest_ready_profile_directory()
+        if profile_directory is None:
+            return jsonify({"ok": False, "error": "Complete onboarding before uploading reference images."}), 400
+
+        image_file = request.files.get("image")
+        filename = str(image_file.filename or "").strip() if image_file else ""
+        if not image_file or not filename:
+            return jsonify({"ok": False, "error": "No image file provided."}), 400
+
+        file_bytes = image_file.read()
+        try:
+            entry = add_visual_context_image(profile_directory, filename, file_bytes)
+        except ImageValidationError as error:
+            return jsonify({"ok": False, "error": str(error)}), 400
+        except Exception as error:
+            current_app.logger.exception("Visual context upload failed")
+            return jsonify({"ok": False, "error": str(error)}), 500
+
+        return jsonify({"ok": True, "image": _visual_context_public_entry(entry)}), 200
+
+    @app.get("/api/visual-context/<image_id>")
+    def visual_context_image(image_id: str) -> Response:
+        from flask import send_file  # noqa: PLC0415
+
+        from desktop_app.visual_context import find_image_entry, visual_context_images_dir
+
+        profile_directory = _latest_ready_profile_directory()
+        if profile_directory is None:
+            return jsonify({"error": "No profile found."}), 404
+
+        entry = find_image_entry(profile_directory, image_id)
+        if entry is None:
+            return jsonify({"error": "Image not found."}), 404
+
+        image_path = visual_context_images_dir(profile_directory) / str(entry.get("stored_filename", ""))
+        if not image_path.exists():
+            return jsonify({"error": "Image file missing on disk."}), 404
+
+        return send_file(image_path, mimetype=str(entry.get("mime_type", "application/octet-stream")))
+
     @app.get("/api/briefing")
     def briefing_snapshot() -> Response:
         from .briefing import load_briefing
@@ -474,6 +572,7 @@ def register_routes(app: Flask) -> None:
     def briefing_save() -> Response:
         try:
             from desktop_app.runtime_controller import register_web_session
+            from desktop_app.session_types import normalize_session_type
             from mobile_app.live_bridge import build_live_bridge_payload_for_session, ensure_live_session_worker
             from .briefing import build_operator_prompts, materialize_briefing_profile, save_briefing
 
@@ -511,6 +610,7 @@ def register_routes(app: Flask) -> None:
                 profile_name=profile_name,
                 registry_path=_registry_path(),
                 prefer_microphone=prefer_microphone,
+                session_type=normalize_session_type(briefing.get("session_type")),
                 operator_prompts=operator_prompts,
                 extra_state={
                     "briefing_id": DEFAULT_BRIEFING_ID,
@@ -558,6 +658,7 @@ def register_routes(app: Flask) -> None:
         try:
             from desktop_app.onboarding import is_session_ready
             from desktop_app.runtime_controller import register_web_session
+            from desktop_app.session_types import normalize_session_type
             from mobile_app.live_bridge import build_live_bridge_payload_for_session, ensure_live_session_worker
             from .briefing import build_operator_prompts, load_briefing
 
@@ -588,6 +689,7 @@ def register_routes(app: Flask) -> None:
             briefing = load_briefing(_briefing_storage_path(), DEFAULT_BRIEFING_ID)
             company_name = str(body.get("company_name") or briefing.get("company_name") or "").strip() or "Target Company"
             role_title = str(body.get("target_role") or briefing.get("target_role") or briefing.get("current_role") or "").strip() or "Target Role"
+            session_type = normalize_session_type(body.get("session_type") or briefing.get("session_type"))
             microphone_status = microphone_capture_status()
             requested_microphone = body.get("use_microphone")
             if requested_microphone is None:
@@ -604,6 +706,7 @@ def register_routes(app: Flask) -> None:
                 profile_name=profile_name,
                 registry_path=_registry_path(),
                 prefer_microphone=prefer_microphone,
+                session_type=session_type,
                 operator_prompts=operator_prompts,
                 extra_state={
                     "briefing_id": DEFAULT_BRIEFING_ID,
@@ -627,6 +730,7 @@ def register_routes(app: Flask) -> None:
                     "profile_directory": str(profile_directory),
                     "company_name": company_name,
                     "role_name": role_title,
+                    "session_type": session_type,
                     "worker_started": worker_started,
                     "bridge_url": _bridge_base_url(),
                     "session": session_payload,
@@ -653,6 +757,69 @@ def register_routes(app: Flask) -> None:
         except KeyError as error:
             return jsonify({"error": _display_error(error)}), 404
         return jsonify(payload)
+
+    @app.post("/api/session/<session_id>/end")
+    def session_end(session_id: str) -> Response:
+        from desktop_app.runtime_controller import load_registered_session_state, update_registered_session_state
+        from desktop_app.session_recording import RecordingValidationError, save_session_recording
+        from desktop_app.session_types import normalize_session_type
+
+        try:
+            existing_state = load_registered_session_state(session_id, _registry_path())
+        except KeyError as error:
+            return jsonify({"ok": False, "error": _display_error(error)}), 404
+
+        recording_meta: dict[str, object] = {}
+        recording_file = request.files.get("recording")
+        if recording_file and recording_file.filename:
+            try:
+                recording_meta = save_session_recording(session_id, recording_file.read())
+            except RecordingValidationError as error:
+                return jsonify({"ok": False, "error": str(error)}), 400
+            except Exception as error:
+                current_app.logger.exception("Recording save failed for session %s", session_id)
+                return jsonify({"ok": False, "error": str(error)}), 500
+
+        summary_meta: dict[str, object] = {}
+        transcript_log = list(existing_state.get("transcript_log", []) or [])
+        if transcript_log:
+            try:
+                from desktop_app.meeting_summary import generate_meeting_summary
+
+                summary_result = generate_meeting_summary(
+                    transcript_log,
+                    session_type=normalize_session_type(existing_state.get("session_type")),
+                    company_name=str(existing_state.get("company_name", "") or ""),
+                    role_title=str(existing_state.get("role_title", "") or ""),
+                )
+                summary_meta = {
+                    "meeting_summary": summary_result.summary,
+                    "action_items": summary_result.action_items,
+                    "summary_generated_at": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
+                }
+            except Exception as error:
+                # Best-effort: never block session end on a summary-generation failure.
+                current_app.logger.warning("Meeting summary generation failed for session %s: %s", session_id, error)
+
+        update_registered_session_state(
+            session_id,
+            {
+                **existing_state,
+                **recording_meta,
+                **summary_meta,
+                "session_ended": True,
+                "ended_at": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
+            },
+            registry_path=_registry_path(),
+        )
+        return jsonify(
+            {
+                "ok": True,
+                "session_id": session_id,
+                "recording_saved": bool(recording_meta),
+                "summary_generated": bool(summary_meta),
+            }
+        ), 200
 
     @app.post("/api/session/<session_id>/listen")
     def session_live_listen(session_id: str) -> Response:
@@ -735,6 +902,32 @@ def register_routes(app: Flask) -> None:
         except Exception as error:
             current_app.logger.exception("Transcript answer failed for session %s", session_id)
             return jsonify({"ok": False, "error": str(error), "type": type(error).__name__}), 500
+
+    @app.get("/api/session/<session_id>/transcript/export")
+    def session_transcript_export(session_id: str) -> Response:
+        from desktop_app.runtime_controller import load_registered_session_state
+
+        try:
+            state = load_registered_session_state(session_id, _registry_path())
+        except KeyError as error:
+            return jsonify({"error": _display_error(error)}), 404
+
+        entries = list(state.get("transcript_log", []) or [])
+        lines = [f"Career Copilot — session transcript ({session_id})", ""]
+        if not entries:
+            lines.append("No questions were captured during this session.")
+        for entry in entries:
+            at = str(entry.get("at", "") or "").strip()
+            question = str(entry.get("text", "") or "").strip() or "-"
+            answer = str(entry.get("answer", "") or "").strip() or "-"
+            lines.append(f"[{at}]" if at else "[unknown time]")
+            lines.append(f"Q: {question}")
+            lines.append(f"A: {answer}")
+            lines.append("")
+
+        response = Response("\n".join(lines).strip() + "\n", mimetype="text/plain")
+        response.headers["Content-Disposition"] = f'attachment; filename="transcript_{session_id}.txt"'
+        return response
 
     @app.post("/api/session/<session_id>/actions/<action_id>")
     def session_action(session_id: str, action_id: str) -> Response:
@@ -984,6 +1177,17 @@ def _latest_ready_profile_directory() -> Path | None:
         reverse=True,
     )
     return ready_dirs[0] if ready_dirs else None
+
+
+def _visual_context_public_entry(entry: dict[str, object]) -> dict[str, object]:
+    return {
+        "id": entry.get("id"),
+        "filename": entry.get("filename"),
+        "description": entry.get("description", ""),
+        "description_error": entry.get("description_error", ""),
+        "uploaded_at": entry.get("uploaded_at"),
+        "url": f"/api/visual-context/{entry.get('id')}",
+    }
 
 
 def _load_existing_onboarding_profile() -> dict[str, object] | None:
@@ -1317,6 +1521,7 @@ def _normalize_session_status(worker_status: str) -> str:
 
 def _load_recent_session_entries(registry_path: Path) -> dict[str, dict[str, object]]:
     from desktop_app.runtime_controller import load_registered_session_state, load_session_registry
+    from desktop_app.session_types import DEFAULT_SESSION_TYPE, normalize_session_type
 
     path = registry_path
     try:
@@ -1343,6 +1548,10 @@ def _load_recent_session_entries(registry_path: Path) -> dict[str, dict[str, obj
                     state_payload.get("meeting_source", merged_entry.get("meeting_source", "Manual / generic interview"))
                     or "Manual / generic interview"
                 )
+                merged_entry["session_type"] = normalize_session_type(
+                    state_payload.get("session_type", merged_entry.get("session_type", DEFAULT_SESSION_TYPE))
+                )
+                merged_entry["session_ended"] = bool(state_payload.get("session_ended", False))
                 merged_entry["updated_at"] = str(state_payload.get("updated_at", merged_entry.get("updated_at", "")) or merged_entry.get("updated_at", ""))
             entries[str(session_id)] = merged_entry
         return entries

@@ -167,6 +167,14 @@ def session_database_path(data_root: Path | None = None) -> Path:
     return cache_root(data_root) / "session_store.db"
 
 
+def recordings_root(data_root: Path | None = None) -> Path:
+    return cache_root(data_root) / "recordings"
+
+
+def session_recording_path(session_id: str, data_root: Path | None = None) -> Path:
+    return recordings_root(data_root) / f"{session_id}.webm"
+
+
 def logs_root(data_root: Path | None = None) -> Path:
     return (data_root or resolve_data_root()) / "logs"
 

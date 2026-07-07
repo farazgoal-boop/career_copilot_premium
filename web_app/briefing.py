@@ -6,6 +6,8 @@ from pathlib import Path
 import json
 from typing import Any
 
+from desktop_app.session_types import DEFAULT_SESSION_TYPE
+
 DEFAULT_BRIEFING_ID = "primary"
 
 
@@ -274,6 +276,7 @@ def _default_briefing_payload(briefing_id: str) -> dict[str, Any]:
         "improvement_actions": "",
         "target_role": "",
         "company_name": "",
+        "session_type": DEFAULT_SESSION_TYPE,
         "meeting_source": "Manual / generic interview",
         "meeting_capture_mode": "Companion workspace with live mic capture",
         "meeting_window_name": "",

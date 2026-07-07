@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
 
+from desktop_app.session_types import DEFAULT_SESSION_TYPE, normalize_session_type
+
 
 @dataclass(frozen=True)
 class MobileBridgeAction:
@@ -69,6 +71,8 @@ class MobileBridgeSnapshot:
     actions: list[MobileBridgeAction]
     required_permissions: list[str]
     updated_at: str
+    transcript_log: list[dict[str, str]] = field(default_factory=list)
+    session_type: str = DEFAULT_SESSION_TYPE
 
     def to_dict(self) -> dict[str, object]:
         return asdict(self)
@@ -108,4 +112,15 @@ class MobileBridgeSnapshot:
             actions=[MobileBridgeAction.from_dict(dict(item)) for item in payload.get("actions", []) if isinstance(item, dict)],
             required_permissions=[str(item) for item in payload.get("required_permissions", []) or []],
             updated_at=str(payload.get("updated_at", "")),
+            transcript_log=[
+                {
+                    "text": str(item.get("text", "") or ""),
+                    "answer": str(item.get("answer", "") or ""),
+                    "at": str(item.get("at", "") or ""),
+                    "source": str(item.get("source", "") or ""),
+                }
+                for item in payload.get("transcript_log", [])
+                if isinstance(item, dict)
+            ],
+            session_type=normalize_session_type(payload.get("session_type")),
         )

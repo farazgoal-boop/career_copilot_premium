@@ -10,12 +10,25 @@ from typing import Protocol
 from urllib import error, request
 
 from .config_manager import ModelConfig, load_runtime_config
+from .session_types import DEFAULT_SESSION_TYPE, normalize_session_type
 from .strategy_generator import (
     CompanyResearchBrief,
     ExpectedQuestion,
     PersonalizedAnswerTemplates,
     StrategyPack,
 )
+
+_PROMPT_FRAMING: dict[str, dict[str, str]] = {
+    "job_interview": {"coach": "interview coach", "speaker": "candidate", "asker": "Interviewer"},
+    "client_presentation": {"coach": "client-presentation coach", "speaker": "presenter", "asker": "Client"},
+    "product_demo": {"coach": "product-demo coach", "speaker": "presenter", "asker": "Audience"},
+    "team_meeting": {"coach": "meeting coach", "speaker": "speaker", "asker": "Teammate"},
+    "sales_call": {"coach": "sales-call coach", "speaker": "rep", "asker": "Prospect"},
+}
+
+
+def _framing_for(session_type: str) -> dict[str, str]:
+    return _PROMPT_FRAMING.get(normalize_session_type(session_type), _PROMPT_FRAMING["job_interview"])
 
 
 @dataclass
@@ -267,6 +280,8 @@ def generate_answer_with_languages(
     engine: AnswerEngine,
     listen_language: str | None = None,
     reply_language: str | None = None,
+    visual_context_entries: list[dict[str, object]] | None = None,
+    session_type: str = DEFAULT_SESSION_TYPE,
 ) -> AnswerResult:
     from .language_config import get_listen_language_code, get_reply_language_code, language_label_for_code
 
@@ -279,6 +294,8 @@ def generate_answer_with_languages(
         strategy_pack=strategy_pack,
         listen_language=language_label_for_code(listen_code),
         reply_language=language_label_for_code(reply_code),
+        visual_context_entries=visual_context_entries,
+        session_type=session_type,
     )
     if isinstance(engine, ChainedAnswerEngine):
         for child in engine.engines:
@@ -487,6 +504,8 @@ def _build_language_aware_prompt(
     strategy_pack: StrategyPack,
     listen_language: str,
     reply_language: str,
+    visual_context_entries: list[dict[str, object]] | None = None,
+    session_type: str = DEFAULT_SESSION_TYPE,
 ) -> str:
     overlap = len(set(_tokenize(transcript)) & set(_tokenize(matched_question.question)))
     reference_block = ""
@@ -496,18 +515,41 @@ def _build_language_aware_prompt(
             f"- {matched_question.suggested_answer}\n"
             f"- {strategy_pack.answer_templates.why_should_we_hire_you}\n"
         )
+    visual_block = _build_visual_context_block(visual_context_entries)
+    framing = _framing_for(session_type)
     return (
-        "You are a live interview coach. Write the candidate's spoken reply.\n"
-        f"Interviewer question ({listen_language}): \"{transcript}\"\n"
+        f"You are a live {framing['coach']}. Write the {framing['speaker']}'s spoken reply.\n"
+        f"{framing['asker']} question ({listen_language}): \"{transcript}\"\n"
         f"Reply language: {reply_language}\n"
         f"Role: {strategy_pack.company_brief.role_title} at {strategy_pack.company_brief.company_name}\n"
         "Rules:\n"
-        "- Answer ONLY the interviewer question above.\n"
+        f"- Answer ONLY the {framing['asker'].lower()} question above.\n"
         "- Do not change topic or answer a different question.\n"
         "- First person, confident, natural speech, 50-90 words.\n"
-        "- Use the candidate's real experience from the talking points when relevant.\n"
+        f"- Use the {framing['speaker']}'s real experience from the talking points when relevant.\n"
         f"{reference_block}"
+        f"{visual_block}"
         "Respond with only the answer text. No labels, no quotes."
+    )
+
+
+def _build_visual_context_block(visual_context_entries: list[dict[str, object]] | None) -> str:
+    if not visual_context_entries:
+        return ""
+    lines: list[str] = []
+    for entry in visual_context_entries:
+        description = str(entry.get("description", "") or "").strip()
+        if not description:
+            continue
+        filename = str(entry.get("filename", "") or "reference image")
+        lines.append(f"- {filename}: {description}")
+    if not lines:
+        return ""
+    return (
+        "\nReference images uploaded by the candidate "
+        "(mention one only if it is directly relevant to the question):\n"
+        + "\n".join(lines)
+        + "\n"
     )
 
 

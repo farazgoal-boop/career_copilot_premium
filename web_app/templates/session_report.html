@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+
+{% block title %}Session Report – Career Copilot Premium{% endblock %}
+
+{% block header %}{% endblock %}
+
+{% block body_class %}session-report-view has-sidebar{% endblock %}
+
+{% block extra_head %}
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  body.session-report-view .premium-main { padding: 0; }
+
+  .rpt-meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 24px;
+  }
+
+  .rpt-meta-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 120px;
+  }
+
+  .rpt-meta-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--premium-muted);
+  }
+
+  .rpt-meta-value {
+    font-size: 0.92rem;
+    color: var(--premium-text);
+  }
+
+  .rpt-summary-text {
+    font-size: 0.92rem;
+    line-height: 1.6;
+    color: var(--premium-text);
+    white-space: pre-wrap;
+    margin: 0;
+  }
+
+  .rpt-action-list {
+    margin: 0;
+    padding-left: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .rpt-action-list li {
+    font-size: 0.92rem;
+    color: var(--premium-text);
+    line-height: 1.5;
+  }
+
+  .rpt-empty {
+    font-size: 0.88rem;
+    color: var(--premium-muted);
+    margin: 0;
+  }
+
+  .rpt-recording-player {
+    width: 100%;
+  }
+
+  .rpt-transcript-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .rpt-transcript-entry {
+    padding: 12px 0;
+  }
+
+  .rpt-transcript-entry:not(:last-child) {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .rpt-transcript-time {
+    font-size: 0.72rem;
+    color: var(--premium-muted);
+    margin: 0 0 6px;
+  }
+
+  .rpt-transcript-q,
+  .rpt-transcript-a {
+    font-size: 0.88rem;
+    line-height: 1.5;
+    margin: 0 0 4px;
+    color: var(--premium-text);
+  }
+
+  .rpt-transcript-q strong,
+  .rpt-transcript-a strong {
+    color: var(--premium-muted);
+    font-weight: 600;
+  }
+
+  .rpt-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+
+  .rpt-download-link {
+    font-size: 0.82rem;
+    color: var(--premium-accent, #6366f1);
+    text-decoration: none;
+  }
+
+  .rpt-download-link:hover { text-decoration: underline; }
+</style>
+{% endblock %}
+
+{% block content %}
+{% include '_sidebar.html' %}
+<div class="page-content">
+
+  <div class="page-header">
+    <a href="/sessions" class="page-breadcrumb">← Sessions</a>
+    <h1 class="page-title">Session Report</h1>
+  </div>
+
+  <!-- Session meta -->
+  <div class="st-group settings-card">
+    <p class="st-group-label">Session</p>
+    <div class="rpt-meta-row">
+      <div class="rpt-meta-item">
+        <span class="rpt-meta-label">Profile</span>
+        <span class="rpt-meta-value">{{ state.profile_name or '—' }}</span>
+      </div>
+      <div class="rpt-meta-item">
+        <span class="rpt-meta-label">Company</span>
+        <span class="rpt-meta-value">{{ state.company_name or '—' }}</span>
+      </div>
+      <div class="rpt-meta-item">
+        <span class="rpt-meta-label">Role</span>
+        <span class="rpt-meta-value">{{ state.role_title or '—' }}</span>
+      </div>
+      <div class="rpt-meta-item">
+        <span class="rpt-meta-label">Type</span>
+        <span class="rpt-meta-value">{{ session_type_label }}</span>
+      </div>
+      <div class="rpt-meta-item">
+        <span class="rpt-meta-label">Status</span>
+        <span class="sess-status-badge sess-status-badge--ended">Ended</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Meeting summary -->
+  <div class="st-group settings-card">
+    <p class="st-group-label">Summary</p>
+    {% if state.meeting_summary %}
+      <p class="rpt-summary-text">{{ state.meeting_summary }}</p>
+    {% else %}
+      <p class="rpt-empty">No summary was generated for this session.</p>
+    {% endif %}
+  </div>
+
+  <!-- Action items -->
+  <div class="st-group settings-card">
+    <p class="st-group-label">Action Items</p>
+    {% if state.action_items %}
+      <ul class="rpt-action-list">
+        {% for item in state.action_items %}
+          <li>{{ item }}</li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="rpt-empty">No action items were identified for this session.</p>
+    {% endif %}
+  </div>
+
+  <!-- Recording -->
+  <div class="st-group settings-card">
+    <p class="st-group-label">Recording</p>
+    {% if state.recording_path %}
+      <audio class="rpt-recording-player" controls preload="none" src="/api/session/{{ session_id }}/recording"></audio>
+    {% else %}
+      <p class="rpt-empty">No recording was saved for this session.</p>
+    {% endif %}
+  </div>
+
+  <!-- Transcript -->
+  <div class="st-group settings-card">
+    <div class="rpt-card-header">
+      <p class="st-group-label" style="margin:0;">Transcript</p>
+      {% if state.transcript_log %}
+        <a class="rpt-download-link" href="/api/session/{{ session_id }}/transcript/export">Download .txt</a>
+      {% endif %}
+    </div>
+    {% if state.transcript_log %}
+      <div class="rpt-transcript-list">
+        {% for entry in state.transcript_log %}
+          <div class="rpt-transcript-entry">
+            {% if entry.at %}<p class="rpt-transcript-time">{{ entry.at }}</p>{% endif %}
+            <p class="rpt-transcript-q"><strong>Q:</strong> {{ entry.text or '—' }}</p>
+            <p class="rpt-transcript-a"><strong>A:</strong> {{ entry.answer or '—' }}</p>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="rpt-empty">No questions were captured during this session.</p>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

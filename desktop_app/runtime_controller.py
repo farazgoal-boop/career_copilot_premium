@@ -33,6 +33,7 @@ from .overlay import (
     create_overlay_controller,
     create_overlay_runtime,
 )
+from .session_types import DEFAULT_SESSION_TYPE
 from .stt_engine import STTEngine
 from .strategy_generator import StrategyPack, generate_strategy_pack, save_strategy_pack
 
@@ -227,20 +228,27 @@ class DesktopSessionRunner:
         return self.session_worker_state_path
 
     def build_diagnostics_payload(self) -> dict[str, object]:
+        # Session state is shared by two independent writers: this desktop runner and the
+        # web routes (register_web_session/update_registered_session_state). Must start from
+        # whatever is already persisted and layer only the fields this runner actually owns
+        # on top -- rebuilding from scratch previously wiped out any web-only field (session_type,
+        # transcript_log, recording metadata, meeting summary, ...) added after registration,
+        # since upsert_session_state replaces the whole row rather than merging.
         overlay_state = self.controller.interview_mode.overlay_state
-        meeting_source = "Manual / generic interview"
-        meeting_capture_mode = "Companion workspace with live mic capture"
-        meeting_window_name = ""
-        camera_layout_preference = "Keep Career Copilot beside the meeting window"
+        persisted_state: dict[str, object] = {}
         if self.session_id is not None:
             persisted_state = get_session_state(self.resolve_session_database_path(), self.session_id) or {}
-            meeting_source = str(persisted_state.get("meeting_source", meeting_source) or meeting_source)
-            meeting_capture_mode = str(persisted_state.get("meeting_capture_mode", meeting_capture_mode) or meeting_capture_mode)
-            meeting_window_name = str(persisted_state.get("meeting_window_name", meeting_window_name) or meeting_window_name)
-            camera_layout_preference = str(
-                persisted_state.get("camera_layout_preference", camera_layout_preference) or camera_layout_preference
-            )
+
+        defaults = {
+            "meeting_source": "Manual / generic interview",
+            "meeting_capture_mode": "Companion workspace with live mic capture",
+            "meeting_window_name": "",
+            "camera_layout_preference": "Keep Career Copilot beside the meeting window",
+        }
+
         return {
+            **defaults,
+            **persisted_state,
             "started": self.started,
             "session_armed": self.controller.session_armed,
             "microphone_enabled": self.prefer_microphone,
@@ -248,10 +256,6 @@ class DesktopSessionRunner:
             "session_id": self.session_id or "",
             "company_name": self.controller.strategy_pack.company_brief.company_name,
             "role_title": self.controller.strategy_pack.company_brief.role_title,
-            "meeting_source": meeting_source,
-            "meeting_capture_mode": meeting_capture_mode,
-            "meeting_window_name": meeting_window_name,
-            "camera_layout_preference": camera_layout_preference,
             "hotkey": self.controller.interview_mode.hotkey,
             "overlay_status": overlay_state.status,
             "overlay_visible": overlay_state.visible,
@@ -832,6 +836,7 @@ def register_web_session(
     *,
     registry_path: str | Path,
     prefer_microphone: bool = True,
+    session_type: str = DEFAULT_SESSION_TYPE,
     operator_prompts: dict[str, str] | None = None,
     extra_state: dict[str, object] | None = None,
 ) -> str:
@@ -873,6 +878,7 @@ def register_web_session(
         "role_title": role_title,
         "meeting_source": "Manual / generic interview",
         "meeting_capture_mode": "Companion workspace with live mic capture",
+        "session_type": session_type,
         "overlay_status": "idle",
         "overlay_visible": False,
         "turn_count": 0,
