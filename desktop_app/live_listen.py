@@ -19,7 +19,7 @@ from .runtime_controller import (
     load_registered_session_state,
     update_registered_session_state,
 )
-from .session_types import normalize_session_type
+from .session_types import DEFAULT_SESSION_TYPE, normalize_session_type
 from .stt_engine import STTEngine, build_stt_engine
 from .strategy_generator import StrategyPack
 from .visual_context import load_visual_context_manifest
@@ -87,6 +87,7 @@ def run_live_listen_cycle(
         listen_language=listen_code,
         reply_language=reply_code,
         visual_context_entries=visual_context_entries,
+        session_type=session_type,
     )
 
 
@@ -100,6 +101,7 @@ def _finalize_live_capture(
     listen_language: str | None = None,
     reply_language: str | None = None,
     visual_context_entries: list[dict[str, object]] | None = None,
+    session_type: str = DEFAULT_SESSION_TYPE,
 ) -> LiveListenResult:
     transcript_result = stt_engine.transcribe(audio_capture)
     raw_transcript = transcript_result.transcript.strip()
@@ -131,6 +133,7 @@ def _finalize_live_capture(
             listen_language=listen_language or get_listen_language_code(),
             reply_language=reply_language or get_reply_language_code(),
             visual_context_entries=visual_context_entries,
+            session_type=session_type,
         )
         suggested_answer = answer_result.suggested_answer
         alternatives = answer_result.alternatives
