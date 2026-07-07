@@ -11,6 +11,7 @@ AI interview assistant desktop app. PySide6 (floating overlay) + Flask (local da
   - `v1.0.8` — overlay error dialog, tray icon
   - `stable-backup-2026-07-06` — recovery point, do not delete
   - `phase1-complete-2026-07-07` — browser mic capture + live transcript + transcript export, 62/62 e2e tests passing, do not delete
+  - `phase2-complete-2026-07-07` — Visual Context Library, session types, continuous recording, meeting summary, post-session report page. Merged to `main` (`--no-ff`), 62/62 e2e tests passing, do not delete
 
 ## Key files
 
@@ -30,7 +31,7 @@ AI interview assistant desktop app. PySide6 (floating overlay) + Flask (local da
 
 **Phase 1 — COMPLETE** (tag `phase1-complete-2026-07-07`): browser-based mic capture (Web Speech API in `web_app/static/js/browser_mic.js`) + live transcript log (`desktop_app/live_listen.py` transcript_log, surfaced in `web_app/templates/live_session.html`) + text transcript export/download (`GET /api/session/<id>/transcript/export` in `web_app/routes.py`). Scope was text-only recording, no audio capture. All 62 Playwright e2e tests passing.
 
-**Phase 2 — in progress**, on branch `feature/visual-context-meeting-intel`:
+**Phase 2 — COMPLETE** (tag `phase2-complete-2026-07-07`, merged to `main`, feature branch deleted):
 
 1. Visual Context Library — image upload + Mistral vision, wired into live-session answers. **Done.**
 2. Session-type-aware content generation — `session_type` field + per-type strategy/answer generation. **Done.**
@@ -38,7 +39,7 @@ AI interview assistant desktop app. PySide6 (floating overlay) + Flask (local da
 4. Meeting summary + action items generated from `transcript_log` on session end (Goal #4). **Done.** Note: built from `transcript_log` only (questions heard + Mistral's suggested replies), not a verified two-way transcript — the user's own spoken words are never captured.
 5. Post-session report page at `/session/<id>/report` (Goal #5, Step 2.12) — surfaces summary, action items, transcript, and recording playback; sessions list routes ended sessions here instead of `/live`. **Done.**
 
-Next: not yet defined — confirm scope with user before starting new work.
+Phase 3: not yet defined — confirm scope with user before starting new work.
 
 ## Fix status
 
