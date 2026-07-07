@@ -463,6 +463,62 @@ def register_routes(app: Flask) -> None:
 
         return jsonify({"filename": filename, "text": text, "skills": skills_hint})
 
+    @app.get("/api/visual-context")
+    def visual_context_list() -> Response:
+        from desktop_app.visual_context import MAX_IMAGES_PER_PROFILE, load_visual_context_manifest
+
+        profile_directory = _latest_ready_profile_directory()
+        if profile_directory is None:
+            return jsonify({"ok": True, "images": [], "max_images": MAX_IMAGES_PER_PROFILE})
+
+        entries = load_visual_context_manifest(profile_directory)
+        images = [_visual_context_public_entry(entry) for entry in entries]
+        return jsonify({"ok": True, "images": images, "max_images": MAX_IMAGES_PER_PROFILE})
+
+    @app.post("/api/visual-context")
+    def visual_context_upload() -> Response:
+        from desktop_app.visual_context import ImageValidationError, add_visual_context_image
+
+        profile_directory = _latest_ready_profile_directory()
+        if profile_directory is None:
+            return jsonify({"ok": False, "error": "Complete onboarding before uploading reference images."}), 400
+
+        image_file = request.files.get("image")
+        filename = str(image_file.filename or "").strip() if image_file else ""
+        if not image_file or not filename:
+            return jsonify({"ok": False, "error": "No image file provided."}), 400
+
+        file_bytes = image_file.read()
+        try:
+            entry = add_visual_context_image(profile_directory, filename, file_bytes)
+        except ImageValidationError as error:
+            return jsonify({"ok": False, "error": str(error)}), 400
+        except Exception as error:
+            current_app.logger.exception("Visual context upload failed")
+            return jsonify({"ok": False, "error": str(error)}), 500
+
+        return jsonify({"ok": True, "image": _visual_context_public_entry(entry)}), 200
+
+    @app.get("/api/visual-context/<image_id>")
+    def visual_context_image(image_id: str) -> Response:
+        from flask import send_file  # noqa: PLC0415
+
+        from desktop_app.visual_context import find_image_entry, visual_context_images_dir
+
+        profile_directory = _latest_ready_profile_directory()
+        if profile_directory is None:
+            return jsonify({"error": "No profile found."}), 404
+
+        entry = find_image_entry(profile_directory, image_id)
+        if entry is None:
+            return jsonify({"error": "Image not found."}), 404
+
+        image_path = visual_context_images_dir(profile_directory) / str(entry.get("stored_filename", ""))
+        if not image_path.exists():
+            return jsonify({"error": "Image file missing on disk."}), 404
+
+        return send_file(image_path, mimetype=str(entry.get("mime_type", "application/octet-stream")))
+
     @app.get("/api/briefing")
     def briefing_snapshot() -> Response:
         from .briefing import load_briefing
@@ -1010,6 +1066,17 @@ def _latest_ready_profile_directory() -> Path | None:
         reverse=True,
     )
     return ready_dirs[0] if ready_dirs else None
+
+
+def _visual_context_public_entry(entry: dict[str, object]) -> dict[str, object]:
+    return {
+        "id": entry.get("id"),
+        "filename": entry.get("filename"),
+        "description": entry.get("description", ""),
+        "description_error": entry.get("description_error", ""),
+        "uploaded_at": entry.get("uploaded_at"),
+        "url": f"/api/visual-context/{entry.get('id')}",
+    }
 
 
 def _load_existing_onboarding_profile() -> dict[str, object] | None:

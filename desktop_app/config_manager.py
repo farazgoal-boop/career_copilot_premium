@@ -28,6 +28,8 @@ class ModelConfig:
     llm_api_key_env: str = "MISTRAL_API_KEY"
     llm_fallback_model: str = "mistral-small-latest"
     llm_fallback_base_url: str = "https://api.mistral.ai/v1/chat/completions"
+    vision_model: str = "pixtral-12b-2409"
+    vision_base_url: str = "https://api.mistral.ai/v1/chat/completions"
 
 
 @dataclass
