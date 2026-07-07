@@ -86,6 +86,43 @@
     </div>
   </div>
 
+  <!-- Language Settings -->
+  <div class="st-group settings-card">
+    <p class="st-group-label">Language Settings</p>
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <label for="st-lang-listen" style="font-size:0.85rem;color:var(--premium-muted);">Caller's language</label>
+        <select id="st-lang-listen" aria-label="Caller's language"
+                style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 10px;color:var(--premium-text);font-size:0.85rem;font-family:inherit;outline:none;"></select>
+        <p style="font-size:0.78rem;color:var(--premium-muted);margin:0;">What language the interviewer/caller speaks — used for speech recognition.</p>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <label for="st-lang-reply" style="font-size:0.85rem;color:var(--premium-muted);">I want answers in</label>
+        <select id="st-lang-reply" aria-label="I want answers in"
+                style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 10px;color:var(--premium-text);font-size:0.85rem;font-family:inherit;outline:none;"></select>
+        <p style="font-size:0.78rem;color:var(--premium-muted);margin:0;">The language AI answers are written in for you to read.</p>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <label for="st-lang-speak" style="font-size:0.85rem;color:var(--premium-muted);">Speak answers to caller in</label>
+        <select id="st-lang-speak" aria-label="Speak answers to caller in"
+                style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 10px;color:var(--premium-text);font-size:0.85rem;font-family:inherit;outline:none;"></select>
+        <p style="font-size:0.78rem;color:var(--premium-muted);margin:0;">Used by the Speak button. If different from "I want answers in", the answer is translated before speaking.</p>
+      </div>
+
+      <p style="font-size:0.78rem;color:var(--premium-muted);margin:0;">Supported: English, Urdu, Arabic, Hindi, Spanish, French, German, Turkish.</p>
+
+      <div>
+        <button id="st-lang-save" type="button"
+                style="padding:10px 18px;border-radius:8px;font-size:0.88rem;font-weight:600;white-space:nowrap;">
+          Save Language Settings
+        </button>
+      </div>
+      <p id="st-lang-status" style="font-size:0.83rem;color:var(--premium-muted);min-height:18px;margin:0;"></p>
+    </div>
+  </div>
+
   <!-- Mobile Pairing -->
   <div class="st-group settings-card">
     <p class="st-group-label">Mobile</p>
@@ -179,9 +216,10 @@
     elevenStatus.style.color = ok === true ? 'var(--premium-success)' : ok === false ? 'var(--premium-danger)' : 'var(--premium-muted)';
   }
 
-  function speakWithBrowser(text) {
+  function speakWithBrowser(text, lang) {
     if (!('speechSynthesis' in window)) return;
     var utterance = new SpeechSynthesisUtterance(text);
+    if (lang) utterance.lang = lang;
     window.speechSynthesis.speak(utterance);
   }
 
@@ -202,7 +240,11 @@
         audio.play();
         return 'elevenlabs';
       }
-      speakWithBrowser(text);
+      // Fallback JSON may carry a translated version of the text (see the
+      // Language Settings card's "speak to caller in") plus the target
+      // language code for the browser voice -- speak those, not the input.
+      var data = await resp.json().catch(function () { return null; });
+      speakWithBrowser((data && data.text) || text, data && data.lang);
       return 'browser';
     } catch (e) {
       speakWithBrowser(text);
@@ -307,6 +349,65 @@
       }),
     }).catch(function () {});
   }
+
+  /* ── Language settings ── */
+  var langListenSelect = document.getElementById('st-lang-listen');
+  var langReplySelect = document.getElementById('st-lang-reply');
+  var langSpeakSelect = document.getElementById('st-lang-speak');
+  var langSaveBtn = document.getElementById('st-lang-save');
+  var langStatus = document.getElementById('st-lang-status');
+
+  function setLangStatus(msg, ok) {
+    langStatus.textContent = msg;
+    langStatus.style.color = ok === true ? 'var(--premium-success)' : ok === false ? 'var(--premium-danger)' : 'var(--premium-muted)';
+  }
+
+  function fillSelect(select, options, selectedValue, valueKey) {
+    select.innerHTML = '';
+    options.forEach(function (opt) {
+      var el = document.createElement('option');
+      el.value = opt[valueKey];
+      el.textContent = opt.label;
+      if (opt[valueKey] === selectedValue) el.selected = true;
+      select.appendChild(el);
+    });
+  }
+
+  fetch('/api/settings/language-prefs', { headers: { Accept: 'application/json' } })
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      if (!d.ok) return;
+      fillSelect(langListenSelect, d.language_options || [], d.listen_language, 'code');
+      fillSelect(langReplySelect, d.language_options || [], d.reply_language, 'code');
+      fillSelect(langSpeakSelect, d.speak_language_options || [], d.speak_language, 'code');
+    })
+    .catch(function () { setLangStatus('Could not load language settings.', null); });
+
+  langSaveBtn.addEventListener('click', async function () {
+    langSaveBtn.disabled = true;
+    setLangStatus('Saving…', null);
+    try {
+      var resp = await fetch('/api/settings/language-prefs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          listen_language: langListenSelect.value,
+          reply_language: langReplySelect.value,
+          speak_language: langSpeakSelect.value,
+        }),
+      });
+      var data = await resp.json();
+      if (data.ok) {
+        setLangStatus('✅ Language settings saved.', true);
+      } else {
+        setLangStatus(data.error || 'Failed to save.', false);
+      }
+    } catch (e) {
+      setLangStatus('Request failed.', false);
+    } finally {
+      langSaveBtn.disabled = false;
+    }
+  });
 
   /* ── Session cleanup ── */
   var cleanupBtn = document.getElementById('st-cleanup-btn');

@@ -489,9 +489,44 @@ def register_routes(app: Flask) -> None:
             current_app.logger.exception("Failed to save voice prefs")
             return jsonify({"ok": False, "error": str(exc)}), 500
 
+    @app.get("/api/settings/language-prefs")
+    def get_language_prefs_route() -> Response:
+        from desktop_app.language_config import LANGUAGE_OPTIONS, SPEAK_LANGUAGE_OPTIONS, load_language_prefs
+        prefs = load_language_prefs()
+        return jsonify(
+            {
+                "ok": True,
+                "listen_language": prefs["listen_language"],
+                "reply_language": prefs["reply_language"],
+                "speak_language": prefs["speak_language"],
+                "language_options": [{"label": label, "code": code} for label, code in LANGUAGE_OPTIONS],
+                "speak_language_options": [{"label": label, "code": code} for label, code in SPEAK_LANGUAGE_OPTIONS],
+            }
+        )
+
+    @app.post("/api/settings/language-prefs")
+    def save_language_prefs_route() -> Response:
+        from desktop_app.language_config import save_language_prefs
+        body = request.get_json(force=True, silent=True) or {}
+        listen_language = str(body.get("listen_language", "") or "")
+        reply_language = str(body.get("reply_language", "") or "")
+        speak_language = body.get("speak_language")
+        try:
+            prefs = save_language_prefs(
+                listen_language,
+                reply_language,
+                speak_language=str(speak_language) if speak_language is not None else None,
+            )
+            return jsonify({"ok": True, **prefs})
+        except Exception as exc:
+            current_app.logger.exception("Failed to save language prefs")
+            return jsonify({"ok": False, "error": str(exc)}), 500
+
     @app.post("/api/tts/speak")
     def tts_speak() -> Response:
         from desktop_app.elevenlabs_setup import elevenlabs_api_key
+        from desktop_app.language_config import get_speak_language_code, language_label_for_code, load_language_prefs
+        from desktop_app.translation import TranslationError, translate_text
         from desktop_app.tts import SpeechSynthesisError, synthesize_speech
         from desktop_app.voice_prefs import load_voice_prefs
 
@@ -500,9 +535,26 @@ def register_routes(app: Flask) -> None:
         if not text:
             return jsonify({"ok": False, "error": "No text to speak."}), 400
 
+        # Translate first if "speak to caller in" resolves to a different
+        # language than the answer was generated in -- TTS reads text
+        # aloud in whatever language it's written in, it doesn't translate.
+        lang_prefs = load_language_prefs()
+        speak_code = get_speak_language_code()
+        final_text = text
+        if speak_code != lang_prefs["reply_language"]:
+            try:
+                final_text = translate_text(
+                    text,
+                    target_language_label=language_label_for_code(speak_code),
+                    source_language_label=language_label_for_code(lang_prefs["reply_language"]),
+                )
+            except TranslationError as exc:
+                current_app.logger.warning("Speak translation failed, using original text: %s", exc)
+                final_text = text
+
         api_key = elevenlabs_api_key()
         if not api_key:
-            return jsonify({"ok": True, "use_browser_fallback": True}), 200
+            return jsonify({"ok": True, "use_browser_fallback": True, "text": final_text, "lang": speak_code}), 200
 
         prefs = load_voice_prefs()
         voice_id = str(body.get("voice_id", "") or prefs["voice_id"])
@@ -512,10 +564,12 @@ def register_routes(app: Flask) -> None:
             speed = float(prefs["speed"])
 
         try:
-            audio_bytes = synthesize_speech(text, api_key, voice_id=voice_id, speed=speed)
+            audio_bytes = synthesize_speech(final_text, api_key, voice_id=voice_id, speed=speed)
         except SpeechSynthesisError as exc:
             current_app.logger.warning("ElevenLabs synthesis failed: %s", exc)
-            return jsonify({"ok": True, "use_browser_fallback": True, "error": str(exc)}), 200
+            return jsonify(
+                {"ok": True, "use_browser_fallback": True, "text": final_text, "lang": speak_code, "error": str(exc)}
+            ), 200
 
         return Response(audio_bytes, mimetype="audio/mpeg")
 

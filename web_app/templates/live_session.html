@@ -927,13 +927,14 @@
         speakButton.innerHTML = '&#128266; Speak';
       }
 
-      function speakWithBrowser(text) {
+      function speakWithBrowser(text, lang) {
         if (!('speechSynthesis' in window)) {
           window.showToast?.('Voice output is not supported in this browser', 'error');
           stopSpeaking();
           return;
         }
         const utterance = new SpeechSynthesisUtterance(text);
+        if (lang) utterance.lang = lang;
         utterance.onend = stopSpeaking;
         utterance.onerror = stopSpeaking;
         window.speechSynthesis.speak(utterance);
@@ -967,7 +968,11 @@
             await currentAudio.play();
             return;
           }
-          speakWithBrowser(text);
+          // Fallback JSON may carry a translated version of the text (see
+          // "speak to caller in" in Settings) plus the target language code
+          // for the browser voice -- speak those, not the original.
+          const data = await response.json().catch(() => null);
+          speakWithBrowser((data && data.text) || text, data && data.lang);
         } catch (error) {
           speakWithBrowser(text);
         }
