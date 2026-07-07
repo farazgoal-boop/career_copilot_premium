@@ -353,6 +353,7 @@ def register_routes(app: Flask) -> None:
                         "role_title": str(entry.get("role_title", "")),
                         "meeting_source": str(entry.get("meeting_source", "Manual / generic interview") or "Manual / generic interview"),
                         "session_type": str(entry.get("session_type", "job_interview") or "job_interview"),
+                        "session_ended": bool(entry.get("session_ended", False)),
                         "worker_status": str(entry.get("worker_status", "stopped") or "stopped"),
                         "session_status": _normalize_session_status(str(entry.get("worker_status", "stopped") or "stopped")),
                         "updated_at": str(entry.get("updated_at", "")),
@@ -1510,6 +1511,7 @@ def _load_recent_session_entries(registry_path: Path) -> dict[str, dict[str, obj
                 merged_entry["session_type"] = normalize_session_type(
                     state_payload.get("session_type", merged_entry.get("session_type", DEFAULT_SESSION_TYPE))
                 )
+                merged_entry["session_ended"] = bool(state_payload.get("session_ended", False))
                 merged_entry["updated_at"] = str(state_payload.get("updated_at", merged_entry.get("updated_at", "")) or merged_entry.get("updated_at", ""))
             entries[str(session_id)] = merged_entry
         return entries

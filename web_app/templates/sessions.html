@@ -88,6 +88,8 @@
   .sess-status-badge--new::before { background: #f59e0b; }
   .sess-status-badge--stopped { color: var(--premium-muted); background: rgba(255, 255, 255, 0.06); }
   .sess-status-badge--stopped::before { background: rgba(255, 255, 255, 0.3); }
+  .sess-status-badge--ended { color: #60a5fa; background: rgba(96, 165, 250, 0.12); }
+  .sess-status-badge--ended::before { background: #60a5fa; }
 
   .sess-empty {
     padding: 40px 16px;
@@ -200,7 +202,10 @@
     }
   }
 
-  function statusBadge(status) {
+  function statusBadge(status, ended) {
+    if (ended) {
+      return '<span class="sess-status-badge sess-status-badge--ended">Ended</span>';
+    }
     var normalized = String(status || 'stopped').toLowerCase();
     var label = 'Stopped';
     var modifier = 'stopped';
@@ -227,7 +232,7 @@
           '<td>' + role + '</td>' +
           '<td class="sess-col-date">' + formatDate(s.updated_at) + '</td>' +
           '<td class="sess-col-duration">—</td>' +
-          '<td>' + statusBadge(s.session_status || s.worker_status) + '</td>' +
+          '<td>' + statusBadge(s.session_status || s.worker_status, s.session_ended) + '</td>' +
         '</tr>'
       );
     }).join('');
