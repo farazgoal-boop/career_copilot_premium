@@ -493,6 +493,25 @@
   }
 
   .ls-transcript-log-entry strong { color: var(--text); }
+
+  .ls-transcript-log-footer {
+    border-top: 1px solid var(--line);
+    padding: 8px 0 10px;
+    text-align: right;
+  }
+
+  #transcript-download-link {
+    font-size: 0.78rem;
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  #transcript-download-link:hover { text-decoration: underline; }
+
+  #transcript-download-link.is-disabled {
+    color: var(--muted);
+    pointer-events: none;
+  }
 </style>
 {% endblock %}
 
@@ -556,6 +575,9 @@
     <div id="transcript-log-body" class="ls-transcript-log-body">
       <p class="ls-transcript-log-entry">No questions captured yet.</p>
     </div>
+    <div class="ls-transcript-log-footer">
+      <a id="transcript-download-link" href="/api/session/{{ session_id }}/transcript/export" download>Download transcript (.txt)</a>
+    </div>
   </details>
 
   <!-- End session -->
@@ -602,6 +624,7 @@
       const manualQuestionSubmit = document.getElementById('manual-question-submit');
       const transcriptLogBody = document.getElementById('transcript-log-body');
       const transcriptLogCount = document.getElementById('transcript-log-count');
+      const transcriptDownloadLink = document.getElementById('transcript-download-link');
       const dataCards = Array.from(document.querySelectorAll('.js-data-card'));
       let latestPersistentPrompt = String(initialPayload?.prompts?.persistent || '');
 
@@ -736,6 +759,7 @@
       function setTranscriptLog(payload) {
         const entries = Array.isArray(payload?.snapshot?.transcript_log) ? payload.snapshot.transcript_log : [];
         transcriptLogCount.textContent = String(entries.length);
+        transcriptDownloadLink.classList.toggle('is-disabled', !entries.length);
 
         if (!entries.length) {
           transcriptLogBody.innerHTML = '<p class="ls-transcript-log-entry">No questions captured yet.</p>';

@@ -736,6 +736,32 @@ def register_routes(app: Flask) -> None:
             current_app.logger.exception("Transcript answer failed for session %s", session_id)
             return jsonify({"ok": False, "error": str(error), "type": type(error).__name__}), 500
 
+    @app.get("/api/session/<session_id>/transcript/export")
+    def session_transcript_export(session_id: str) -> Response:
+        from desktop_app.runtime_controller import load_registered_session_state
+
+        try:
+            state = load_registered_session_state(session_id, _registry_path())
+        except KeyError as error:
+            return jsonify({"error": _display_error(error)}), 404
+
+        entries = list(state.get("transcript_log", []) or [])
+        lines = [f"Career Copilot — session transcript ({session_id})", ""]
+        if not entries:
+            lines.append("No questions were captured during this session.")
+        for entry in entries:
+            at = str(entry.get("at", "") or "").strip()
+            question = str(entry.get("text", "") or "").strip() or "-"
+            answer = str(entry.get("answer", "") or "").strip() or "-"
+            lines.append(f"[{at}]" if at else "[unknown time]")
+            lines.append(f"Q: {question}")
+            lines.append(f"A: {answer}")
+            lines.append("")
+
+        response = Response("\n".join(lines).strip() + "\n", mimetype="text/plain")
+        response.headers["Content-Disposition"] = f'attachment; filename="transcript_{session_id}.txt"'
+        return response
+
     @app.post("/api/session/<session_id>/actions/<action_id>")
     def session_action(session_id: str, action_id: str) -> Response:
         return _queue_session_action(session_id, action_id)
