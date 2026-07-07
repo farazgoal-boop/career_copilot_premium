@@ -721,6 +721,7 @@ def register_routes(app: Flask) -> None:
     def session_end(session_id: str) -> Response:
         from desktop_app.runtime_controller import load_registered_session_state, update_registered_session_state
         from desktop_app.session_recording import RecordingValidationError, save_session_recording
+        from desktop_app.session_types import normalize_session_type
 
         try:
             existing_state = load_registered_session_state(session_id, _registry_path())
@@ -738,17 +739,46 @@ def register_routes(app: Flask) -> None:
                 current_app.logger.exception("Recording save failed for session %s", session_id)
                 return jsonify({"ok": False, "error": str(error)}), 500
 
+        summary_meta: dict[str, object] = {}
+        transcript_log = list(existing_state.get("transcript_log", []) or [])
+        if transcript_log:
+            try:
+                from desktop_app.meeting_summary import generate_meeting_summary
+
+                summary_result = generate_meeting_summary(
+                    transcript_log,
+                    session_type=normalize_session_type(existing_state.get("session_type")),
+                    company_name=str(existing_state.get("company_name", "") or ""),
+                    role_title=str(existing_state.get("role_title", "") or ""),
+                )
+                summary_meta = {
+                    "meeting_summary": summary_result.summary,
+                    "action_items": summary_result.action_items,
+                    "summary_generated_at": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
+                }
+            except Exception as error:
+                # Best-effort: never block session end on a summary-generation failure.
+                current_app.logger.warning("Meeting summary generation failed for session %s: %s", session_id, error)
+
         update_registered_session_state(
             session_id,
             {
                 **existing_state,
                 **recording_meta,
+                **summary_meta,
                 "session_ended": True,
                 "ended_at": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
             },
             registry_path=_registry_path(),
         )
-        return jsonify({"ok": True, "session_id": session_id, "recording_saved": bool(recording_meta)}), 200
+        return jsonify(
+            {
+                "ok": True,
+                "session_id": session_id,
+                "recording_saved": bool(recording_meta),
+                "summary_generated": bool(summary_meta),
+            }
+        ), 200
 
     @app.post("/api/session/<session_id>/listen")
     def session_live_listen(session_id: str) -> Response:
