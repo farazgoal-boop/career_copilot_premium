@@ -10,6 +10,7 @@ AI interview assistant desktop app. PySide6 (floating overlay) + Flask (local da
   - `v1.0.6` — activation/profile/sessions/mobile QR
   - `v1.0.8` — overlay error dialog, tray icon
   - `stable-backup-2026-07-06` — recovery point, do not delete
+  - `phase1-complete-2026-07-07` — browser mic capture + live transcript + transcript export, 62/62 e2e tests passing, do not delete
 
 ## Key files
 
@@ -22,7 +23,9 @@ AI interview assistant desktop app. PySide6 (floating overlay) + Flask (local da
 
 ## Current active task
 
-**Phase 1**: adding browser-based mic capture + live transcript + session recording (WebRTC in the browser, no local installs needed). See prior diagnosis of the current flow before touching this — audio capture today is Python/desktop-side only (`desktop_app/audio_handler.py`), there is no browser mic code yet.
+**Phase 1 — COMPLETE** (tag `phase1-complete-2026-07-07`): browser-based mic capture (Web Speech API in `web_app/static/js/browser_mic.js`) + live transcript log (`desktop_app/live_listen.py` transcript_log, surfaced in `web_app/templates/live_session.html`) + text transcript export/download (`GET /api/session/<id>/transcript/export` in `web_app/routes.py`). Scope was text-only recording, no audio capture. All 62 Playwright e2e tests passing.
+
+Phase 2: not yet defined — confirm scope with user before starting new work.
 
 ## Fix status
 
