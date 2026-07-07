@@ -7,6 +7,7 @@ from pathlib import Path
 from urllib.request import urlopen
 
 from desktop_app.runtime_controller import enqueue_session_command, find_session_registry_entry, load_registered_session_state
+from desktop_app.session_types import normalize_session_type
 from desktop_app.utils import sanitize_display_text
 
 from .contracts import MobileBridgeAction, MobileBridgeSnapshot, MobileBubbleState
@@ -72,6 +73,7 @@ def build_mobile_bridge_snapshot(payload: dict[str, object], entry: dict[str, ob
             for item in payload.get("transcript_log", [])
             if isinstance(item, dict)
         ],
+        session_type=normalize_session_type(payload.get("session_type")),
     )
 
 

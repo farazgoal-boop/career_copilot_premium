@@ -33,6 +33,7 @@ from .overlay import (
     create_overlay_controller,
     create_overlay_runtime,
 )
+from .session_types import DEFAULT_SESSION_TYPE
 from .stt_engine import STTEngine
 from .strategy_generator import StrategyPack, generate_strategy_pack, save_strategy_pack
 
@@ -873,6 +874,7 @@ def register_web_session(
         "role_title": role_title,
         "meeting_source": "Manual / generic interview",
         "meeting_capture_mode": "Companion workspace with live mic capture",
+        "session_type": DEFAULT_SESSION_TYPE,
         "overlay_status": "idle",
         "overlay_visible": False,
         "turn_count": 0,

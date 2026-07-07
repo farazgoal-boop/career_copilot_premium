@@ -352,6 +352,7 @@ def register_routes(app: Flask) -> None:
                         "company_name": str(entry.get("company_name", "")),
                         "role_title": str(entry.get("role_title", "")),
                         "meeting_source": str(entry.get("meeting_source", "Manual / generic interview") or "Manual / generic interview"),
+                        "session_type": str(entry.get("session_type", "job_interview") or "job_interview"),
                         "worker_status": str(entry.get("worker_status", "stopped") or "stopped"),
                         "session_status": _normalize_session_status(str(entry.get("worker_status", "stopped") or "stopped")),
                         "updated_at": str(entry.get("updated_at", "")),
@@ -530,6 +531,7 @@ def register_routes(app: Flask) -> None:
     def briefing_save() -> Response:
         try:
             from desktop_app.runtime_controller import register_web_session
+            from desktop_app.session_types import normalize_session_type
             from mobile_app.live_bridge import build_live_bridge_payload_for_session, ensure_live_session_worker
             from .briefing import build_operator_prompts, materialize_briefing_profile, save_briefing
 
@@ -570,6 +572,7 @@ def register_routes(app: Flask) -> None:
                 operator_prompts=operator_prompts,
                 extra_state={
                     "briefing_id": DEFAULT_BRIEFING_ID,
+                    "session_type": normalize_session_type(briefing.get("session_type")),
                     "meeting_source": str(briefing.get("meeting_source", "") or ""),
                     "meeting_capture_mode": str(briefing.get("meeting_capture_mode", "") or ""),
                     "meeting_window_name": str(briefing.get("meeting_window_name", "") or ""),
@@ -614,6 +617,7 @@ def register_routes(app: Flask) -> None:
         try:
             from desktop_app.onboarding import is_session_ready
             from desktop_app.runtime_controller import register_web_session
+            from desktop_app.session_types import normalize_session_type
             from mobile_app.live_bridge import build_live_bridge_payload_for_session, ensure_live_session_worker
             from .briefing import build_operator_prompts, load_briefing
 
@@ -644,6 +648,7 @@ def register_routes(app: Flask) -> None:
             briefing = load_briefing(_briefing_storage_path(), DEFAULT_BRIEFING_ID)
             company_name = str(body.get("company_name") or briefing.get("company_name") or "").strip() or "Target Company"
             role_title = str(body.get("target_role") or briefing.get("target_role") or briefing.get("current_role") or "").strip() or "Target Role"
+            session_type = normalize_session_type(body.get("session_type") or briefing.get("session_type"))
             microphone_status = microphone_capture_status()
             requested_microphone = body.get("use_microphone")
             if requested_microphone is None:
@@ -663,6 +668,7 @@ def register_routes(app: Flask) -> None:
                 operator_prompts=operator_prompts,
                 extra_state={
                     "briefing_id": DEFAULT_BRIEFING_ID,
+                    "session_type": session_type,
                     "meeting_source": str(briefing.get("meeting_source", "Manual / generic interview") or "Manual / generic interview"),
                 },
             )
@@ -683,6 +689,7 @@ def register_routes(app: Flask) -> None:
                     "profile_directory": str(profile_directory),
                     "company_name": company_name,
                     "role_name": role_title,
+                    "session_type": session_type,
                     "worker_started": worker_started,
                     "bridge_url": _bridge_base_url(),
                     "session": session_payload,
@@ -1410,6 +1417,7 @@ def _normalize_session_status(worker_status: str) -> str:
 
 def _load_recent_session_entries(registry_path: Path) -> dict[str, dict[str, object]]:
     from desktop_app.runtime_controller import load_registered_session_state, load_session_registry
+    from desktop_app.session_types import DEFAULT_SESSION_TYPE, normalize_session_type
 
     path = registry_path
     try:
@@ -1435,6 +1443,9 @@ def _load_recent_session_entries(registry_path: Path) -> dict[str, dict[str, obj
                 merged_entry["meeting_source"] = str(
                     state_payload.get("meeting_source", merged_entry.get("meeting_source", "Manual / generic interview"))
                     or "Manual / generic interview"
+                )
+                merged_entry["session_type"] = normalize_session_type(
+                    state_payload.get("session_type", merged_entry.get("session_type", DEFAULT_SESSION_TYPE))
                 )
                 merged_entry["updated_at"] = str(state_payload.get("updated_at", merged_entry.get("updated_at", "")) or merged_entry.get("updated_at", ""))
             entries[str(session_id)] = merged_entry
