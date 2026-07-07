@@ -8,18 +8,10 @@
 
 {% block extra_head %}
 <style>
-  :root {
-    --bg: #0f0f0f;
-    --panel: #171717;
-    --line: rgba(255, 255, 255, 0.08);
-    --text: #ffffff;
-    --muted: #b9b9c2;
-    --accent: #6366f1;
-    --ready: #14b8a6;
-    --listening: #22c55e;
-    --processing: #f59e0b;
-    --danger: #ef4444;
-  }
+  /* Uses the shared --premium-* tokens from premium.css (theme-aware) --
+     this page used to define its own separate --bg/--panel/--line/etc.
+     set, which never re-themed and had --bg/--panel/--danger defined but
+     unused. */
 
   *, *::before, *::after { box-sizing: border-box; }
 
@@ -44,13 +36,13 @@
 
   .ls-home-link {
     font-size: 0.86rem;
-    color: var(--muted);
+    color: var(--premium-muted);
     text-decoration: none;
     white-space: nowrap;
     flex-shrink: 0;
   }
 
-  .ls-home-link:hover { color: var(--text); }
+  .ls-home-link:hover { color: var(--premium-text); }
 
   .ls-status-indicator {
     display: flex;
@@ -68,18 +60,18 @@
   }
 
   .status-dot.listening {
-    background: var(--listening);
+    background: var(--premium-success);
     box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.18);
     animation: ls-pulse 1.8s ease-in-out infinite;
   }
 
   .status-dot.processing {
-    background: var(--processing);
+    background: var(--premium-warning);
     box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.18);
   }
 
   .status-dot.ready {
-    background: var(--ready);
+    background: var(--premium-ready);
     box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.18);
   }
 
@@ -95,8 +87,8 @@
 
   .ls-session-chip {
     font-size: 0.76rem;
-    color: var(--muted);
-    border: 1px solid var(--line);
+    color: var(--premium-muted);
+    border: 1px solid var(--premium-line);
     border-radius: 999px;
     padding: 5px 12px;
     white-space: nowrap;
@@ -108,9 +100,9 @@
 
   /* ── Question ── */
   .ls-question {
-    border: 1px solid var(--line);
+    border: 1px solid var(--premium-line);
     border-radius: 18px;
-    background: rgba(255, 255, 255, 0.025);
+    background: var(--premium-overlay-025);
     padding: 14px 18px;
   }
 
@@ -120,7 +112,7 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    color: var(--muted);
+    color: var(--premium-muted);
   }
 
   #interviewer-text {
@@ -130,13 +122,13 @@
     white-space: pre-wrap;
   }
 
-  #interviewer-text.placeholder { color: var(--muted); font-style: italic; }
+  #interviewer-text.placeholder { color: var(--premium-muted); font-style: italic; }
 
   /* ── Answer — the main element ── */
   .ls-answer-wrap {
-    border: 1px solid var(--line);
+    border: 1px solid var(--premium-line);
     border-radius: 24px;
-    background: rgba(255, 255, 255, 0.02);
+    background: var(--premium-overlay-02);
     padding: 24px;
     display: flex;
     flex-direction: column;
@@ -152,7 +144,7 @@
   }
 
   #answer-body.placeholder {
-    color: var(--muted);
+    color: var(--premium-muted);
     font-size: 1rem;
     font-style: italic;
   }
@@ -175,10 +167,10 @@
 
   /* .pill class is added by JS */
   .pill {
-    border: 1px solid var(--line);
-    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--premium-line);
+    background: var(--premium-overlay-04);
     border-radius: 999px;
-    color: var(--text);
+    color: var(--premium-text);
     cursor: pointer;
     font-family: inherit;
     font-size: 0.84rem;
@@ -187,7 +179,7 @@
     text-align: left;
   }
 
-  .pill:hover { background: rgba(255, 255, 255, 0.09); }
+  .pill:hover { background: var(--premium-overlay-09); }
 
   .ls-answer-actions {
     display: flex;
@@ -197,10 +189,10 @@
 
   #copy-button,
   #speak-button {
-    border: 1px solid var(--line);
-    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--premium-line);
+    background: var(--premium-overlay-05);
     border-radius: 999px;
-    color: var(--text);
+    color: var(--premium-text);
     cursor: pointer;
     font-family: inherit;
     font-size: 0.86rem;
@@ -210,14 +202,14 @@
   }
 
   #copy-button:hover,
-  #speak-button:hover { background: rgba(255, 255, 255, 0.1); }
+  #speak-button:hover { background: var(--premium-overlay-10); }
 
   /* .is-speaking is toggled by JS while audio plays; reuses the mic-pulse
      keyframes already defined for #browser-mic-toggle.mic-listening. */
   #speak-button.is-speaking {
     background: rgba(99, 102, 241, 0.18);
     border-color: rgba(99, 102, 241, 0.6);
-    color: var(--accent);
+    color: var(--premium-accent);
     animation: mic-pulse 1.8s ease-in-out infinite;
   }
 
@@ -232,7 +224,7 @@
     border: 1px solid rgba(99, 102, 241, 0.35);
     background: rgba(99, 102, 241, 0.08);
     border-radius: 999px;
-    color: var(--text);
+    color: var(--premium-text);
     cursor: pointer;
     font-family: inherit;
     font-size: 0.92rem;
@@ -249,20 +241,20 @@
 
   /* ── Live steer ── */
   .ls-steer-wrap {
-    border: 1px solid var(--line);
+    border: 1px solid var(--premium-line);
     border-radius: 18px;
-    background: rgba(255, 255, 255, 0.02);
+    background: var(--premium-overlay-02);
     overflow: hidden;
   }
 
   #live-steer-input {
     width: 100%;
     border: 0;
-    border-bottom: 1px solid var(--line);
+    border-bottom: 1px solid var(--premium-line);
     padding: 13px 16px;
     font-family: inherit;
     font-size: 0.95rem;
-    color: var(--text);
+    color: var(--premium-text);
     background: transparent;
     resize: none;
     min-height: 70px;
@@ -270,7 +262,7 @@
     display: block;
   }
 
-  #live-steer-input::placeholder { color: var(--muted); }
+  #live-steer-input::placeholder { color: var(--premium-muted); }
 
   .ls-steer-footer {
     display: flex;
@@ -281,7 +273,7 @@
   }
 
   #steer-status {
-    color: var(--muted);
+    color: var(--premium-muted);
     font-size: 0.82rem;
     flex: 1;
     margin: 0;
@@ -290,7 +282,7 @@
 
   #send-live-steer {
     border: 0;
-    background: var(--accent);
+    background: var(--premium-accent);
     color: #fff;
     border-radius: 999px;
     cursor: pointer;
@@ -302,7 +294,7 @@
     flex-shrink: 0;
   }
 
-  #send-live-steer:hover { background: #5254d1; }
+  #send-live-steer:hover { background: var(--premium-accent-hover); }
   #send-live-steer:disabled { opacity: 0.55; cursor: wait; }
 
   /* ── End session ── */
@@ -316,7 +308,7 @@
     border: 1px solid rgba(239, 68, 68, 0.4);
     background: transparent;
     border-radius: 999px;
-    color: #ef4444;
+    color: var(--premium-danger);
     cursor: pointer;
     font-family: inherit;
     font-size: 0.92rem;
@@ -334,7 +326,7 @@
     font-size: 1.4rem;
     font-weight: 700;
     letter-spacing: -0.02em;
-    color: var(--text);
+    color: var(--premium-text);
     margin: 0 0 4px;
   }
 
@@ -360,7 +352,7 @@
   }
 
   #browser-mic-toggle {
-    border: 1px solid var(--line);
+    border: 1px solid var(--premium-line);
     border-radius: 999px;
     cursor: pointer;
     font-family: inherit;
@@ -375,17 +367,17 @@
 
   /* grey = idle/ready */
   #browser-mic-toggle.mic-idle {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: var(--line);
-    color: var(--text);
+    background: var(--premium-overlay-05);
+    border-color: var(--premium-line);
+    color: var(--premium-text);
   }
-  #browser-mic-toggle.mic-idle:hover { background: rgba(255, 255, 255, 0.1); }
+  #browser-mic-toggle.mic-idle:hover { background: var(--premium-overlay-10); }
 
   /* green = listening, pulses to read as "live" */
   #browser-mic-toggle.mic-listening {
     background: rgba(34, 197, 94, 0.15);
     border-color: rgba(34, 197, 94, 0.6);
-    color: #22c55e;
+    color: var(--premium-success);
     animation: mic-pulse 1.8s ease-in-out infinite;
   }
 
@@ -393,14 +385,14 @@
   #browser-mic-toggle.mic-processing {
     background: rgba(245, 158, 11, 0.15);
     border-color: rgba(245, 158, 11, 0.6);
-    color: var(--processing);
+    color: var(--premium-warning);
   }
 
   /* red = error */
   #browser-mic-toggle.mic-error {
     background: rgba(239, 68, 68, 0.15);
     border-color: rgba(239, 68, 68, 0.6);
-    color: #ef4444;
+    color: var(--premium-danger);
   }
 
   @keyframes mic-pulse {
@@ -411,7 +403,7 @@
   #mic-compat-message {
     display: none;
     font-size: 0.82rem;
-    color: var(--muted);
+    color: var(--premium-muted);
     text-align: center;
     max-width: 420px;
   }
@@ -427,26 +419,26 @@
 
   #manual-question-input {
     width: 100%;
-    border: 1px solid var(--line);
+    border: 1px solid var(--premium-line);
     border-radius: 14px;
-    background: rgba(255, 255, 255, 0.02);
+    background: var(--premium-overlay-02);
     padding: 10px 14px;
     font-family: inherit;
     font-size: 0.88rem;
-    color: var(--text);
+    color: var(--premium-text);
     resize: none;
     min-height: 44px;
     outline: none;
   }
 
-  #manual-question-input::placeholder { color: var(--muted); }
+  #manual-question-input::placeholder { color: var(--premium-muted); }
 
   #manual-question-submit {
     align-self: center;
-    border: 1px solid var(--line);
-    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--premium-line);
+    background: var(--premium-overlay-05);
     border-radius: 999px;
-    color: var(--text);
+    color: var(--premium-text);
     cursor: pointer;
     font-family: inherit;
     font-size: 0.86rem;
@@ -454,14 +446,14 @@
     padding: 7px 20px;
   }
 
-  #manual-question-submit:hover { background: rgba(255, 255, 255, 0.1); }
+  #manual-question-submit:hover { background: var(--premium-overlay-10); }
   #manual-question-submit:disabled { opacity: 0.5; cursor: wait; }
 
   /* ── Live transcript log: collapsed by default, muted, does not compete with the main answer ── */
   .ls-transcript-log {
-    border: 1px solid var(--line);
+    border: 1px solid var(--premium-line);
     border-radius: 14px;
-    background: rgba(255, 255, 255, 0.015);
+    background: var(--premium-overlay-015);
     padding: 4px 14px;
   }
 
@@ -469,7 +461,7 @@
     cursor: pointer;
     padding: 8px 0;
     font-size: 0.8rem;
-    color: var(--muted);
+    color: var(--premium-muted);
     font-weight: 600;
     list-style: none;
   }
@@ -496,8 +488,8 @@
   .ls-transcript-log-entry {
     font-size: 0.78rem;
     line-height: 1.5;
-    color: var(--muted);
-    border-top: 1px solid var(--line);
+    color: var(--premium-muted);
+    border-top: 1px solid var(--premium-line);
     padding-top: 8px;
   }
 
@@ -509,24 +501,24 @@
     margin-right: 4px;
   }
 
-  .ls-transcript-log-entry strong { color: var(--text); }
+  .ls-transcript-log-entry strong { color: var(--premium-text); }
 
   .ls-transcript-log-footer {
-    border-top: 1px solid var(--line);
+    border-top: 1px solid var(--premium-line);
     padding: 8px 0 10px;
     text-align: right;
   }
 
   #transcript-download-link {
     font-size: 0.78rem;
-    color: var(--accent);
+    color: var(--premium-accent);
     text-decoration: none;
   }
 
   #transcript-download-link:hover { text-decoration: underline; }
 
   #transcript-download-link.is-disabled {
-    color: var(--muted);
+    color: var(--premium-muted);
     pointer-events: none;
   }
 </style>

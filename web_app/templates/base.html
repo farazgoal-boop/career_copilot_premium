@@ -4,6 +4,27 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Career Copilot Premium{% endblock %}</title>
+  <script>
+    /* Runs before the stylesheet paints so there's no flash of the wrong
+       theme. Settings -> Appearance writes the raw preference ('dark' |
+       'light' | 'auto') to localStorage; this resolves 'auto' against the
+       OS preference and stamps data-theme on <html> for premium.css's
+       :root[data-theme="light"] rules to match. Leaving data-theme unset
+       for 'dark' keeps the default :root (dark) values in effect --
+       identical to how the app looked before this system existed. */
+    (function () {
+      try {
+        var stored = localStorage.getItem('ccp-theme') || 'auto';
+        var resolved = stored;
+        if (stored === 'auto') {
+          resolved = (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark';
+        }
+        if (resolved === 'light') {
+          document.documentElement.setAttribute('data-theme', 'light');
+        }
+      } catch (e) {}
+    })();
+  </script>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/premium.css') }}">
   {% block extra_head %}{% endblock %}
 </head>
@@ -68,6 +89,38 @@
 
   <script>
     (() => {
+      // Theme: 'dark' | 'light' | 'auto', persisted to localStorage.
+      // window.setTheme() applies + saves it immediately (no reload needed);
+      // the inline <head> script (this same resolution logic) handles the
+      // no-flash case on the next page load.
+      function resolveTheme(pref) {
+        if (pref === 'auto') {
+          return (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark';
+        }
+        return pref;
+      }
+
+      window.setTheme = function setTheme(pref) {
+        try { localStorage.setItem('ccp-theme', pref); } catch (e) {}
+        const resolved = resolveTheme(pref);
+        if (resolved === 'light') {
+          document.documentElement.setAttribute('data-theme', 'light');
+        } else {
+          document.documentElement.removeAttribute('data-theme');
+        }
+      };
+
+      window.getThemePref = function getThemePref() {
+        try { return localStorage.getItem('ccp-theme') || 'auto'; } catch (e) { return 'auto'; }
+      };
+
+      // Live-follow the OS theme while 'auto' is selected.
+      if (window.matchMedia) {
+        window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => {
+          if (window.getThemePref() === 'auto') window.setTheme('auto');
+        });
+      }
+
       const host = document.getElementById('premium-toast-host');
       window.showToast = function showToast(message, tone = 'info') {
         if (!host || !message) {

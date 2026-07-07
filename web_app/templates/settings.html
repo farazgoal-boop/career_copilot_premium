@@ -22,6 +22,22 @@
     <h1 class="page-title">Settings</h1>
   </div>
 
+  <!-- Appearance -->
+  <div class="st-group settings-card">
+    <p class="st-group-label">Appearance</p>
+    <div id="st-theme-options" style="display:flex;gap:20px;flex-wrap:wrap;font-size:0.9rem;color:var(--premium-text);">
+      <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;">
+        <input type="radio" name="st-theme" value="dark" /> Dark
+      </label>
+      <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;">
+        <input type="radio" name="st-theme" value="light" /> Light
+      </label>
+      <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;">
+        <input type="radio" name="st-theme" value="auto" /> Auto (follows system)
+      </label>
+    </div>
+  </div>
+
   <!-- AI & API -->
   <div class="st-group settings-card">
     <p class="st-group-label">AI &amp; API</p>
@@ -30,7 +46,7 @@
       <div style="display:flex;gap:8px;align-items:center;">
         <input id="st-mistral-key" type="password" autocomplete="off" spellcheck="false"
                placeholder="Enter Mistral API key…"
-               style="flex:1;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:10px 12px;color:var(--premium-text);font-size:0.9rem;font-family:inherit;outline:none;" />
+               style="flex:1;background:var(--premium-overlay-05);border:1px solid var(--premium-overlay-10);border-radius:8px;padding:10px 12px;color:var(--premium-text);font-size:0.9rem;font-family:inherit;outline:none;" />
         <button id="st-mistral-save" type="button"
                 style="padding:10px 18px;border-radius:8px;font-size:0.88rem;font-weight:600;white-space:nowrap;flex-shrink:0;">
           Save key
@@ -51,7 +67,7 @@
       <div style="display:flex;gap:8px;align-items:center;">
         <input id="st-eleven-key" type="password" autocomplete="off" spellcheck="false"
                placeholder="Paste your key here…" aria-label="ElevenLabs API key"
-               style="flex:1;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:10px 12px;color:var(--premium-text);font-size:0.9rem;font-family:inherit;outline:none;" />
+               style="flex:1;background:var(--premium-overlay-05);border:1px solid var(--premium-overlay-10);border-radius:8px;padding:10px 12px;color:var(--premium-text);font-size:0.9rem;font-family:inherit;outline:none;" />
         <button id="st-eleven-save" type="button"
                 style="padding:10px 18px;border-radius:8px;font-size:0.88rem;font-weight:600;white-space:nowrap;flex-shrink:0;">
           Save Key
@@ -62,7 +78,7 @@
         <div style="display:flex;flex-direction:column;gap:4px;">
           <label for="st-voice-select" style="font-size:0.8rem;color:var(--premium-muted);">Voice style</label>
           <select id="st-voice-select" aria-label="Voice style"
-                  style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 10px;color:var(--premium-text);font-size:0.85rem;font-family:inherit;outline:none;"></select>
+                  style="background:var(--premium-overlay-05);border:1px solid var(--premium-overlay-10);border-radius:8px;padding:8px 10px;color:var(--premium-text);font-size:0.85rem;font-family:inherit;outline:none;"></select>
         </div>
         <div style="display:flex;flex-direction:column;gap:4px;">
           <span style="font-size:0.8rem;color:var(--premium-muted);">Speed</span>
@@ -72,7 +88,7 @@
 
       <div>
         <button id="st-eleven-test" type="button"
-                style="padding:10px 18px;border-radius:8px;font-size:0.88rem;font-weight:600;white-space:nowrap;background:rgba(255,255,255,0.06);color:var(--premium-text);border:1px solid rgba(255,255,255,0.1);cursor:pointer;">
+                style="padding:10px 18px;border-radius:8px;font-size:0.88rem;font-weight:600;white-space:nowrap;background:var(--premium-overlay-06);color:var(--premium-text);border:1px solid var(--premium-overlay-10);cursor:pointer;">
           Test Voice
         </button>
       </div>
@@ -93,21 +109,21 @@
       <div style="display:flex;flex-direction:column;gap:4px;">
         <label for="st-lang-listen" style="font-size:0.85rem;color:var(--premium-muted);">Caller's language</label>
         <select id="st-lang-listen" aria-label="Caller's language"
-                style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 10px;color:var(--premium-text);font-size:0.85rem;font-family:inherit;outline:none;"></select>
+                style="background:var(--premium-overlay-05);border:1px solid var(--premium-overlay-10);border-radius:8px;padding:8px 10px;color:var(--premium-text);font-size:0.85rem;font-family:inherit;outline:none;"></select>
         <p style="font-size:0.78rem;color:var(--premium-muted);margin:0;">What language the interviewer/caller speaks — used for speech recognition.</p>
       </div>
 
       <div style="display:flex;flex-direction:column;gap:4px;">
         <label for="st-lang-reply" style="font-size:0.85rem;color:var(--premium-muted);">I want answers in</label>
         <select id="st-lang-reply" aria-label="I want answers in"
-                style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 10px;color:var(--premium-text);font-size:0.85rem;font-family:inherit;outline:none;"></select>
+                style="background:var(--premium-overlay-05);border:1px solid var(--premium-overlay-10);border-radius:8px;padding:8px 10px;color:var(--premium-text);font-size:0.85rem;font-family:inherit;outline:none;"></select>
         <p style="font-size:0.78rem;color:var(--premium-muted);margin:0;">The language AI answers are written in for you to read.</p>
       </div>
 
       <div style="display:flex;flex-direction:column;gap:4px;">
         <label for="st-lang-speak" style="font-size:0.85rem;color:var(--premium-muted);">Speak answers to caller in</label>
         <select id="st-lang-speak" aria-label="Speak answers to caller in"
-                style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 10px;color:var(--premium-text);font-size:0.85rem;font-family:inherit;outline:none;"></select>
+                style="background:var(--premium-overlay-05);border:1px solid var(--premium-overlay-10);border-radius:8px;padding:8px 10px;color:var(--premium-text);font-size:0.85rem;font-family:inherit;outline:none;"></select>
         <p style="font-size:0.78rem;color:var(--premium-muted);margin:0;">Used by the Speak button. If different from "I want answers in", the answer is translated before speaking.</p>
       </div>
 
@@ -154,6 +170,16 @@
 <script>
 (function () {
   'use strict';
+
+  /* ── Appearance (theme) ── */
+  var themeRadios = document.querySelectorAll('input[name="st-theme"]');
+  var currentThemePref = (window.getThemePref && window.getThemePref()) || 'auto';
+  themeRadios.forEach(function (radio) {
+    radio.checked = radio.value === currentThemePref;
+    radio.addEventListener('change', function () {
+      if (radio.checked && window.setTheme) window.setTheme(radio.value);
+    });
+  });
 
   /* ── Mistral API key ── */
   var mistralInput = document.getElementById('st-mistral-key');

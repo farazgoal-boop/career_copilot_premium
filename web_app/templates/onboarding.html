@@ -60,7 +60,7 @@
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.12);
+    background: var(--premium-overlay-12);
     transition: background 240ms, box-shadow 240ms;
   }
 
@@ -226,7 +226,7 @@
     background-image: none;
   }
 
-  .ob-btn--primary:hover { background: #5254d1; background-image: none; }
+  .ob-btn--primary:hover { background: var(--premium-accent-hover); background-image: none; }
   .ob-btn--primary:disabled { opacity: 0.6; cursor: wait; box-shadow: none; }
 
   .ob-btn--secondary {
@@ -235,7 +235,7 @@
     color: var(--premium-text);
   }
 
-  .ob-btn--secondary:hover { background: rgba(255, 255, 255, 0.05); }
+  .ob-btn--secondary:hover { background: var(--premium-overlay-05); }
 </style>
 {% endblock %}
 
