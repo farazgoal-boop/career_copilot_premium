@@ -117,6 +117,46 @@ def register_routes(app: Flask) -> None:
             session_status_label="Session Live",
         )
 
+    @app.get("/session/<session_id>/report")
+    def session_report(session_id: str) -> Response | str:
+        from desktop_app.runtime_controller import load_registered_session_state
+        from desktop_app.session_types import session_type_label
+
+        try:
+            state = load_registered_session_state(session_id, _registry_path())
+        except KeyError as error:
+            return jsonify({"error": _display_error(error)}), 404
+
+        return render_template(
+            "session_report.html",
+            session_id=session_id,
+            state=state,
+            session_type_label=session_type_label(state.get("session_type")),
+            session_online=False,
+            session_status_label="Session Ended",
+        )
+
+    @app.get("/api/session/<session_id>/recording")
+    def session_recording_playback(session_id: str) -> Response:
+        from flask import send_file
+
+        from desktop_app.runtime_controller import load_registered_session_state
+
+        try:
+            state = load_registered_session_state(session_id, _registry_path())
+        except KeyError as error:
+            return jsonify({"error": _display_error(error)}), 404
+
+        recording_path = str(state.get("recording_path", "") or "")
+        if not recording_path:
+            return jsonify({"error": "No recording available for this session."}), 404
+
+        path = Path(recording_path)
+        if not path.exists():
+            return jsonify({"error": "Recording file missing on disk."}), 404
+
+        return send_file(path, mimetype=str(state.get("recording_mime_type", "") or "audio/webm"))
+
     @app.route("/onboarding", methods=["GET", "POST"])
     def onboarding() -> Response | str:
         wants_json = (

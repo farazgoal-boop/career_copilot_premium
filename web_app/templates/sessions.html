@@ -225,7 +225,7 @@
       var company = escapeHtml(s.company_name) || '—';
       var role = escapeHtml(s.role_title) || '—';
       return (
-        '<tr data-session-id="' + escapeHtml(s.session_id) + '">' +
+        '<tr data-session-id="' + escapeHtml(s.session_id) + '" data-session-ended="' + (s.session_ended ? '1' : '0') + '">' +
           '<td class="sess-col-index">' + (start + i + 1) + '</td>' +
           '<td>' + name + '</td>' +
           '<td>' + company + '</td>' +
@@ -240,7 +240,8 @@
     Array.prototype.forEach.call(tbody.querySelectorAll('tr'), function (row) {
       row.addEventListener('click', function () {
         var id = row.getAttribute('data-session-id');
-        if (id) window.location.href = '/session/' + encodeURIComponent(id) + '/live';
+        var ended = row.getAttribute('data-session-ended') === '1';
+        if (id) window.location.href = '/session/' + encodeURIComponent(id) + (ended ? '/report' : '/live');
       });
     });
 
