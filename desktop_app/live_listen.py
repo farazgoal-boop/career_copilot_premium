@@ -19,8 +19,9 @@ from .runtime_controller import (
     load_registered_session_state,
     update_registered_session_state,
 )
+from .session_types import normalize_session_type
 from .stt_engine import STTEngine, build_stt_engine
-from .strategy_generator import StrategyPack, load_strategy_pack
+from .strategy_generator import StrategyPack
 from .visual_context import load_visual_context_manifest
 
 
@@ -46,8 +47,8 @@ def run_live_listen_cycle(
     """Capture call audio (or use provided transcript), transcribe, and generate overlay answer."""
     entry = find_session_registry_entry(session_id, registry_path)
     profile_directory = Path(str(entry["profile_directory"]))
-    strategy_path = profile_directory / "strategy_pack.json"
-    strategy_pack = _load_strategy_pack_for_session(profile_directory, strategy_path, entry)
+    session_type = normalize_session_type(load_registered_session_state(session_id, registry_path).get("session_type"))
+    strategy_pack = _build_strategy_pack_for_session(profile_directory, entry, session_type)
     visual_context_entries = load_visual_context_manifest(profile_directory)
 
     runtime_config = load_runtime_config()
@@ -198,14 +199,14 @@ def build_listening_state_for_session(session_id: str, registry_path: str | Path
     return build_listening_overlay()
 
 
-def _load_strategy_pack_for_session(
+def _build_strategy_pack_for_session(
     profile_directory: Path,
-    strategy_path: Path,
     entry: dict[str, object],
+    session_type: str,
 ) -> StrategyPack:
-    if strategy_path.exists():
-        return load_strategy_pack(strategy_path)
-
+    """Always regenerate fresh -- session_type (and company/role) can differ between
+    two sessions on the same profile, so a cached strategy_pack.json would silently
+    serve stale, wrong-type content."""
     profile = load_completed_profile(profile_directory / PROFILE_FILENAME)
     from .strategy_generator import generate_strategy_pack
 
@@ -213,6 +214,7 @@ def _load_strategy_pack_for_session(
         profile,
         company_name=str(entry.get("company_name", "Target Company") or "Target Company"),
         role_title=str(entry.get("role_title", "Target Role") or "Target Role"),
+        session_type=session_type,
     )
 
 

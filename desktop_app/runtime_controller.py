@@ -833,6 +833,7 @@ def register_web_session(
     *,
     registry_path: str | Path,
     prefer_microphone: bool = True,
+    session_type: str = DEFAULT_SESSION_TYPE,
     operator_prompts: dict[str, str] | None = None,
     extra_state: dict[str, object] | None = None,
 ) -> str:
@@ -874,7 +875,7 @@ def register_web_session(
         "role_title": role_title,
         "meeting_source": "Manual / generic interview",
         "meeting_capture_mode": "Companion workspace with live mic capture",
-        "session_type": DEFAULT_SESSION_TYPE,
+        "session_type": session_type,
         "overlay_status": "idle",
         "overlay_visible": False,
         "turn_count": 0,

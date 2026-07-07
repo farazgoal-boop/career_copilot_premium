@@ -9,6 +9,7 @@ from pathlib import Path
 from .confidence_validator import ConfidenceAssessment, assess_interview_confidence
 from .fallback_manager import build_fallback_plan
 from .onboarding import CompleteUserProfile
+from .session_types import DEFAULT_SESSION_TYPE
 
 
 @dataclass
@@ -52,7 +53,10 @@ def generate_strategy_pack(
     company_name: str,
     role_title: str,
     company_values: list[str] | None = None,
+    session_type: str = DEFAULT_SESSION_TYPE,
 ) -> StrategyPack:
+    # session_type is accepted but not yet branched on -- content generation
+    # (Step 2.7 continuation) will use it to vary questions/templates/framing.
     normalized_values = company_values or _default_company_values(company_name)
     top_skills = [skill.name for skill in profile.skills[:3]]
     latest_job = profile.work_history[0]

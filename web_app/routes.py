@@ -569,10 +569,10 @@ def register_routes(app: Flask) -> None:
                 profile_name=profile_name,
                 registry_path=_registry_path(),
                 prefer_microphone=prefer_microphone,
+                session_type=normalize_session_type(briefing.get("session_type")),
                 operator_prompts=operator_prompts,
                 extra_state={
                     "briefing_id": DEFAULT_BRIEFING_ID,
-                    "session_type": normalize_session_type(briefing.get("session_type")),
                     "meeting_source": str(briefing.get("meeting_source", "") or ""),
                     "meeting_capture_mode": str(briefing.get("meeting_capture_mode", "") or ""),
                     "meeting_window_name": str(briefing.get("meeting_window_name", "") or ""),
@@ -665,10 +665,10 @@ def register_routes(app: Flask) -> None:
                 profile_name=profile_name,
                 registry_path=_registry_path(),
                 prefer_microphone=prefer_microphone,
+                session_type=session_type,
                 operator_prompts=operator_prompts,
                 extra_state={
                     "briefing_id": DEFAULT_BRIEFING_ID,
-                    "session_type": session_type,
                     "meeting_source": str(briefing.get("meeting_source", "Manual / generic interview") or "Manual / generic interview"),
                 },
             )
