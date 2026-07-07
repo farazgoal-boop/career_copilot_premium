@@ -94,7 +94,7 @@ def register_routes(app: Flask) -> None:
 
     @app.get("/system-status")
     def system_status_page() -> str:
-        return render_template("system_status.html")
+        return render_template("system_status.html", host_platform=sys.platform)
 
     @app.get("/session/<session_id>/live")
     def live_session(session_id: str) -> Response | str:
@@ -441,6 +441,83 @@ def register_routes(app: Flask) -> None:
         except Exception as exc:
             current_app.logger.exception("Failed to save Mistral key")
             return jsonify({"ok": False, "error": str(exc)}), 500
+
+    @app.get("/api/settings/elevenlabs-key")
+    def get_elevenlabs_key_status() -> Response:
+        from desktop_app.elevenlabs_setup import elevenlabs_api_key
+        key = elevenlabs_api_key()
+        return jsonify({"ok": True, "has_key": bool(key)})
+
+    @app.post("/api/settings/elevenlabs-key")
+    def save_elevenlabs_key() -> Response:
+        from desktop_app.elevenlabs_setup import save_elevenlabs_api_key
+        body = request.get_json(force=True, silent=True) or {}
+        key = str(body.get("api_key", "")).strip()
+        if not key:
+            return jsonify({"ok": False, "error": "API key is required."}), 400
+        try:
+            save_elevenlabs_api_key(key)
+            return jsonify({"ok": True, "message": "ElevenLabs API key saved."})
+        except Exception as exc:
+            current_app.logger.exception("Failed to save ElevenLabs key")
+            return jsonify({"ok": False, "error": str(exc)}), 500
+
+    @app.get("/api/settings/voice-prefs")
+    def get_voice_prefs() -> Response:
+        from desktop_app.voice_prefs import SPEED_OPTIONS, VOICE_OPTIONS, load_voice_prefs
+        prefs = load_voice_prefs()
+        return jsonify(
+            {
+                "ok": True,
+                "voice_id": prefs["voice_id"],
+                "speed": prefs["speed"],
+                "voice_options": [{"label": label, "voice_id": voice_id} for label, voice_id in VOICE_OPTIONS],
+                "speed_options": [{"label": label, "value": value} for label, value in SPEED_OPTIONS],
+            }
+        )
+
+    @app.post("/api/settings/voice-prefs")
+    def save_voice_prefs_route() -> Response:
+        from desktop_app.voice_prefs import save_voice_prefs
+        body = request.get_json(force=True, silent=True) or {}
+        voice_id = str(body.get("voice_id", "") or "")
+        speed = body.get("speed", 1.0)
+        try:
+            prefs = save_voice_prefs(voice_id, speed)
+            return jsonify({"ok": True, **prefs})
+        except Exception as exc:
+            current_app.logger.exception("Failed to save voice prefs")
+            return jsonify({"ok": False, "error": str(exc)}), 500
+
+    @app.post("/api/tts/speak")
+    def tts_speak() -> Response:
+        from desktop_app.elevenlabs_setup import elevenlabs_api_key
+        from desktop_app.tts import SpeechSynthesisError, synthesize_speech
+        from desktop_app.voice_prefs import load_voice_prefs
+
+        body = request.get_json(force=True, silent=True) or {}
+        text = str(body.get("text", "") or "").strip()
+        if not text:
+            return jsonify({"ok": False, "error": "No text to speak."}), 400
+
+        api_key = elevenlabs_api_key()
+        if not api_key:
+            return jsonify({"ok": True, "use_browser_fallback": True}), 200
+
+        prefs = load_voice_prefs()
+        voice_id = str(body.get("voice_id", "") or prefs["voice_id"])
+        try:
+            speed = float(body.get("speed", prefs["speed"]))
+        except (TypeError, ValueError):
+            speed = float(prefs["speed"])
+
+        try:
+            audio_bytes = synthesize_speech(text, api_key, voice_id=voice_id, speed=speed)
+        except SpeechSynthesisError as exc:
+            current_app.logger.warning("ElevenLabs synthesis failed: %s", exc)
+            return jsonify({"ok": True, "use_browser_fallback": True, "error": str(exc)}), 200
+
+        return Response(audio_bytes, mimetype="audio/mpeg")
 
     @app.post("/api/overlay/show")
     def overlay_show() -> Response:

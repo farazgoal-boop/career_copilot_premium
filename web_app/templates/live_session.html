@@ -189,7 +189,14 @@
 
   .pill:hover { background: rgba(255, 255, 255, 0.09); }
 
-  #copy-button {
+  .ls-answer-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  #copy-button,
+  #speak-button {
     border: 1px solid var(--line);
     background: rgba(255, 255, 255, 0.05);
     border-radius: 999px;
@@ -202,7 +209,17 @@
     flex-shrink: 0;
   }
 
-  #copy-button:hover { background: rgba(255, 255, 255, 0.1); }
+  #copy-button:hover,
+  #speak-button:hover { background: rgba(255, 255, 255, 0.1); }
+
+  /* .is-speaking is toggled by JS while audio plays; reuses the mic-pulse
+     keyframes already defined for #browser-mic-toggle.mic-listening. */
+  #speak-button.is-speaking {
+    background: rgba(99, 102, 241, 0.18);
+    border-color: rgba(99, 102, 241, 0.6);
+    color: var(--accent);
+    animation: mic-pulse 1.8s ease-in-out infinite;
+  }
 
   /* ── Quick-action chips ── */
   .ls-action-chips {
@@ -540,7 +557,10 @@
     <div id="answer-body" class="placeholder">Waiting for a question to be captured.</div>
     <div class="ls-answer-footer">
       <div id="alternatives"></div>
-      <button id="copy-button" type="button">Copy</button>
+      <div class="ls-answer-actions">
+        <button id="speak-button" type="button" title="Speak answer aloud (Alt+S)">&#128266; Speak</button>
+        <button id="copy-button" type="button">Copy</button>
+      </div>
     </div>
   </div>
 
@@ -609,6 +629,7 @@
       const statusHint = document.getElementById('status-hint');
       const alternatives = document.getElementById('alternatives');
       const copyButton = document.getElementById('copy-button');
+      const speakButton = document.getElementById('speak-button');
       const fallbackSimple = document.getElementById('fallback-simple');
       const fallbackEmergency = document.getElementById('fallback-emergency');
       const interviewerText = document.getElementById('interviewer-text');
@@ -889,6 +910,75 @@
           window.showToast?.('Main reply copied', 'success');
         } catch {
           window.showToast?.('Copy failed', 'error');
+        }
+      });
+
+      let currentAudio = null;
+
+      function stopSpeaking() {
+        if (currentAudio) {
+          currentAudio.pause();
+          currentAudio = null;
+        }
+        if ('speechSynthesis' in window) {
+          window.speechSynthesis.cancel();
+        }
+        speakButton.classList.remove('is-speaking');
+        speakButton.innerHTML = '&#128266; Speak';
+      }
+
+      function speakWithBrowser(text) {
+        if (!('speechSynthesis' in window)) {
+          window.showToast?.('Voice output is not supported in this browser', 'error');
+          stopSpeaking();
+          return;
+        }
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.onend = stopSpeaking;
+        utterance.onerror = stopSpeaking;
+        window.speechSynthesis.speak(utterance);
+      }
+
+      async function speakAnswer() {
+        if (speakButton.classList.contains('is-speaking')) {
+          stopSpeaking();
+          return;
+        }
+        const text = answerBody.textContent || '';
+        if (!text || answerBody.classList.contains('placeholder')) {
+          window.showToast?.('No answer to speak yet', 'info');
+          return;
+        }
+        speakButton.classList.add('is-speaking');
+        speakButton.innerHTML = '&#9209; Stop';
+        try {
+          const response = await fetch('/api/tts/speak', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text }),
+          });
+          const contentType = response.headers.get('Content-Type') || '';
+          if (response.ok && contentType.indexOf('audio/') === 0) {
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            currentAudio = new Audio(url);
+            currentAudio.onended = stopSpeaking;
+            currentAudio.onerror = stopSpeaking;
+            await currentAudio.play();
+            return;
+          }
+          speakWithBrowser(text);
+        } catch (error) {
+          speakWithBrowser(text);
+        }
+      }
+
+      speakButton.addEventListener('click', speakAnswer);
+
+      document.addEventListener('keydown', (event) => {
+        if (event.altKey && !event.ctrlKey && !event.metaKey && (event.key === 's' || event.key === 'S')) {
+          event.preventDefault();
+          speakAnswer();
         }
       });
 

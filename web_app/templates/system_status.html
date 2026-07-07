@@ -35,6 +35,57 @@
     </div>
   </div>
 
+  <!-- Voice routing guide: how to make the caller hear the Speak-button audio -->
+  <div class="st-group settings-card">
+    <p class="st-group-label">Voice Routing to Caller (Optional)</p>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <p style="font-size:0.88rem;color:var(--premium-muted);margin:0;">
+        To let callers hear AI voice output (from Settings → Voice Output), route the app's audio
+        into your call app's microphone input using a free virtual audio cable.
+      </p>
+
+      {% if host_platform == 'win32' %}
+        <p style="font-size:0.85rem;color:var(--premium-text);margin:0;"><strong>Windows: VB-Cable</strong></p>
+        <ol style="font-size:0.85rem;color:var(--premium-muted);margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px;">
+          <li>Install VB-Cable (free) from vb-audio.com/Cable.</li>
+          <li>In Zoom/Meet/WhatsApp call settings, set <strong>CABLE Input (VB-Audio Virtual Cable)</strong> as the microphone.</li>
+          <li>Set your Windows playback device to <strong>CABLE Input</strong> so app audio plays into it, or select it as the output for the Speak button's audio.</li>
+        </ol>
+        <div>
+          <a href="https://vb-audio.com/Cable/" target="_blank" rel="noopener noreferrer"
+             style="display:inline-block;padding:9px 18px;border-radius:8px;font-size:0.85rem;font-weight:600;background:var(--premium-accent);color:#fff;text-decoration:none;">
+            Download VB-Cable
+          </a>
+        </div>
+      {% elif host_platform == 'darwin' %}
+        <p style="font-size:0.85rem;color:var(--premium-text);margin:0;"><strong>Mac: BlackHole</strong></p>
+        <ol style="font-size:0.85rem;color:var(--premium-muted);margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px;">
+          <li>Install BlackHole (free, 2ch) from existential.audio/blackhole.</li>
+          <li>In Zoom/Meet/WhatsApp call settings, set <strong>BlackHole 2ch</strong> as the microphone.</li>
+          <li>Route the app's audio output through BlackHole so the Speak button's voice reaches the call.</li>
+        </ol>
+        <div>
+          <a href="https://existential.audio/blackhole/" target="_blank" rel="noopener noreferrer"
+             style="display:inline-block;padding:9px 18px;border-radius:8px;font-size:0.85rem;font-weight:600;background:var(--premium-accent);color:#fff;text-decoration:none;">
+            Download BlackHole
+          </a>
+        </div>
+      {% else %}
+        <p style="font-size:0.85rem;color:var(--premium-text);margin:0;"><strong>Linux: PulseAudio / PipeWire</strong></p>
+        <ol style="font-size:0.85rem;color:var(--premium-muted);margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px;">
+          <li>Create a null sink / loopback module (PulseAudio) or a virtual sink (PipeWire).</li>
+          <li>Set your call app's microphone input to that virtual sink's monitor source.</li>
+          <li>Route the app's audio output to the same virtual sink.</li>
+        </ol>
+      {% endif %}
+
+      <p style="font-size:0.78rem;color:var(--premium-muted);margin:0;">
+        This step is optional — the Speak button works through your normal speakers without it; a virtual
+        cable is only needed so the <em>other person on the call</em> can hear it too.
+      </p>
+    </div>
+  </div>
+
 </div>
 {% endblock %}
 
