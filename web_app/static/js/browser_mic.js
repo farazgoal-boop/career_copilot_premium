@@ -32,6 +32,91 @@
     }
   }
 
+  // --- Continuous session recording (best-effort; independent of Speech Recognition support) ---
+  // One MediaRecorder spans the whole session: it starts on the first mic-toggle click and is
+  // paused/resumed alongside the toggle rather than stopped, so the whole call is one file.
+  let mediaStream = null;
+  let mediaRecorder = null;
+  let recordedChunks = [];
+  let recordingSupported = typeof MediaRecorder !== 'undefined'
+    && typeof MediaRecorder.isTypeSupported === 'function'
+    && MediaRecorder.isTypeSupported('audio/webm');
+
+  async function ensureRecording() {
+    if (!recordingSupported || !sessionId) return;
+    if (mediaRecorder) {
+      if (mediaRecorder.state === 'paused') mediaRecorder.resume();
+      return;
+    }
+    try {
+      mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch (error) {
+      recordingSupported = false;
+      return;
+    }
+    try {
+      mediaRecorder = new MediaRecorder(mediaStream, { mimeType: 'audio/webm' });
+    } catch (error) {
+      recordingSupported = false;
+      mediaStream.getTracks().forEach((track) => track.stop());
+      mediaStream = null;
+      return;
+    }
+    mediaRecorder.ondataavailable = (event) => {
+      if (event.data && event.data.size > 0) recordedChunks.push(event.data);
+    };
+    mediaRecorder.start(1000);
+  }
+
+  function pauseRecording() {
+    if (mediaRecorder && mediaRecorder.state === 'recording') {
+      mediaRecorder.pause();
+    }
+  }
+
+  function finalizeRecording() {
+    if (!mediaRecorder) return Promise.resolve(null);
+    return new Promise((resolve) => {
+      const finish = () => {
+        const blob = new Blob(recordedChunks, { type: 'audio/webm' });
+        if (mediaStream) {
+          mediaStream.getTracks().forEach((track) => track.stop());
+        }
+        resolve(blob);
+      };
+      if (mediaRecorder.state === 'inactive') {
+        finish();
+        return;
+      }
+      mediaRecorder.addEventListener('stop', finish, { once: true });
+      mediaRecorder.stop();
+    });
+  }
+
+  // Always available -- even in browsers without Speech Recognition support -- so the
+  // End Session flow can mark the session ended (and upload a recording, if one exists).
+  window.finalizeAndUploadSessionRecording = async function finalizeAndUploadSessionRecording() {
+    if (!sessionId) return { ok: false, error: 'No session ID' };
+    try {
+      if (typeof window.stopBrowserMicListening === 'function') {
+        window.stopBrowserMicListening();
+      }
+      const blob = await finalizeRecording();
+      const formData = new FormData();
+      if (blob && blob.size > 0) {
+        formData.append('recording', blob, 'session-recording.webm');
+      }
+      const response = await fetch(`/api/session/${encodeURIComponent(sessionId)}/end`, {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await response.json().catch(() => ({}));
+      return { ok: response.ok, ...data };
+    } catch (error) {
+      return { ok: false, error: error instanceof Error ? error.message : String(error) };
+    }
+  };
+
   if (!supported) {
     micButton.disabled = true;
     micButton.classList.add('mic-idle');
@@ -109,6 +194,7 @@
     }
     active = true;
     setState(STATE_LISTENING, 'Listening... (click to stop)');
+    ensureRecording();
   }
 
   function stopListening() {
@@ -118,8 +204,11 @@
       recognition.stop();
       recognition = null;
     }
+    pauseRecording();
     setState(STATE_IDLE, 'Start Browser Mic');
   }
+
+  window.stopBrowserMicListening = stopListening;
 
   micButton.addEventListener('click', () => {
     if (active) {

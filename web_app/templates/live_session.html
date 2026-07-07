@@ -582,7 +582,7 @@
 
   <!-- End session -->
   <div class="ls-end-wrap">
-    <button class="ls-end-btn" type="button" onclick="window.location.href='/'">End session</button>
+    <button id="end-session-btn" class="ls-end-btn" type="button">End session</button>
   </div>
 
   <!-- Hidden infrastructure: JS references these elements but they are not shown -->
@@ -622,6 +622,7 @@
       const metaUpdated = document.getElementById('meta-updated');
       const manualQuestionInput = document.getElementById('manual-question-input');
       const manualQuestionSubmit = document.getElementById('manual-question-submit');
+      const endSessionButton = document.getElementById('end-session-btn');
       const transcriptLogBody = document.getElementById('transcript-log-body');
       const transcriptLogCount = document.getElementById('transcript-log-count');
       const transcriptDownloadLink = document.getElementById('transcript-download-link');
@@ -921,10 +922,26 @@
         }
       }
 
+      async function endSession() {
+        endSessionButton.disabled = true;
+        const previous = endSessionButton.textContent;
+        endSessionButton.textContent = 'Saving...';
+        try {
+          if (typeof window.finalizeAndUploadSessionRecording === 'function') {
+            await window.finalizeAndUploadSessionRecording();
+          }
+        } catch (error) {
+          // Best-effort: never block navigation on a failed recording upload.
+        } finally {
+          window.location.href = '/';
+        }
+      }
+
       fallbackSimple.addEventListener('click', () => postAction('fallback_simple', fallbackSimple));
       fallbackEmergency.addEventListener('click', () => postAction('fallback_emergency', fallbackEmergency));
       sendLiveSteerButton.addEventListener('click', sendLiveSteer);
       manualQuestionSubmit.addEventListener('click', submitManualQuestion);
+      endSessionButton.addEventListener('click', endSession);
 
       render(initialPayload);
       window.setInterval(refresh, 3000);

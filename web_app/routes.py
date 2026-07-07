@@ -717,6 +717,39 @@ def register_routes(app: Flask) -> None:
             return jsonify({"error": _display_error(error)}), 404
         return jsonify(payload)
 
+    @app.post("/api/session/<session_id>/end")
+    def session_end(session_id: str) -> Response:
+        from desktop_app.runtime_controller import load_registered_session_state, update_registered_session_state
+        from desktop_app.session_recording import RecordingValidationError, save_session_recording
+
+        try:
+            existing_state = load_registered_session_state(session_id, _registry_path())
+        except KeyError as error:
+            return jsonify({"ok": False, "error": _display_error(error)}), 404
+
+        recording_meta: dict[str, object] = {}
+        recording_file = request.files.get("recording")
+        if recording_file and recording_file.filename:
+            try:
+                recording_meta = save_session_recording(session_id, recording_file.read())
+            except RecordingValidationError as error:
+                return jsonify({"ok": False, "error": str(error)}), 400
+            except Exception as error:
+                current_app.logger.exception("Recording save failed for session %s", session_id)
+                return jsonify({"ok": False, "error": str(error)}), 500
+
+        update_registered_session_state(
+            session_id,
+            {
+                **existing_state,
+                **recording_meta,
+                "session_ended": True,
+                "ended_at": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
+            },
+            registry_path=_registry_path(),
+        )
+        return jsonify({"ok": True, "session_id": session_id, "recording_saved": bool(recording_meta)}), 200
+
     @app.post("/api/session/<session_id>/listen")
     def session_live_listen(session_id: str) -> Response:
         from desktop_app.language_config import save_language_prefs
