@@ -4,7 +4,7 @@ AI interview assistant desktop app. PySide6 (floating overlay) + Flask (local da
 
 ## Version
 
-- Current version: v1.0.9
+- Current version: v1.0.8 (latest published GitHub release — verified live against the API; a prior "v1.0.9" note here was inaccurate, no such tag/release exists). Also tracked as `CURRENT_APP_VERSION` in `web_app/routes.py` (used by the sidebar version badge + `/api/check-update`). Bump both together, plus `setup.py` / `career-copilot-version.txt`, when cutting a release (Phase 3 Step 3.10 will do this for v2.0.0).
 - Git tags:
   - `v1.0.5` — macOS SSL cert fix
   - `v1.0.6` — activation/profile/sessions/mobile QR
@@ -26,6 +26,13 @@ AI interview assistant desktop app. PySide6 (floating overlay) + Flask (local da
 - `desktop_app/session_recording.py` — continuous per-session `.webm` recording storage (session-scoped, not profile-scoped)
 - `desktop_app/meeting_summary.py` — post-session summary + action items generation from `transcript_log` (Mistral, JSON mode)
 - `web_app/templates/session_report.html` — post-session report page (`/session/<id>/report`)
+- `desktop_app/elevenlabs_setup.py` — ElevenLabs API key storage/validation (plaintext `.env`, mirrors `mistral_setup.py`)
+- `desktop_app/voice_prefs.py` — voice/speed preferences for TTS
+- `desktop_app/tts.py` — server-side ElevenLabs speech synthesis (key never reaches the browser)
+- `desktop_app/language_config.py` — listen/reply/speak language prefs (extended in Phase 3 with `speak_language` + German)
+- `desktop_app/translation.py` — Mistral-based translation, used only when "speak to caller in" differs from the answer's language
+- `web_app/static/css/premium.css` — theme tokens (`:root` = dark default, `:root[data-theme="light"]` override); all new CSS must use these `--premium-*` vars
+- `web_app/templates/_sidebar.html` — sidebar nav + version badge/update-check (bottom, revealed on hover/pin)
 
 ## Current active task
 
@@ -39,7 +46,22 @@ AI interview assistant desktop app. PySide6 (floating overlay) + Flask (local da
 4. Meeting summary + action items generated from `transcript_log` on session end (Goal #4). **Done.** Note: built from `transcript_log` only (questions heard + Mistral's suggested replies), not a verified two-way transcript — the user's own spoken words are never captured.
 5. Post-session report page at `/session/<id>/report` (Goal #5, Step 2.12) — surfaces summary, action items, transcript, and recording playback; sessions list routes ended sessions here instead of `/live`. **Done.**
 
-Phase 3: not yet defined — confirm scope with user before starting new work.
+**Phase 3 — IN PROGRESS**, branch `feature/multilang-premium-polish` (not merged to `main` yet). Goal: $299 → $999 tier, competing with Google Meet AI / Zoom AI Companion / Otter.ai. Ends in a v2.0.0 multi-platform build. 10 steps total; process is one step at a time, diff shown and confirmed before each commit, full Playwright suite run at least after Steps 3.3/3.7/3.9/3.10 (and as extra insurance after any step touching shared templates).
+
+1. Real-time voice output (ElevenLabs + browser TTS fallback) — **Done** (commit `a7a1bafc`). Key stored plaintext `.env` like Mistral's. Speak button on live-session answers, Voice Output card in Settings, OS-aware VB-Cable/BlackHole guide on System Status.
+2. Multi-language intelligence — **Done** (commit `6083a9f5`). Language Settings card (caller's language / answer language / speak-to-caller language, 8 languages). Speak button translates via Mistral when the target language differs from the answer's language.
+3. Premium light/dark theme system — **Done** (commit `a5b4bfac`). `premium.css` token architecture (`--premium-*`, dark default + `[data-theme="light"]`), Appearance card in Settings, no-flash theme-init in `base.html`. `activation.html` deliberately excluded (own palette, never-touch per rules below).
+4. Auto-update notification in sidebar — **Done** (commit `bb9e6a6c`). `GET /api/check-update` against the real GitHub Releases API, manual/click-triggered only.
+5. Company/client research before sessions — **Not started.**
+6. Resume-matched personalized answers — **Not started.**
+7. Interview Preparation Mode (`/prepare`) — **Not started.** Run full Playwright suite after this step.
+8. Premium onboarding experience — **Not started.**
+9. Performance + polish pass — **Not started.** Run full Playwright suite after this step.
+10. Final v2.0.0 build (version bump across `setup.py`/`career-copilot-version.txt`/installers, tag, multi-platform packages) — **Not started.** Run full Playwright suite after this step.
+
+Never touch (Phase 3 additions, on top of the list below): `desktop_app/audio_handler.py`'s F2 path, Playwright test suite *structure*. If anything breaks mid-step: `git checkout -- <file>` and report, don't silently patch over it.
+
+Resume prompt for a fresh session: "Read CLAUDE.md. Phase 3 in progress, Steps 3.1–3.4 done. We are at Step 3.5. Last commit `bb9e6a6c`. Branch `feature/multilang-premium-polish`. Continue."
 
 ## Fix status
 
@@ -61,7 +83,7 @@ Phase 3: not yet defined — confirm scope with user before starting new work.
 
 - Always diagnose before changing anything.
 - One feature at a time, git branch per feature.
-- Never touch: SSL fix, backup tags, activation code generation logic, Playwright test suite.
+- Never touch: SSL fix, backup tags, activation code generation logic (including `activation.html`'s UI/palette), Playwright test suite structure, `desktop_app/audio_handler.py`'s F2 path.
 - Always confirm with user before committing.
 
 ## Client delivery
