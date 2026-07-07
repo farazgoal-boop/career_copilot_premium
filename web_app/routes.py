@@ -24,6 +24,12 @@ from runtime_paths import (
 DEFAULT_BRIEFING_ID = "primary"
 _MIC_RUNTIME_CACHE: dict[str, object] | None = None
 
+# Single source of truth for the running app's version, shown in the
+# sidebar and compared against GitHub releases by /api/check-update. Bump
+# alongside setup.py / career-copilot-version.txt / the other files listed
+# in CLAUDE.md's version-bump checklist.
+CURRENT_APP_VERSION = "1.0.8"
+
 
 def _is_public_route(path: str) -> bool:
     normalized = (path or "/").rstrip("/").lower() or "/"
@@ -39,6 +45,10 @@ def _is_public_route(path: str) -> bool:
 
 
 def register_routes(app: Flask) -> None:
+    @app.context_processor
+    def inject_app_version() -> dict[str, object]:
+        return {"app_version": CURRENT_APP_VERSION}
+
     @app.get("/api/health")
     def health() -> Response:
         return jsonify({"status": "ok"}), 200
@@ -377,6 +387,50 @@ def register_routes(app: Flask) -> None:
         from runtime_paths import portable_status_payload
 
         return jsonify({"ok": True, **portable_status_payload()})
+
+    @app.get("/api/check-update")
+    def check_update() -> Response:
+        """Compare the running version against the latest published GitHub release.
+
+        Manual/user-triggered only (no auto-polling) -- one outbound request
+        per click. Never blocks or errors loudly: any failure reaching
+        GitHub just reports "could not check" rather than surfacing a stack
+        trace, since this is a nice-to-have, not a required feature.
+        """
+        import json as _json
+        from urllib import error as _url_error
+        from urllib import request as _url_request
+
+        current_version = CURRENT_APP_VERSION
+        repo = "farazgoal-boop/career_copilot_premium"
+
+        try:
+            url = f"https://api.github.com/repos/{repo}/releases/latest"
+            req = _url_request.Request(url, headers={"User-Agent": "CareerCopilotPremium"})
+            with _url_request.urlopen(req, timeout=5) as response:
+                data = _json.loads(response.read())
+            latest_version = str(data.get("tag_name", "")).lstrip("v").strip()
+            if not latest_version:
+                raise ValueError("Release response had no tag_name.")
+            return jsonify(
+                {
+                    "ok": True,
+                    "update_available": _is_version_newer(latest_version, current_version),
+                    "current_version": current_version,
+                    "latest_version": latest_version,
+                    "download_url": str(data.get("html_url", "")),
+                }
+            )
+        except (_url_error.URLError, _url_error.HTTPError, OSError, TimeoutError, ValueError, KeyError) as exc:
+            current_app.logger.warning("check-update failed: %s", exc)
+            return jsonify(
+                {
+                    "ok": False,
+                    "update_available": False,
+                    "current_version": current_version,
+                    "error": "Could not reach GitHub.",
+                }
+            )
 
     @app.get("/api/sessions/recent")
     def recent_sessions() -> Response:
@@ -1809,6 +1863,32 @@ def _display_error(error: KeyError) -> str:
     if error.args:
         return str(error.args[0])
     return str(error)
+
+
+def _is_version_newer(candidate: str, baseline: str) -> bool:
+    """True if candidate > baseline as a dotted version (e.g. "1.10.0" > "1.9.0").
+
+    Plain string inequality (candidate != baseline) would also flag a
+    downgrade or a differently-formatted-but-equal tag as "update
+    available" -- this compares the actual numeric parts instead. Falls
+    back to False on anything that doesn't parse as dotted integers,
+    since a malformed tag shouldn't nag the user with a false positive.
+    """
+    def parts(value: str) -> tuple[int, ...] | None:
+        try:
+            return tuple(int(segment) for segment in value.strip().split("."))
+        except ValueError:
+            return None
+
+    candidate_parts = parts(candidate)
+    baseline_parts = parts(baseline)
+    if candidate_parts is None or baseline_parts is None:
+        return False
+
+    length = max(len(candidate_parts), len(baseline_parts))
+    candidate_padded = candidate_parts + (0,) * (length - len(candidate_parts))
+    baseline_padded = baseline_parts + (0,) * (length - len(baseline_parts))
+    return candidate_padded > baseline_padded
 
 
 def _extract_validation_issues(message: str) -> list[str]:

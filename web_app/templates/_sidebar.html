@@ -90,6 +90,18 @@
     </button>
 
   </nav>
+
+  <!-- Version / update check -->
+  <div class="sidebar-version-area">
+    <div class="version-badge">
+      <span class="version-dot"></span>
+      <span class="version-text">v{{ app_version }}</span>
+    </div>
+    <button class="update-check-btn" id="sidebar-update-check-btn" type="button" title="Check for updates">
+      &#8593; Check updates
+    </button>
+    <div class="update-status" id="sidebar-update-status" hidden></div>
+  </div>
 </aside>
 <script>
 (function () {
@@ -125,6 +137,45 @@
   sidebar.querySelectorAll('.sidebar-item[data-path]').forEach(function (item) {
     if (item.dataset.path === path) item.classList.add('is-active');
   });
+
+  /* Check for updates — compares the running version against the latest
+     GitHub release. Manual/click-triggered only, never auto-polled. */
+  var updateBtn = document.getElementById('sidebar-update-check-btn');
+  var updateStatus = document.getElementById('sidebar-update-status');
+  if (updateBtn && updateStatus) {
+    updateBtn.addEventListener('click', function () {
+      updateBtn.textContent = 'Checking...';
+      updateBtn.disabled = true;
+      fetch('/api/check-update', { headers: { Accept: 'application/json' } })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          updateStatus.classList.remove('update-available');
+          if (d.update_available) {
+            var link = document.createElement('a');
+            link.href = d.download_url || '#';
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            link.textContent = 'Download';
+            updateStatus.textContent = '\u{1F389} v' + d.latest_version + ' available! ';
+            updateStatus.appendChild(link);
+            updateStatus.classList.add('update-available');
+          } else if (d.ok) {
+            updateStatus.textContent = '✅ You are up to date';
+          } else {
+            updateStatus.textContent = d.error || 'Could not check. Try again.';
+          }
+          updateStatus.hidden = false;
+        })
+        .catch(function () {
+          updateStatus.textContent = 'Could not check. Try again.';
+          updateStatus.hidden = false;
+        })
+        .finally(function () {
+          updateBtn.innerHTML = '&#8593; Check updates';
+          updateBtn.disabled = false;
+        });
+    });
+  }
 
   /* Open Overlay button — writes a flag file the overlay's poll timer picks up */
   var overlayBtn = document.getElementById('sidebar-open-overlay-btn');

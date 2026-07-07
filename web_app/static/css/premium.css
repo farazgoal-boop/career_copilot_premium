@@ -1078,6 +1078,81 @@ body.has-sidebar .premium-main {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
+   SIDEBAR — version / update check (rail bottom, revealed on hover/pin same
+   as .sidebar-label -- opacity only, the sidebar's own width+overflow:hidden
+   transition handles the collapsed-state clipping)
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.sidebar-version-area {
+  flex-shrink: 0;
+  padding: 10px 8px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  opacity: 0;
+  white-space: nowrap;
+}
+
+.sidebar:hover .sidebar-version-area,
+.sidebar.is-open .sidebar-version-area {
+  opacity: 1;
+}
+
+.version-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 4px;
+}
+
+.version-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--premium-success);
+  flex-shrink: 0;
+}
+
+.version-text {
+  font-size: 0.76rem;
+  color: var(--premium-muted);
+  font-weight: 600;
+}
+
+.update-check-btn {
+  border: 1px solid var(--premium-line);
+  background: var(--premium-overlay-04);
+  color: var(--premium-muted);
+  border-radius: 8px;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 6px 10px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.update-check-btn:hover { background: var(--premium-overlay-06); color: var(--premium-text); }
+.update-check-btn:disabled { opacity: 0.6; cursor: wait; }
+
+.update-status {
+  font-size: 0.74rem;
+  color: var(--premium-muted);
+  line-height: 1.4;
+  padding: 0 4px;
+  white-space: normal;
+}
+
+.update-status a {
+  color: var(--premium-accent-strong);
+  text-decoration: underline;
+}
+
+.update-status.update-available {
+  color: var(--premium-success);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
    PAIRING MODAL
    ───────────────────────────────────────────────────────────────────────────── */
 
