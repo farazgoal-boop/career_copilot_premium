@@ -187,7 +187,7 @@ def refresh_mistral_validation_async(force: bool = False) -> None:
 def run_first_time_setup_wizard(qt_app: "QtApplication | None" = None) -> bool:
     """Show PySide6 setup dialog. Returns True when key saved and valid."""
     try:
-        from PySide6.QtCore import Qt
+        from PySide6.QtCore import Qt, QTimer
         from PySide6.QtWidgets import (
             QApplication,
             QDialog,
@@ -324,6 +324,14 @@ def run_first_time_setup_wizard(qt_app: "QtApplication | None" = None) -> bool:
     verify_btn.clicked.connect(save_key)
     key_input.returnPressed.connect(save_key)
 
+    # exec() shows the dialog itself but never raises/focuses it -- on macOS,
+    # a process launched from a shell script (not a proper .app bundle)
+    # otherwise starts without window-manager focus, so this dialog can
+    # render behind other windows or without keyboard focus, making startup
+    # look hung while it's actually just waiting on an unreachable dialog.
+    # Scheduled via singleShot so it runs once the dialog actually has a
+    # window handle (raise_()/activateWindow() are no-ops before that).
+    QTimer.singleShot(0, lambda: (dialog.raise_(), dialog.activateWindow()))
     return dialog.exec() == QDialog.DialogCode.Accepted
 
 
