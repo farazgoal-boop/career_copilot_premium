@@ -1,0 +1,451 @@
+{% extends "base.html" %}
+
+{% block title %}Prepare – Career Copilot Premium{% endblock %}
+
+{% block header %}{% endblock %}
+
+{% block body_class %}prepare-view has-sidebar{% endblock %}
+
+{% block extra_head %}
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  body.prepare-view .premium-main { padding: 0; }
+
+  .prep-subtitle {
+    margin: 4px 0 0;
+    font-size: 0.88rem;
+    color: var(--premium-muted);
+  }
+
+  .prep-empty {
+    font-size: 0.88rem;
+    color: var(--premium-muted);
+    margin: 0;
+  }
+
+  .prep-empty-card {
+    text-align: center;
+    padding: 40px 20px;
+  }
+
+  .prep-empty-card p {
+    color: var(--premium-muted);
+    margin: 0 0 16px;
+  }
+
+  .prep-cta-link {
+    display: inline-block;
+    padding: 10px 20px;
+    border-radius: 10px;
+    background: var(--premium-accent);
+    color: #ffffff;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.88rem;
+  }
+
+  .prep-readiness-row {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  .prep-score {
+    font-size: 2.4rem;
+    font-weight: 700;
+    color: var(--premium-text);
+    line-height: 1;
+  }
+
+  .prep-score-sub {
+    font-size: 0.72rem;
+    color: var(--premium-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .prep-band-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 0.74rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .prep-band-badge--below { background: rgba(239, 68, 68, 0.14); color: var(--premium-danger); }
+  .prep-band-badge--mid { background: rgba(245, 158, 11, 0.14); color: var(--premium-warning); }
+  .prep-band-badge--ready { background: rgba(34, 197, 94, 0.14); color: var(--premium-success); }
+
+  .prep-action-plan {
+    margin: 10px 0 0;
+    font-size: 0.88rem;
+    color: var(--premium-text);
+    line-height: 1.5;
+  }
+
+  .prep-highlight-list {
+    margin: 0;
+    padding-left: 18px;
+    max-height: 220px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .prep-highlight-list li {
+    font-size: 0.86rem;
+    color: var(--premium-text);
+    line-height: 1.4;
+  }
+
+  .prep-difficulty-group { margin-bottom: 14px; }
+  .prep-difficulty-group:last-child { margin-bottom: 0; }
+
+  .prep-difficulty-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--premium-muted);
+    margin: 0 0 6px;
+  }
+
+  .prep-question {
+    border: 1px solid var(--premium-line);
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin-bottom: 6px;
+  }
+
+  .prep-question summary {
+    cursor: pointer;
+    font-size: 0.88rem;
+    color: var(--premium-text);
+    font-weight: 600;
+  }
+
+  .prep-question p {
+    margin: 8px 0 0;
+    font-size: 0.85rem;
+    color: var(--premium-muted);
+    line-height: 1.5;
+  }
+
+  .prep-overview-text {
+    font-size: 0.88rem;
+    color: var(--premium-text);
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  .prep-research-form {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .prep-research-form input {
+    flex: 1;
+    min-width: 0;
+    padding: 8px 10px;
+    border-radius: 10px;
+    border: 1px solid var(--premium-line);
+    background: var(--premium-overlay-04);
+    color: var(--premium-text);
+    font: inherit;
+    font-size: 0.8rem;
+    outline: none;
+  }
+
+  .prep-research-form button {
+    padding: 8px 14px;
+    border-radius: 10px;
+    border: 0;
+    background: var(--premium-accent);
+    color: #ffffff;
+    font: inherit;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .prep-research-form button:disabled { opacity: 0.6; cursor: wait; }
+
+  .prep-research-section { margin-bottom: 10px; }
+  .prep-research-section:last-child { margin-bottom: 0; }
+
+  .prep-research-section-title {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--premium-muted);
+    margin: 0 0 4px;
+  }
+
+  .prep-research-list { margin: 0; padding-left: 18px; }
+
+  .prep-research-caveat {
+    font-size: 0.72rem;
+    color: var(--premium-muted);
+    opacity: 0.8;
+    font-style: italic;
+    margin-top: 4px;
+  }
+
+  .prep-cta-row { display: flex; justify-content: flex-end; }
+
+  .prep-start-btn {
+    padding: 12px 24px;
+    border-radius: 12px;
+    border: 0;
+    background: var(--premium-accent);
+    color: #ffffff;
+    font: inherit;
+    font-size: 0.92rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .prep-start-btn:disabled { opacity: 0.6; cursor: wait; }
+
+  .prep-start-status {
+    font-size: 0.82rem;
+    color: var(--premium-danger);
+    margin: 8px 0 0;
+    text-align: right;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+{% include '_sidebar.html' %}
+<div class="page-content">
+
+  <div class="page-header">
+    <a href="/dashboard" class="page-breadcrumb">← Home</a>
+    <h1 class="page-title">Interview Preparation</h1>
+    {% if profile_ready %}
+      <p class="prep-subtitle">{{ role_title }} at {{ company_name }} — {{ session_type_label }}</p>
+    {% endif %}
+  </div>
+
+  {% if not profile_ready %}
+    <div class="st-group settings-card prep-empty-card">
+      <p>Complete your profile to unlock readiness scoring, practice questions, and company research.</p>
+      <a class="prep-cta-link" href="/onboarding">Complete your profile</a>
+    </div>
+  {% else %}
+
+    <!-- Readiness -->
+    <div class="st-group settings-card">
+      <p class="st-group-label">Readiness</p>
+      <div class="prep-readiness-row">
+        <div>
+          <div class="prep-score">{{ strategy_pack.confidence.score }}</div>
+          <div class="prep-score-sub">out of 100</div>
+        </div>
+        {% set band = strategy_pack.confidence.band %}
+        {% if band == 'below_60' %}
+          <span class="prep-band-badge prep-band-badge--below">Needs practice</span>
+        {% elif band == '60_to_80' %}
+          <span class="prep-band-badge prep-band-badge--mid">Ready, with prep</span>
+        {% else %}
+          <span class="prep-band-badge prep-band-badge--ready">Ready</span>
+        {% endif %}
+      </div>
+      <p class="prep-action-plan">{{ strategy_pack.confidence.action_plan }}</p>
+    </div>
+
+    <!-- Resume ammo -->
+    <div class="st-group settings-card">
+      <p class="st-group-label">Resume experience to lean on</p>
+      {% if strategy_pack.resume_highlights %}
+        <ul class="prep-highlight-list">
+          {% for item in strategy_pack.resume_highlights %}
+            <li>{{ item.text }}</li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="prep-empty">No resume details found yet.</p>
+      {% endif %}
+    </div>
+
+    <!-- Company research -->
+    <div class="st-group settings-card">
+      <p class="st-group-label">Company research</p>
+      <div id="prep-research-body">
+        <p class="prep-empty">No research yet — click Generate below.</p>
+      </div>
+      <form id="prep-research-form" class="prep-research-form">
+        <input id="prep-research-name-input" type="text" value="{{ company_name if company_name != 'Target Company' else '' }}" placeholder="Company or client name" autocomplete="off">
+        <button id="prep-research-generate-btn" type="submit">Generate</button>
+      </form>
+    </div>
+
+    <!-- Practice questions -->
+    <div class="st-group settings-card">
+      <p class="st-group-label">Practice questions</p>
+      {% set groups = {'Easy': [], 'Medium': [], 'Tricky': []} %}
+      {% for q in strategy_pack.expected_questions %}
+        {% if groups.get(q.difficulty) is not none %}
+          {% set _ = groups[q.difficulty].append(q) %}
+        {% endif %}
+      {% endfor %}
+      {% for label, items in groups.items() %}
+        {% if items %}
+          <div class="prep-difficulty-group">
+            <p class="prep-difficulty-label">{{ label }}</p>
+            {% for q in items %}
+              <details class="prep-question">
+                <summary>{{ q.question }}</summary>
+                <p>{{ q.suggested_answer }}</p>
+              </details>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+
+    <!-- Start session -->
+    <div class="st-group settings-card">
+      <div class="prep-cta-row">
+        <button id="prep-start-btn" class="prep-start-btn" type="button">Start session now</button>
+      </div>
+      <p id="prep-start-status" class="prep-start-status"></p>
+    </div>
+
+  {% endif %}
+
+</div>
+
+{% if profile_ready %}
+<script>
+(function () {
+  var companyName = {{ company_name|tojson }};
+  var roleTitle = {{ role_title|tojson }};
+
+  var researchForm = document.getElementById('prep-research-form');
+  var researchBody = document.getElementById('prep-research-body');
+  var researchNameInput = document.getElementById('prep-research-name-input');
+  var researchBtn = document.getElementById('prep-research-generate-btn');
+
+  function renderList(title, items) {
+    if (!items || !items.length) return null;
+    var section = document.createElement('div');
+    section.className = 'prep-research-section';
+    var heading = document.createElement('p');
+    heading.className = 'prep-research-section-title';
+    heading.textContent = title;
+    section.appendChild(heading);
+    var list = document.createElement('ul');
+    list.className = 'prep-research-list';
+    items.forEach(function (item) {
+      var li = document.createElement('li');
+      li.textContent = item;
+      list.appendChild(li);
+    });
+    section.appendChild(list);
+    return section;
+  }
+
+  function renderResearch(research) {
+    researchBody.innerHTML = '';
+    if (!research || !research.company_name) {
+      researchBody.innerHTML = '<p class="prep-empty">No research yet — click Generate below.</p>';
+      return;
+    }
+    var overviewSection = document.createElement('div');
+    overviewSection.className = 'prep-research-section';
+    var heading = document.createElement('p');
+    heading.className = 'prep-research-section-title';
+    heading.textContent = research.role_title ? research.company_name + ' — ' + research.role_title : research.company_name;
+    overviewSection.appendChild(heading);
+    if (research.overview) {
+      var overviewText = document.createElement('p');
+      overviewText.className = 'prep-overview-text';
+      overviewText.textContent = research.overview;
+      overviewSection.appendChild(overviewText);
+    }
+    researchBody.appendChild(overviewSection);
+
+    var focusSection = renderList('Likely focus areas', research.focus_areas);
+    if (focusSection) researchBody.appendChild(focusSection);
+    var valuesSection = renderList('Culture & values', research.culture_values);
+    if (valuesSection) researchBody.appendChild(valuesSection);
+    var questionsSection = renderList('Smart questions to ask', research.smart_questions_to_ask);
+    if (questionsSection) researchBody.appendChild(questionsSection);
+
+    if (research.caveat) {
+      var caveat = document.createElement('p');
+      caveat.className = 'prep-research-caveat';
+      caveat.textContent = research.caveat;
+      researchBody.appendChild(caveat);
+    }
+  }
+
+  if (researchForm) {
+    researchForm.addEventListener('submit', async function (event) {
+      event.preventDefault();
+      var name = researchNameInput.value.trim();
+      if (!name) {
+        window.showToast?.('Enter a company or client name first', 'info');
+        return;
+      }
+      researchBtn.disabled = true;
+      var previous = researchBtn.textContent;
+      researchBtn.textContent = 'Generating…';
+      try {
+        var resp = await fetch('/api/prepare/research', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ company_name: name, role_title: roleTitle }),
+        });
+        var data = await resp.json();
+        if (!resp.ok || !data.ok) throw new Error(data.error || 'Could not generate research.');
+        renderResearch(data.company_research);
+        window.showToast?.('Research ready', 'success');
+      } catch (e) {
+        window.showToast?.(e.message || String(e), 'error');
+      } finally {
+        researchBtn.disabled = false;
+        researchBtn.textContent = previous;
+      }
+    });
+  }
+
+  var startBtn = document.getElementById('prep-start-btn');
+  var startStatus = document.getElementById('prep-start-status');
+  if (startBtn) {
+    startBtn.addEventListener('click', async function () {
+      startBtn.disabled = true;
+      startBtn.textContent = 'Starting…';
+      startStatus.textContent = '';
+      try {
+        var resp = await fetch('/api/session/quick-start', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ use_microphone: true, company_name: companyName, target_role: roleTitle }),
+        });
+        var data = await resp.json();
+        if (resp.ok && data.ok && data.session_id) {
+          window.location.href = '/session/' + encodeURIComponent(data.session_id) + '/live';
+          return;
+        }
+        throw new Error(data.error || 'Could not start session.');
+      } catch (e) {
+        startBtn.disabled = false;
+        startBtn.textContent = 'Start session now';
+        startStatus.textContent = e.message || String(e);
+      }
+    });
+  }
+})();
+</script>
+{% endif %}
+{% endblock %}

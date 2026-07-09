@@ -102,6 +102,62 @@ def register_routes(app: Flask) -> None:
     def profile_page() -> str:
         return render_template("profile.html", existing_profile=_load_existing_onboarding_profile())
 
+    @app.get("/prepare")
+    def prepare_mode() -> str:
+        from desktop_app.onboarding import PROFILE_FILENAME, load_completed_profile
+        from desktop_app.session_types import normalize_session_type, session_type_label
+        from desktop_app.strategy_generator import generate_strategy_pack
+
+        briefing = load_briefing_helper()
+        company_name = str(briefing.get("company_name", "") or "").strip() or "Target Company"
+        role_title = str(briefing.get("target_role", "") or "").strip() or "Target Role"
+        session_type = normalize_session_type(briefing.get("session_type"))
+
+        profile_directory = _resolve_quick_start_profile_directory({})
+        profile = None
+        if profile_directory is not None:
+            try:
+                profile = load_completed_profile(profile_directory / PROFILE_FILENAME)
+            except (OSError, KeyError, ValueError):
+                profile = None
+
+        if profile is None:
+            return render_template("prepare.html", profile_ready=False)
+
+        strategy_pack = generate_strategy_pack(
+            profile, company_name=company_name, role_title=role_title, session_type=session_type
+        )
+
+        return render_template(
+            "prepare.html",
+            profile_ready=True,
+            company_name=company_name,
+            role_title=role_title,
+            session_type=session_type,
+            session_type_label=session_type_label(session_type),
+            strategy_pack=strategy_pack.to_dict(),
+        )
+
+    @app.post("/api/prepare/research")
+    def prepare_research() -> Response:
+        from desktop_app.company_research import company_research_to_dict, generate_company_research
+        from desktop_app.session_types import normalize_session_type
+
+        body = request.get_json(silent=True) or {}
+        briefing = load_briefing_helper()
+        company_name = str(body.get("company_name") or briefing.get("company_name") or "").strip()
+        role_title = str(body.get("role_title") or briefing.get("target_role") or "").strip()
+        session_type = normalize_session_type(body.get("session_type") or briefing.get("session_type"))
+        if not company_name or company_name == "Target Company":
+            return jsonify({"ok": False, "error": "Add a company or client name in your profile first."}), 400
+
+        try:
+            research_result = generate_company_research(company_name, role_title=role_title, session_type=session_type)
+        except Exception as error:
+            return jsonify({"ok": False, "error": str(error)}), 502
+
+        return jsonify({"ok": True, "company_research": company_research_to_dict(research_result)}), 200
+
     @app.get("/system-status")
     def system_status_page() -> str:
         return render_template("system_status.html", host_platform=sys.platform)
