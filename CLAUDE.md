@@ -52,7 +52,7 @@ AI interview assistant desktop app. PySide6 (floating overlay) + Flask (local da
 2. Multi-language intelligence — **Done** (commit `6083a9f5`). Language Settings card (caller's language / answer language / speak-to-caller language, 8 languages). Speak button translates via Mistral when the target language differs from the answer's language.
 3. Premium light/dark theme system — **Done** (commit `a5b4bfac`). `premium.css` token architecture (`--premium-*`, dark default + `[data-theme="light"]`), Appearance card in Settings, no-flash theme-init in `base.html`. `activation.html` deliberately excluded (own palette, never-touch per rules below).
 4. Auto-update notification in sidebar — **Done** (commit `bb9e6a6c`). `GET /api/check-update` against the real GitHub Releases API, manual/click-triggered only.
-5. Company/client research before sessions — **Not started.**
+5. Company/client research before sessions — **Done** (commit `ddbcd36f`). `desktop_app/company_research.py` (Mistral, JSON mode) generates an overview/focus-areas/culture-values/smart-questions briefing, auto-triggered from quick-start when a real company name is given (best-effort, never blocks session start) plus `GET/POST /api/session/<id>/research[/generate]`. Collapsible "Company research" card on `live_session.html`, "Add company details for research" modal on `index.html`. Briefing is LLM training-knowledge, not a live lookup — caveat surfaced in the UI.
 6. Resume-matched personalized answers — **Not started.**
 7. Interview Preparation Mode (`/prepare`) — **Not started.** Run full Playwright suite after this step.
 8. Premium onboarding experience — **Not started.**
@@ -61,7 +61,7 @@ AI interview assistant desktop app. PySide6 (floating overlay) + Flask (local da
 
 Never touch (Phase 3 additions, on top of the list below): `desktop_app/audio_handler.py`'s F2 path, Playwright test suite *structure*. If anything breaks mid-step: `git checkout -- <file>` and report, don't silently patch over it.
 
-Resume prompt for a fresh session: "Read CLAUDE.md. Phase 3 in progress, Steps 3.1–3.4 done. We are at Step 3.5. Last commit `bb9e6a6c`. Branch `feature/multilang-premium-polish`. Continue."
+Resume prompt for a fresh session: "Read CLAUDE.md. Phase 3 in progress, Steps 3.1–3.5 done. We are at Step 3.6. Last commit `ddbcd36f`. Branch `feature/multilang-premium-polish`. Continue."
 
 ## Fix status
 
