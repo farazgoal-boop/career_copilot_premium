@@ -263,7 +263,7 @@ def register_routes(app: Flask) -> None:
             return _render_onboarding_error("Upload a resume PDF or type a product or service description.")
 
         try:
-            profile_path = _materialize_onboarding_profile(
+            profile_path, resume_extracted, skills_preview = _materialize_onboarding_profile(
                 full_name=full_name,
                 current_role=current_role or target_name or "Professional",
                 target_name=target_name,
@@ -290,6 +290,8 @@ def register_routes(app: Flask) -> None:
                     "connect_mobile_url": "/settings",
                     "dashboard_url": "/dashboard",
                     "bridge_hint": _bridge_base_url(),
+                    "resume_extracted": resume_extracted,
+                    "skills_preview": skills_preview,
                 }
             )
             response.headers["Content-Type"] = "application/json; charset=utf-8"
@@ -1614,6 +1616,20 @@ def _wants_json_response() -> bool:
     return "application/json" in str(request.headers.get("Accept", "")).lower()
 
 
+_DOCX_WORD_NAMESPACE = {"w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"}
+
+
+def _extract_docx_text_from_stream(stream) -> str:
+    import zipfile
+    from xml.etree import ElementTree
+
+    with zipfile.ZipFile(stream) as archive:
+        document_xml = archive.read("word/document.xml")
+    root = ElementTree.fromstring(document_xml)
+    fragments = [node.text for node in root.findall(".//w:t", _DOCX_WORD_NAMESPACE) if node.text]
+    return re.sub(r"\s+", " ", " ".join(fragments)).strip()
+
+
 def _extract_onboarding_resume_payload(
     resume_file,
     product_description: str,
@@ -1637,6 +1653,8 @@ def _extract_onboarding_resume_payload(
                     extracted_text = output.getvalue().strip()
                 except ImportError:
                     extracted_text = ""
+            elif ext == "docx":
+                extracted_text = _extract_docx_text_from_stream(resume_file.stream)
             else:
                 extracted_text = resume_file.read().decode("utf-8", errors="replace").strip()
         except Exception:
@@ -1672,11 +1690,11 @@ def _materialize_onboarding_profile(
     resume_text: str,
     resume_filename: str,
     product_description: str,
-) -> Path:
+) -> tuple[Path, bool, list[str]]:
     profile_directory = _profiles_root() / _slug_profile_name(full_name)
     profile_directory.mkdir(parents=True, exist_ok=True)
 
-    profile_payload = _build_onboarding_profile_payload(
+    profile_payload, resume_extracted = _build_onboarding_profile_payload(
         full_name=full_name,
         current_role=current_role,
         target_name=target_name,
@@ -1688,7 +1706,45 @@ def _materialize_onboarding_profile(
     profile_path = profile_directory / "user_complete_profile.json"
     profile_path.write_text(json.dumps(profile_payload, indent=2), encoding="utf-8")
     (profile_directory / "user_session_ready.flag").write_text("session-ready\n", encoding="utf-8")
-    return profile_path
+    skills_preview = [str(skill["name"]) for skill in profile_payload["skills"][:6]]
+    return profile_path, resume_extracted, skills_preview
+
+
+def _extracted_onboarding_profile_sections(
+    resume_text: str, target_name: str
+) -> tuple[list[dict[str, object]], list[dict[str, object]], list[dict[str, object]]] | None:
+    """Try to build skills/work_history/projects from the actual resume text via
+    Mistral. Returns None on any failure so the caller falls back to placeholder
+    data instead of blocking onboarding -- see resume_profile_extractor.py."""
+    try:
+        from desktop_app.resume_profile_extractor import extract_resume_profile
+
+        extraction = extract_resume_profile(resume_text, target_role=target_name)
+    except Exception:
+        return None
+
+    skills = [{"name": skill.name, "level": skill.level} for skill in extraction.skills]
+    work_history = [
+        {
+            "company_name": job.company_name,
+            "duration": job.duration,
+            "achievements": job.achievements,
+            "reason_for_leaving": "Not specified.",
+            "salary_expectations": "Open based on opportunity.",
+        }
+        for job in extraction.work_history
+    ]
+    projects = [
+        {
+            "name": project.name,
+            "description": project.description or f"Project delivered while working toward {target_name}.",
+            "technologies": project.technologies,
+            "contribution": project.contribution or "Led delivery of this work.",
+            "link": None,
+        }
+        for project in extraction.projects
+    ]
+    return skills, work_history, projects
 
 
 def _build_onboarding_profile_payload(
@@ -1699,49 +1755,47 @@ def _build_onboarding_profile_payload(
     resume_text: str,
     resume_filename: str,
     product_description: str,
-) -> dict[str, object]:
+) -> tuple[dict[str, object], bool]:
     now = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
     project_summary = product_description.strip() or f"Session context for {target_name}."
-    skill_names = [
-        target_name,
-        "Communication",
-        "Problem Solving",
-        "Positioning",
-        "Discovery Calls",
-        "Closing",
-        "Client Strategy",
-        "Offer Design",
-        "Follow-up",
-        "Execution",
-    ]
 
-    unique_skills: list[dict[str, str]] = []
-    seen: set[str] = set()
-    for item in skill_names:
-        cleaned = str(item).strip()
-        if not cleaned:
-            continue
-        key = cleaned.casefold()
-        if key in seen:
-            continue
-        seen.add(key)
-        unique_skills.append(
-            {
-                "name": cleaned,
-                "level": "Expert" if len(unique_skills) < 3 else "Intermediate",
-            }
-        )
+    extracted = _extracted_onboarding_profile_sections(resume_text, target_name)
+    resume_extracted = extracted is not None
 
-    return {
-        "identity": {
-            "full_name": full_name,
-            "current_role": current_role,
-            "total_experience_years": 0,
-            "location": "Remote",
-            "work_mode": "Hybrid",
-        },
-        "skills": unique_skills,
-        "work_history": [
+    if extracted is not None:
+        unique_skills, work_history, projects = extracted
+    else:
+        skill_names = [
+            target_name,
+            "Communication",
+            "Problem Solving",
+            "Positioning",
+            "Discovery Calls",
+            "Closing",
+            "Client Strategy",
+            "Offer Design",
+            "Follow-up",
+            "Execution",
+        ]
+
+        unique_skills = []
+        seen: set[str] = set()
+        for item in skill_names:
+            cleaned = str(item).strip()
+            if not cleaned:
+                continue
+            key = cleaned.casefold()
+            if key in seen:
+                continue
+            seen.add(key)
+            unique_skills.append(
+                {
+                    "name": cleaned,
+                    "level": "Expert" if len(unique_skills) < 3 else "Intermediate",
+                }
+            )
+
+        work_history = [
             {
                 "company_name": target_name,
                 "duration": "Current focus",
@@ -1753,8 +1807,8 @@ def _build_onboarding_profile_payload(
                 "reason_for_leaving": "Active focus area.",
                 "salary_expectations": "Open based on opportunity.",
             }
-        ],
-        "projects": [
+        ]
+        projects = [
             {
                 "name": target_name,
                 "description": project_summary,
@@ -1762,12 +1816,24 @@ def _build_onboarding_profile_payload(
                 "contribution": product_description.strip() or f"Created the working session context for {target_name}.",
                 "link": None,
             }
-        ],
+        ]
+
+    payload = {
+        "identity": {
+            "full_name": full_name,
+            "current_role": current_role,
+            "total_experience_years": 0,
+            "location": "Remote",
+            "work_mode": "Hybrid",
+        },
+        "skills": unique_skills,
+        "work_history": work_history,
+        "projects": projects,
         "resume": {
             "filename": resume_filename,
             "extracted_text": resume_text,
             "confirmed": True,
-            "source_format": "pdf" if resume_filename.lower().endswith(".pdf") else "text",
+            "source_format": _resume_source_format(resume_filename),
         },
         "weaknesses": {
             "english_fluency_level": 7,
@@ -1789,6 +1855,16 @@ def _build_onboarding_profile_payload(
         "created_at": now,
         "updated_at": now,
     }
+    return payload, resume_extracted
+
+
+def _resume_source_format(resume_filename: str) -> str:
+    lowered = resume_filename.lower()
+    if lowered.endswith(".docx"):
+        return "docx"
+    if lowered.endswith(".pdf"):
+        return "pdf"
+    return "text"
 
 
 def _slug_profile_name(value: str) -> str:
