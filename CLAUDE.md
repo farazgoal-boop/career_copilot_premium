@@ -76,7 +76,7 @@ Resume prompt for a fresh session: "Read CLAUDE.md. Phase 3 in progress, Steps 3
 - System tray quit (`premium_launcher.py`)
 
 **PENDING:**
-- Mac overlay (PySide6 on Mac unreliable)
+- Mac overlay (PySide6 on Mac unreliable) — investigated 2026-07-09: there is no mic+Ollama+audio gate blocking overlay launch (it already always opens once PySide6 imports; already has a status bar + language selector). Real suspected mechanism: `run_first_time_setup_wizard()`'s modal `QDialog` (`desktop_app/mistral_setup.py`) was never raised/activated before `exec()`, so on macOS (launched from a shell script, not a real `.app` bundle) it can render unfocused/behind other windows, blocking `main()` before the overlay is ever reached. Fixed by scheduling `raise_()`/`activateWindow()` via `QTimer.singleShot` before `exec()` (commit `818bf803`) — **not yet verified on an actual Mac**, only syntax/import-checked on Windows. Still worth a real Mac test before considering this closed; if it recurs, the next suspect is `.app` bundle packaging (no `Info.plist`/activation-policy context at all when run as a raw script).
 - System slowdown (no root cause found yet)
 
 ## Safety rules
