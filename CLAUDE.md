@@ -54,14 +54,14 @@ AI interview assistant desktop app. PySide6 (floating overlay) + Flask (local da
 4. Auto-update notification in sidebar — **Done** (commit `bb9e6a6c`). `GET /api/check-update` against the real GitHub Releases API, manual/click-triggered only.
 5. Company/client research before sessions — **Done** (commit `ddbcd36f`). `desktop_app/company_research.py` (Mistral, JSON mode) generates an overview/focus-areas/culture-values/smart-questions briefing, auto-triggered from quick-start when a real company name is given (best-effort, never blocks session start) plus `GET/POST /api/session/<id>/research[/generate]`. Collapsible "Company research" card on `live_session.html`, "Add company details for research" modal on `index.html`. Briefing is LLM training-knowledge, not a live lookup — caveat surfaced in the UI.
 6. Resume-matched personalized answers — **Done** (commit `1a6a83f8`). `strategy_generator.py`'s `build_resume_highlights()` flattens every skill/job-achievement/project (not just top-3/first) into keyword-tagged `ResumeHighlight`s on `StrategyPack`; `answer_builder.py` token-matches the live question against all of them and injects the most relevant specific experience into the prompt instead of always the same canned template.
-7. Interview Preparation Mode (`/prepare`) — **Not started.** Run full Playwright suite after this step.
+7. Interview Preparation Mode (`/prepare`) — **Done** (commit `3fc09379`, 62/62 Playwright passing). New session-less page sourced from the saved briefing/profile: readiness score/band/action-plan (`ConfidenceAssessment`, first surfaced in UI here), full resume-highlight list (Step 3.6), on-demand company research via `POST /api/prepare/research` (session-less variant of Step 3.5), all 15 session-type practice questions as difficulty-grouped flashcards, and a "Start session now" CTA into quick-start. Sidebar link added in `_sidebar.html`.
 8. Premium onboarding experience — **Not started.**
 9. Performance + polish pass — **Not started.** Run full Playwright suite after this step.
 10. Final v2.0.0 build (version bump across `setup.py`/`career-copilot-version.txt`/installers, tag, multi-platform packages) — **Not started.** Run full Playwright suite after this step.
 
 Never touch (Phase 3 additions, on top of the list below): `desktop_app/audio_handler.py`'s F2 path, Playwright test suite *structure*. If anything breaks mid-step: `git checkout -- <file>` and report, don't silently patch over it.
 
-Resume prompt for a fresh session: "Read CLAUDE.md. Phase 3 in progress, Steps 3.1–3.6 done. We are at Step 3.7. Last commit `1a6a83f8`. Branch `feature/multilang-premium-polish`. Continue."
+Resume prompt for a fresh session: "Read CLAUDE.md. Phase 3 in progress, Steps 3.1–3.7 done. We are at Step 3.8. Last commit `3fc09379`. Branch `feature/multilang-premium-polish`. Continue."
 
 ## Fix status
 
