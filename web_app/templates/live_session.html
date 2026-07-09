@@ -521,6 +521,76 @@
     color: var(--premium-muted);
     pointer-events: none;
   }
+
+  /* ── Company research card: same collapsible shell as the transcript log ── */
+  .ls-research-section {
+    margin-bottom: 10px;
+  }
+
+  .ls-research-section:last-child {
+    margin-bottom: 0;
+  }
+
+  .ls-research-section-title {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--premium-muted);
+    margin: 0 0 4px;
+  }
+
+  .ls-research-list {
+    margin: 0;
+    padding-left: 18px;
+  }
+
+  .ls-research-caveat {
+    font-size: 0.72rem;
+    color: var(--premium-muted);
+    opacity: 0.8;
+    font-style: italic;
+    margin-top: 4px;
+  }
+
+  .ls-research-form {
+    display: flex;
+    gap: 8px;
+    border-top: 1px solid var(--premium-line);
+    padding: 8px 0 10px;
+  }
+
+  .ls-research-form input {
+    flex: 1;
+    min-width: 0;
+    padding: 8px 10px;
+    border-radius: 10px;
+    border: 1px solid var(--premium-line);
+    background: var(--premium-overlay-04);
+    color: var(--premium-text);
+    font: inherit;
+    font-size: 0.8rem;
+    outline: none;
+  }
+
+  .ls-research-form button {
+    padding: 8px 14px;
+    border-radius: 10px;
+    border: 0;
+    background: var(--premium-accent);
+    background-image: none;
+    color: #ffffff;
+    font: inherit;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .ls-research-form button:disabled {
+    opacity: 0.6;
+    cursor: wait;
+  }
 </style>
 {% endblock %}
 
@@ -581,6 +651,18 @@
     </div>
   </div>
 
+  <!-- Company research: LLM-generated briefing, collapsed by default -->
+  <details class="ls-transcript-log">
+    <summary>Company research</summary>
+    <div id="company-research-body" class="ls-transcript-log-body">
+      <p class="ls-transcript-log-entry">No research yet.</p>
+    </div>
+    <form id="company-research-form" class="ls-research-form">
+      <input id="company-research-name-input" type="text" placeholder="Company or client name" autocomplete="off">
+      <button id="company-research-generate-btn" type="submit">Generate</button>
+    </form>
+  </details>
+
   <!-- Live transcript log: running Q&A history, collapsed by default so it stays out of the way -->
   <details class="ls-transcript-log">
     <summary>Session transcript (<span id="transcript-log-count">0</span>)</summary>
@@ -639,6 +721,10 @@
       const transcriptLogBody = document.getElementById('transcript-log-body');
       const transcriptLogCount = document.getElementById('transcript-log-count');
       const transcriptDownloadLink = document.getElementById('transcript-download-link');
+      const companyResearchBody = document.getElementById('company-research-body');
+      const companyResearchForm = document.getElementById('company-research-form');
+      const companyResearchNameInput = document.getElementById('company-research-name-input');
+      const companyResearchGenerateBtn = document.getElementById('company-research-generate-btn');
       const dataCards = Array.from(document.querySelectorAll('.js-data-card'));
       let latestPersistentPrompt = String(initialPayload?.prompts?.persistent || '');
 
@@ -808,6 +894,110 @@
         });
         transcriptLogBody.scrollTop = transcriptLogBody.scrollHeight;
       }
+
+      function renderResearchList(title, items) {
+        if (!items || !items.length) return null;
+        const section = document.createElement('div');
+        section.className = 'ls-research-section';
+        const heading = document.createElement('p');
+        heading.className = 'ls-research-section-title';
+        heading.textContent = title;
+        section.appendChild(heading);
+        const list = document.createElement('ul');
+        list.className = 'ls-research-list';
+        items.forEach((item) => {
+          const li = document.createElement('li');
+          li.textContent = item;
+          list.appendChild(li);
+        });
+        section.appendChild(list);
+        return section;
+      }
+
+      function renderCompanyResearch(research) {
+        companyResearchBody.innerHTML = '';
+        if (!research || !research.company_name) {
+          companyResearchBody.innerHTML = '<p class="ls-transcript-log-entry">No research yet — add a company or client name below and click Generate.</p>';
+          return;
+        }
+
+        if (research.overview) {
+          const overviewSection = document.createElement('div');
+          overviewSection.className = 'ls-research-section';
+          const heading = document.createElement('p');
+          heading.className = 'ls-research-section-title';
+          heading.textContent = research.role_title
+            ? `${research.company_name} — ${research.role_title}`
+            : research.company_name;
+          overviewSection.appendChild(heading);
+          const overviewText = document.createElement('p');
+          overviewText.className = 'ls-transcript-log-entry';
+          overviewText.style.borderTop = '0';
+          overviewText.style.paddingTop = '0';
+          overviewText.textContent = research.overview;
+          overviewSection.appendChild(overviewText);
+          companyResearchBody.appendChild(overviewSection);
+        }
+
+        const focusSection = renderResearchList('Likely focus areas', research.focus_areas);
+        if (focusSection) companyResearchBody.appendChild(focusSection);
+
+        const valuesSection = renderResearchList('Culture & values', research.culture_values);
+        if (valuesSection) companyResearchBody.appendChild(valuesSection);
+
+        const questionsSection = renderResearchList('Smart questions to ask', research.smart_questions_to_ask);
+        if (questionsSection) companyResearchBody.appendChild(questionsSection);
+
+        if (research.caveat) {
+          const caveat = document.createElement('p');
+          caveat.className = 'ls-research-caveat';
+          caveat.textContent = research.caveat;
+          companyResearchBody.appendChild(caveat);
+        }
+      }
+
+      async function loadCompanyResearch() {
+        try {
+          const response = await fetch(`/api/session/${encodeURIComponent(sessionId)}/research`, { cache: 'no-store' });
+          if (!response.ok) return;
+          const payload = await response.json();
+          renderCompanyResearch(payload.company_research);
+        } catch (error) {
+          // Best-effort: leave the "no research yet" placeholder in place.
+        }
+      }
+
+      async function generateCompanyResearch(event) {
+        event.preventDefault();
+        const companyName = companyResearchNameInput.value.trim();
+        if (!companyName) {
+          window.showToast?.('Enter a company or client name first', 'info');
+          return;
+        }
+        companyResearchGenerateBtn.disabled = true;
+        const previous = companyResearchGenerateBtn.textContent;
+        companyResearchGenerateBtn.textContent = 'Generating…';
+        try {
+          const response = await fetch(`/api/session/${encodeURIComponent(sessionId)}/research/generate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ company_name: companyName }),
+          });
+          const payload = await response.json();
+          if (!response.ok || !payload.ok) {
+            throw new Error(payload.error || 'Could not generate research.');
+          }
+          renderCompanyResearch(payload.company_research);
+          window.showToast?.('Research ready', 'success');
+        } catch (error) {
+          window.showToast?.(error instanceof Error ? error.message : 'Could not generate research.', 'error');
+        } finally {
+          companyResearchGenerateBtn.disabled = false;
+          companyResearchGenerateBtn.textContent = previous;
+        }
+      }
+
+      companyResearchForm.addEventListener('submit', generateCompanyResearch);
 
       function render(payload) {
         dataCards.forEach((card) => card.classList.remove('is-loading'));
@@ -1032,6 +1222,12 @@
 
       render(initialPayload);
       window.setInterval(refresh, 3000);
+
+      const initialCompanyName = String(initialPayload?.snapshot?.company_name || '');
+      if (initialCompanyName && initialCompanyName !== 'Target Company') {
+        companyResearchNameInput.value = initialCompanyName;
+      }
+      loadCompanyResearch();
     })();
   </script>
   <script>window.SESSION_ID = {{ session_id|tojson }};</script>

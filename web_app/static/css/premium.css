@@ -528,6 +528,82 @@ body.home-view .premium-main {
   color: var(--premium-danger);
 }
 
+.home-company-details-link {
+  align-self: flex-start;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  color: var(--premium-accent-strong);
+  font-family: inherit;
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.home-company-details-link:hover {
+  text-decoration: underline;
+}
+
+.company-details-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.company-details-form label {
+  display: block;
+  text-align: left;
+}
+
+.company-details-form label span {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 0.82rem;
+  color: var(--premium-muted);
+}
+
+.company-details-form input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--premium-line);
+  background: var(--premium-overlay-04);
+  color: var(--premium-text);
+  font: inherit;
+  font-size: 0.92rem;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.company-details-form input:focus {
+  border-color: rgba(99, 102, 241, 0.5);
+}
+
+.company-details-submit {
+  width: 100%;
+  height: 46px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--premium-accent);
+  background-image: none;
+  color: #ffffff;
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.company-details-submit:hover {
+  background: var(--premium-accent-hover);
+  background-image: none;
+}
+
+.company-details-submit:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
 /* Recent sessions */
 .home-sessions-label {
   font-size: 0.75rem;

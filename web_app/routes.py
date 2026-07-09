@@ -842,7 +842,7 @@ def register_routes(app: Flask) -> None:
         """One-click session start using the latest saved profile and briefing."""
         try:
             from desktop_app.onboarding import is_session_ready
-            from desktop_app.runtime_controller import register_web_session
+            from desktop_app.runtime_controller import register_web_session, update_registered_session_state
             from desktop_app.session_types import normalize_session_type
             from mobile_app.live_bridge import build_live_bridge_payload_for_session, ensure_live_session_worker
             from .briefing import build_operator_prompts, load_briefing
@@ -903,6 +903,27 @@ def register_routes(app: Flask) -> None:
             except Exception as worker_error:
                 current_app.logger.warning("Session worker skipped: %s", worker_error)
                 worker_started = False
+
+            research_generated = False
+            if company_name and company_name != "Target Company":
+                try:
+                    from desktop_app.company_research import company_research_to_dict, generate_company_research
+
+                    research_result = generate_company_research(
+                        company_name,
+                        role_title=role_title if role_title != "Target Role" else "",
+                        session_type=session_type,
+                    )
+                    update_registered_session_state(
+                        session_id,
+                        {"company_research": company_research_to_dict(research_result)},
+                        registry_path=_registry_path(),
+                    )
+                    research_generated = True
+                except Exception as research_error:
+                    # Best-effort: never block session start on a research-generation failure.
+                    current_app.logger.warning("Company research generation skipped for session %s: %s", session_id, research_error)
+
             session_payload = build_live_bridge_payload_for_session(
                 session_id,
                 registry_path=_registry_path(),
@@ -917,6 +938,7 @@ def register_routes(app: Flask) -> None:
                     "role_name": role_title,
                     "session_type": session_type,
                     "worker_started": worker_started,
+                    "research_generated": research_generated,
                     "bridge_url": _bridge_base_url(),
                     "session": session_payload,
                     "hint": "Press F2 or click Listen in the overlay to capture the interviewer's question and generate your script.",
@@ -942,6 +964,49 @@ def register_routes(app: Flask) -> None:
         except KeyError as error:
             return jsonify({"error": _display_error(error)}), 404
         return jsonify(payload)
+
+    @app.get("/api/session/<session_id>/research")
+    def session_research(session_id: str) -> Response:
+        from desktop_app.runtime_controller import load_registered_session_state
+
+        try:
+            state = load_registered_session_state(session_id, _registry_path())
+        except KeyError as error:
+            return jsonify({"ok": False, "error": _display_error(error)}), 404
+        return jsonify({"ok": True, "company_research": state.get("company_research") or None})
+
+    @app.post("/api/session/<session_id>/research/generate")
+    def session_research_generate(session_id: str) -> Response:
+        from desktop_app.company_research import company_research_to_dict, generate_company_research
+        from desktop_app.runtime_controller import load_registered_session_state, update_registered_session_state
+
+        try:
+            state = load_registered_session_state(session_id, _registry_path())
+        except KeyError as error:
+            return jsonify({"ok": False, "error": _display_error(error)}), 404
+
+        body = request.get_json(silent=True) or {}
+        company_name = str(body.get("company_name") or state.get("company_name") or "").strip()
+        role_title = str(body.get("role_title") or state.get("role_title") or "").strip()
+        if not company_name or company_name == "Target Company":
+            return jsonify({"ok": False, "error": "Enter a company or client name first."}), 400
+
+        try:
+            research_result = generate_company_research(
+                company_name,
+                role_title=role_title if role_title != "Target Role" else "",
+                session_type=str(state.get("session_type") or ""),
+            )
+        except Exception as error:
+            return jsonify({"ok": False, "error": str(error)}), 502
+
+        research_payload = company_research_to_dict(research_result)
+        update_registered_session_state(
+            session_id,
+            {"company_research": research_payload},
+            registry_path=_registry_path(),
+        )
+        return jsonify({"ok": True, "company_research": research_payload}), 200
 
     @app.post("/api/session/<session_id>/end")
     def session_end(session_id: str) -> Response:
