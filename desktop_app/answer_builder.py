@@ -15,7 +15,9 @@ from .strategy_generator import (
     CompanyResearchBrief,
     ExpectedQuestion,
     PersonalizedAnswerTemplates,
+    ResumeHighlight,
     StrategyPack,
+    build_resume_highlights,
 )
 
 _PROMPT_FRAMING: dict[str, dict[str, str]] = {
@@ -249,6 +251,7 @@ def build_manual_strategy_pack(question: str = "") -> StrategyPack:
         expected_questions=[expected],
         fallback_plan=build_fallback_plan(),
         confidence=assess_interview_confidence(profile, "Target Role"),
+        resume_highlights=build_resume_highlights(profile),
     )
 
 
@@ -515,6 +518,7 @@ def _build_language_aware_prompt(
             f"- {matched_question.suggested_answer}\n"
             f"- {strategy_pack.answer_templates.why_should_we_hire_you}\n"
         )
+    resume_block = _build_resume_match_block(transcript, strategy_pack.resume_highlights)
     visual_block = _build_visual_context_block(visual_context_entries)
     framing = _framing_for(session_type)
     return (
@@ -527,9 +531,36 @@ def _build_language_aware_prompt(
         "- Do not change topic or answer a different question.\n"
         "- First person, confident, natural speech, 50-90 words.\n"
         f"- Use the {framing['speaker']}'s real experience from the talking points when relevant.\n"
+        f"- Prefer the specific resume experience below over the talking points when it matches the question more closely.\n"
         f"{reference_block}"
+        f"{resume_block}"
         f"{visual_block}"
         "Respond with only the answer text. No labels, no quotes."
+    )
+
+
+def _select_relevant_resume_highlights(
+    transcript: str, resume_highlights: list[ResumeHighlight], limit: int = 2
+) -> list[ResumeHighlight]:
+    transcript_tokens = set(_tokenize(transcript))
+    scored = [
+        (len(transcript_tokens & set(highlight.keywords)), highlight)
+        for highlight in resume_highlights
+    ]
+    scored = [(score, highlight) for score, highlight in scored if score > 0]
+    scored.sort(key=lambda pair: pair[0], reverse=True)
+    return [highlight for _, highlight in scored[:limit]]
+
+
+def _build_resume_match_block(transcript: str, resume_highlights: list[ResumeHighlight]) -> str:
+    matches = _select_relevant_resume_highlights(transcript, resume_highlights)
+    if not matches:
+        return ""
+    lines = [f"- {match.text}" for match in matches]
+    return (
+        "\nSpecific resume experience matching this question:\n"
+        + "\n".join(lines)
+        + "\n"
     )
 
 
