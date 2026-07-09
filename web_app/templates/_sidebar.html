@@ -142,10 +142,32 @@
     /* when unpinning: mouse still inside, mouseleave handles collapse */
   });
 
-  /* active state */
+  /* active state + signature shatter-out transition on nav clicks.
+     Only intercepts plain left-clicks to a different page — modified
+     clicks (new tab/window) and same-page clicks fall through to normal
+     <a href> navigation untouched. */
   var path = window.location.pathname.replace(/\/+$/, '') || '/dashboard';
   sidebar.querySelectorAll('.sidebar-item[data-path]').forEach(function (item) {
-    if (item.dataset.path === path) item.classList.add('is-active');
+    var isActive = item.dataset.path === path;
+    if (isActive) item.classList.add('is-active');
+
+    item.addEventListener('click', function (event) {
+      if (isActive || event.defaultPrevented || event.button !== 0
+          || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+        return;
+      }
+      var href = item.getAttribute('href');
+      var pageContent = document.querySelector('.page-content');
+      var container = document.querySelector('.premium-main');
+      var prefersReducedMotion = window.matchMedia
+        && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (!href || !pageContent || !container || !window.CC_TRANSITION || prefersReducedMotion) return;
+
+      event.preventDefault();
+      CC_TRANSITION.runOut(pageContent, container).then(function () {
+        window.location.href = href;
+      });
+    });
   });
 
   /* Check for updates — compares the running version against the latest

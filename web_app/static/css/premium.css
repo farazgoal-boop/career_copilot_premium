@@ -253,6 +253,9 @@ input[type='submit']:hover {
 
 .premium-main {
   padding: 24px 0 40px;
+  position: relative;
+  perspective: 1200px;
+  perspective-origin: 50% -20%;
 }
 
 .premium-toast-host {
@@ -689,6 +692,17 @@ body.home-view .premium-main {
   display: flex;
   flex-direction: column;
   gap: 40px;
+}
+
+/* Signature page-entry transition (base.html's DOMContentLoaded handler
+   animates transform/opacity/filter inline). Users who prefer reduced
+   motion get a plain fade instead of the 3D flip. */
+@media (prefers-reduced-motion: reduce) {
+  .page-content {
+    transition: opacity 0.2s ease !important;
+    transform: none !important;
+    filter: none !important;
+  }
 }
 
 /* Unified page header — title + optional breadcrumb, same across all pages */
