@@ -4,7 +4,7 @@ AI interview assistant desktop app. PySide6 (floating overlay) + Flask (local da
 
 ## Version
 
-- Current version: v1.0.8 (latest published GitHub release — verified live against the API; a prior "v1.0.9" note here was inaccurate, no such tag/release exists). Also tracked as `CURRENT_APP_VERSION` in `web_app/routes.py` (used by the sidebar version badge + `/api/check-update`). Bump both together, plus `setup.py` / `career-copilot-version.txt`, when cutting a release (Phase 3 Step 3.10 will do this for v2.0.0).
+- Current version: v2.0.0 (bumped on `feature/multilang-premium-polish`, Step 3.10; not yet published as a GitHub release and not yet merged to `main` — v1.0.8 remains the latest *published* release until that merge/publish happens). `CURRENT_APP_VERSION` in `web_app/routes.py`, `setup.py`, and `career-copilot-version.txt` all bumped together in commit `cfb9270e`.
 - Git tags:
   - `v1.0.5` — macOS SSL cert fix
   - `v1.0.6` — activation/profile/sessions/mobile QR
@@ -12,6 +12,7 @@ AI interview assistant desktop app. PySide6 (floating overlay) + Flask (local da
   - `stable-backup-2026-07-06` — recovery point, do not delete
   - `phase1-complete-2026-07-07` — browser mic capture + live transcript + transcript export, 62/62 e2e tests passing, do not delete
   - `phase2-complete-2026-07-07` — Visual Context Library, session types, continuous recording, meeting summary, post-session report page. Merged to `main` (`--no-ff`), 62/62 e2e tests passing, do not delete
+  - `v2.0.0` — Phase 3 complete (Steps 3.1–3.10: voice output, multi-language, themes, auto-update, company research, resume-matched answers, prepare mode, premium onboarding, page transitions, version bump). Local tag only, not pushed; not yet merged to `main`
 
 ## Key files
 
@@ -46,7 +47,9 @@ AI interview assistant desktop app. PySide6 (floating overlay) + Flask (local da
 4. Meeting summary + action items generated from `transcript_log` on session end (Goal #4). **Done.** Note: built from `transcript_log` only (questions heard + Mistral's suggested replies), not a verified two-way transcript — the user's own spoken words are never captured.
 5. Post-session report page at `/session/<id>/report` (Goal #5, Step 2.12) — surfaces summary, action items, transcript, and recording playback; sessions list routes ended sessions here instead of `/live`. **Done.**
 
-**Phase 3 — IN PROGRESS**, branch `feature/multilang-premium-polish` (not merged to `main` yet). Goal: $299 → $999 tier, competing with Google Meet AI / Zoom AI Companion / Otter.ai. Ends in a v2.0.0 multi-platform build. 10 steps total; process is one step at a time, diff shown and confirmed before each commit, full Playwright suite run at least after Steps 3.3/3.7/3.9/3.10 (and as extra insurance after any step touching shared templates).
+**Phase 3 — CODE COMPLETE (Steps 3.1–3.10 done), release not finished**, branch `feature/multilang-premium-polish` (not merged to `main` yet). Goal: $299 → $999 tier, competing with Google Meet AI / Zoom AI Companion / Otter.ai. 10 steps total; process is one step at a time, diff shown and confirmed before each commit, full Playwright suite run at least after Steps 3.3/3.7/3.9/3.10 (and as extra insurance after any step touching shared templates). Also landed mid-Phase-3 (unlisted step, commit `be0694ea`): per-nav-item sidebar icon accent colors + teal update-check button restyle.
+
+Remaining before this is an actual release: run the Windows PyInstaller/Inno Setup build (`scripts/build_windows_bundle.ps1`, `scripts/build_installer.bat`) to produce `CareerCopilotPremium_Setup_v2.0.0.exe`; build the Mac package on real Mac hardware (verify the overlay raise/focus fix from commit `818bf803` while there, per the Fix status section below); push the `v2.0.0` tag and publish the GitHub release; merge `feature/multilang-premium-polish` to `main`.
 
 1. Real-time voice output (ElevenLabs + browser TTS fallback) — **Done** (commit `a7a1bafc`). Key stored plaintext `.env` like Mistral's. Speak button on live-session answers, Voice Output card in Settings, OS-aware VB-Cable/BlackHole guide on System Status.
 2. Multi-language intelligence — **Done** (commit `6083a9f5`). Language Settings card (caller's language / answer language / speak-to-caller language, 8 languages). Speak button translates via Mistral when the target language differs from the answer's language.
@@ -57,11 +60,11 @@ AI interview assistant desktop app. PySide6 (floating overlay) + Flask (local da
 7. Interview Preparation Mode (`/prepare`) — **Done** (commit `3fc09379`, 62/62 Playwright passing). New session-less page sourced from the saved briefing/profile: readiness score/band/action-plan (`ConfidenceAssessment`, first surfaced in UI here), full resume-highlight list (Step 3.6), on-demand company research via `POST /api/prepare/research` (session-less variant of Step 3.5), all 15 session-type practice questions as difficulty-grouped flashcards, and a "Start session now" CTA into quick-start. Sidebar link added in `_sidebar.html`.
 8. Premium onboarding experience — **Done** (commit `17fb89e5`, 62/62 Playwright passing). Fixed a real substance bug: onboarding previously built the entire structured profile from hardcoded placeholders regardless of the uploaded resume, so Steps 3.6/3.7 worked off fake data for every real user. `desktop_app/resume_profile_extractor.py` (Mistral JSON-mode) now extracts real skills/work-history/projects from resume text, with a minimum-content check and clean fallback to the old placeholder path on any failure (missing key, sparse resume, LLM error — onboarding never blocks). Also added DOCX upload support (was PDF-only), drag-and-drop with filename confirmation, and a skills-preview chip list on the done step.
 9. Performance + polish pass — **Done** (commit `30a8c136`, 62/62 Playwright passing). Signature shatter-out (8x6 grid, canvas/html2canvas capture) + 3D flip-in (rotateX/rotateY, easeOutBack overshoot) page transition, originating from the clicked sidebar item. `web_app/static/js/transition.js` (new, `CC_TRANSITION.runOut()` only — multi-page app, so the IN half animates the real `.page-content` directly on load, no capture needed). Wired into `_sidebar.html`'s nav click handler and `base.html`'s entry animation; `perspective`/reduced-motion rules in `premium.css`. Respects `prefers-reduced-motion` on both halves; degrades to a fast opacity fade if html2canvas fails to load (verified navigation is never blocked).
-10. Final v2.0.0 build (version bump across `setup.py`/`career-copilot-version.txt`/installers, tag, multi-platform packages) — **Not started.** Run full Playwright suite after this step.
+10. Final v2.0.0 build — **Done** (commit `cfb9270e`, 62/62 Playwright passing, tagged `v2.0.0` locally). Version bumped consistently across `web_app/routes.py` (`CURRENT_APP_VERSION`), `setup.py`, `career-copilot-version.txt`, and `installers/windows_setup.iss`. Multi-platform packages (Windows exe build, Mac zip) deliberately **not** run yet — see "release not finished" note above.
 
 Never touch (Phase 3 additions, on top of the list below): `desktop_app/audio_handler.py`'s F2 path, Playwright test suite *structure*. If anything breaks mid-step: `git checkout -- <file>` and report, don't silently patch over it.
 
-Resume prompt for a fresh session: "Read CLAUDE.md. Phase 3 in progress, Steps 3.1–3.9 done. We are at Step 3.10. Last commit `30a8c136`. Branch `feature/multilang-premium-polish`. Continue."
+Resume prompt for a fresh session: "Read CLAUDE.md. Phase 3 code-complete (Steps 3.1–3.10 done, tag `v2.0.0` local/unpushed). Last commit `cfb9270e`. Branch `feature/multilang-premium-polish`. Remaining: Windows exe build, Mac build+overlay verification, push tag, publish GitHub release, merge to main. Continue."
 
 ## Fix status
 
