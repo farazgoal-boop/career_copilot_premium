@@ -28,7 +28,7 @@ _MIC_RUNTIME_CACHE: dict[str, object] | None = None
 # sidebar and compared against GitHub releases by /api/check-update. Bump
 # alongside setup.py / career-copilot-version.txt / the other files listed
 # in CLAUDE.md's version-bump checklist.
-CURRENT_APP_VERSION = "1.0.8"
+CURRENT_APP_VERSION = "2.0.0"
 
 
 def _is_public_route(path: str) -> bool:
