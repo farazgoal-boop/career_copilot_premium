@@ -143,9 +143,9 @@ if exist "%ROOT%\dist\windows-bundle" (
   xcopy /E /I /Y "%ROOT%\dist\windows-bundle\*" "%ROOT%\ready to client\windows\" >nul
   if exist "%ROOT%\ready to client\windows\_internal\mobile_app\react_native" rmdir /s /q "%ROOT%\ready to client\windows\_internal\mobile_app\react_native"
 )
-if exist "%ROOT%\dist\installer\CareerCopilotPremium_Setup_v1.0.7.exe" (
-  copy /Y "%ROOT%\dist\installer\CareerCopilotPremium_Setup_v1.0.7.exe" "%ROOT%\ready to client\installer\" >nul
-  copy /Y "%ROOT%\dist\installer\CareerCopilotPremium_Setup_v1.0.7.exe" "%ROOT%\CareerCopilotPremium_Setup_v1.0.7.exe" >nul
+for %%F in ("%ROOT%\dist\installer\CareerCopilotPremium_Setup_v*.exe") do (
+  copy /Y "%%F" "%ROOT%\ready to client\installer\" >nul
+  copy /Y "%%F" "%ROOT%\%%~nxF" >nul
 )
 if exist "%ROOT%\release\android\CareerCopilotPremium.apk" (
   copy /Y "%ROOT%\release\android\CareerCopilotPremium.apk" "%ROOT%\ready to client\android\" >nul
@@ -168,7 +168,7 @@ echo ============================================================
 echo  BUILD FINISHED
 echo ============================================================
 echo  Client folder: %ROOT%\ready to client
-echo  Client ZIP:    %ROOT%\CareerCopilotPremium-v1.0.7-CLIENT.zip
+echo  Client ZIP:    see ZIP path printed above by build_client_manifest.ps1
 echo.
 echo  Dev run: START_PREMIUM.bat
 echo  Upload VIRUSTOTAL-LINK.txt after scanning Setup.exe
