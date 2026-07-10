@@ -4,7 +4,7 @@ AI interview assistant desktop app. PySide6 (floating overlay) + Flask (local da
 
 ## Version
 
-- Current version: v2.0.0 (bumped on `feature/multilang-premium-polish`, Step 3.10; not yet published as a GitHub release and not yet merged to `main` — v1.0.8 remains the latest *published* release until that merge/publish happens). `CURRENT_APP_VERSION` in `web_app/routes.py`, `setup.py`, and `career-copilot-version.txt` all bumped together in commit `cfb9270e`.
+- Current version: v2.0.0 — latest published GitHub release (https://github.com/farazgoal-boop/career_copilot_premium/releases/tag/v2.0.0), tag pushed, merged to `main`. `CURRENT_APP_VERSION` in `web_app/routes.py`, `setup.py`, and `career-copilot-version.txt` all bumped together in commit `cfb9270e`.
 - Git tags:
   - `v1.0.5` — macOS SSL cert fix
   - `v1.0.6` — activation/profile/sessions/mobile QR
@@ -12,7 +12,7 @@ AI interview assistant desktop app. PySide6 (floating overlay) + Flask (local da
   - `stable-backup-2026-07-06` — recovery point, do not delete
   - `phase1-complete-2026-07-07` — browser mic capture + live transcript + transcript export, 62/62 e2e tests passing, do not delete
   - `phase2-complete-2026-07-07` — Visual Context Library, session types, continuous recording, meeting summary, post-session report page. Merged to `main` (`--no-ff`), 62/62 e2e tests passing, do not delete
-  - `v2.0.0` — Phase 3 complete (Steps 3.1–3.10: voice output, multi-language, themes, auto-update, company research, resume-matched answers, prepare mode, premium onboarding, page transitions, version bump). Local tag only, not pushed; not yet merged to `main`
+  - `v2.0.0` — Phase 3 complete (Steps 3.1–3.10: voice output, multi-language, themes, auto-update, company research, resume-matched answers, prepare mode, premium onboarding, page transitions, version bump, Windows packaging script fixes). Pushed, merged to `main` (`--no-ff`, merge commit `4f4db0c4`), GitHub release published with Windows/macOS/Linux assets. `feature/multilang-premium-polish` branch deleted (local-only, never existed on origin)
 
 ## Key files
 
@@ -47,9 +47,9 @@ AI interview assistant desktop app. PySide6 (floating overlay) + Flask (local da
 4. Meeting summary + action items generated from `transcript_log` on session end (Goal #4). **Done.** Note: built from `transcript_log` only (questions heard + Mistral's suggested replies), not a verified two-way transcript — the user's own spoken words are never captured.
 5. Post-session report page at `/session/<id>/report` (Goal #5, Step 2.12) — surfaces summary, action items, transcript, and recording playback; sessions list routes ended sessions here instead of `/live`. **Done.**
 
-**Phase 3 — CODE COMPLETE (Steps 3.1–3.10 done), release not finished**, branch `feature/multilang-premium-polish` (not merged to `main` yet). Goal: $299 → $999 tier, competing with Google Meet AI / Zoom AI Companion / Otter.ai. 10 steps total; process is one step at a time, diff shown and confirmed before each commit, full Playwright suite run at least after Steps 3.3/3.7/3.9/3.10 (and as extra insurance after any step touching shared templates). Also landed mid-Phase-3 (unlisted step, commit `be0694ea`): per-nav-item sidebar icon accent colors + teal update-check button restyle.
+**Phase 3 — COMPLETE AND SHIPPED**, merged to `main` (`--no-ff`, merge commit `4f4db0c4`), feature branch deleted. Goal: $299 → $999 tier, competing with Google Meet AI / Zoom AI Companion / Otter.ai. 10 steps total; process was one step at a time, diff shown and confirmed before each commit, full Playwright suite run at least after Steps 3.3/3.7/3.9/3.10 (and as extra insurance after any step touching shared templates) — 62/62 passing on the final pre-merge run. Also landed mid-Phase-3 (unlisted step, commit `be0694ea`): per-nav-item sidebar icon accent colors + teal update-check button restyle.
 
-Remaining before this is an actual release: run the Windows PyInstaller/Inno Setup build (`scripts/build_windows_bundle.ps1`, `scripts/build_installer.bat`) to produce `CareerCopilotPremium_Setup_v2.0.0.exe`; build the Mac package on real Mac hardware (verify the overlay raise/focus fix from commit `818bf803` while there, per the Fix status section below); push the `v2.0.0` tag and publish the GitHub release; merge `feature/multilang-premium-polish` to `main`.
+v2.0.0 GitHub release is live with Windows/macOS/Linux assets: https://github.com/farazgoal-boop/career_copilot_premium/releases/tag/v2.0.0. The Mac/Linux builds run via the `Build Mac and Linux Desktop Apps` GitHub Actions workflow (auto-triggered on the `v2.0.0` tag push, run `29073611891`, all jobs succeeded) — see Fix status below for two things that workflow surfaced that still need follow-up.
 
 1. Real-time voice output (ElevenLabs + browser TTS fallback) — **Done** (commit `a7a1bafc`). Key stored plaintext `.env` like Mistral's. Speak button on live-session answers, Voice Output card in Settings, OS-aware VB-Cable/BlackHole guide on System Status.
 2. Multi-language intelligence — **Done** (commit `6083a9f5`). Language Settings card (caller's language / answer language / speak-to-caller language, 8 languages). Speak button translates via Mistral when the target language differs from the answer's language.
@@ -64,7 +64,7 @@ Remaining before this is an actual release: run the Windows PyInstaller/Inno Set
 
 Never touch (Phase 3 additions, on top of the list below): `desktop_app/audio_handler.py`'s F2 path, Playwright test suite *structure*. If anything breaks mid-step: `git checkout -- <file>` and report, don't silently patch over it.
 
-Resume prompt for a fresh session: "Read CLAUDE.md. Phase 3 code-complete (Steps 3.1–3.10 done, tag `v2.0.0` local/unpushed). Last commit `cfb9270e`. Branch `feature/multilang-premium-polish`. Remaining: Windows exe build, Mac build+overlay verification, push tag, publish GitHub release, merge to main. Continue."
+Resume prompt for a fresh session: "Read CLAUDE.md. Phase 3 is complete and shipped (v2.0.0, merged to main, GitHub release live). Phase 4 not yet defined — confirm scope with user before starting new work."
 
 ## Fix status
 
@@ -79,7 +79,8 @@ Resume prompt for a fresh session: "Read CLAUDE.md. Phase 3 code-complete (Steps
 - System tray quit (`premium_launcher.py`)
 
 **PENDING:**
-- Mac overlay (PySide6 on Mac unreliable) — investigated 2026-07-09: there is no mic+Ollama+audio gate blocking overlay launch (it already always opens once PySide6 imports; already has a status bar + language selector). Real suspected mechanism: `run_first_time_setup_wizard()`'s modal `QDialog` (`desktop_app/mistral_setup.py`) was never raised/activated before `exec()`, so on macOS (launched from a shell script, not a real `.app` bundle) it can render unfocused/behind other windows, blocking `main()` before the overlay is ever reached. Fixed by scheduling `raise_()`/`activateWindow()` via `QTimer.singleShot` before `exec()` (commit `818bf803`) — **not yet verified on an actual Mac**, only syntax/import-checked on Windows. Still worth a real Mac test before considering this closed; if it recurs, the next suspect is `.app` bundle packaging (no `Info.plist`/activation-policy context at all when run as a raw script).
+- Mac overlay (PySide6 on Mac unreliable) — investigated 2026-07-09: there is no mic+Ollama+audio gate blocking overlay launch (it already always opens once PySide6 imports; already has a status bar + language selector). Real suspected mechanism: `run_first_time_setup_wizard()`'s modal `QDialog` (`desktop_app/mistral_setup.py`) was never raised/activated before `exec()`, so on macOS (launched from a shell script, not a real `.app` bundle) it can render unfocused/behind other windows, blocking `main()` before the overlay is ever reached. Fixed by scheduling `raise_()`/`activateWindow()` via `QTimer.singleShot` before `exec()` (commit `818bf803`) — **still not verified on an actual Mac** as of the v2.0.0 release (2026-07-10). The `v2.0.0` CI run (`build-macos` job, run `29073611891`) only proves the app *packages* into a DMG successfully — it doesn't launch or exercise the app, so it says nothing about this fix. Still worth a real Mac test before considering this closed; if it recurs, the next suspect is `.app` bundle packaging (no `Info.plist`/activation-policy context at all when run as a raw script).
+- Mac codesigning/notarization not yet set up, and one known blocker for it: the `v2.0.0` macOS CI build (`build-macos` job, run `29073611891`) logged `speech_recognition`'s bundled `flac-mac` binary as having an "invalid or incompatible macOS SDK version," warning it "will likely cause issues with code-signing and hardened runtime." Not a problem today (README already documents the app as unsigned — users right-click → Open to bypass Gatekeeper), but flag this binary first if codesigning/notarization is ever attempted.
 - System slowdown (no root cause found yet)
 
 ## Safety rules
