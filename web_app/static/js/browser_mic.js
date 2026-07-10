@@ -7,6 +7,15 @@
   const compatMessage = document.getElementById('mic-compat-message');
   const sessionId = window.SESSION_ID || '';
 
+  // Which language the caller/interviewer speaks, from Settings -> Language
+  // Settings. Best-effort: if this hasn't resolved yet when the mic starts,
+  // recognition falls back to en-US rather than blocking the mic button.
+  let listenLanguage = 'en-US';
+  fetch('/api/settings/language-prefs', { headers: { Accept: 'application/json' } })
+    .then((r) => r.json())
+    .then((d) => { if (d && d.ok && d.listen_language) listenLanguage = d.listen_language; })
+    .catch(() => {});
+
   const SpeechRecognitionImpl = window.SpeechRecognition || window.webkitSpeechRecognition;
   const supported = Boolean(SpeechRecognitionImpl);
 
@@ -150,7 +159,7 @@
     const instance = new SpeechRecognitionImpl();
     instance.continuous = true;
     instance.interimResults = true;
-    instance.lang = 'en-US';
+    instance.lang = listenLanguage;
 
     instance.onresult = (event) => {
       for (let i = event.resultIndex; i < event.results.length; i += 1) {

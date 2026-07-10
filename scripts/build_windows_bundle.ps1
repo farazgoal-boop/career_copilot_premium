@@ -69,7 +69,7 @@ $resolvedOutputDir = Join-Path $resolvedProjectRoot $OutputDir
 $buildDir = Join-Path $resolvedProjectRoot "build"
 $pyInstallerWorkDir = Join-Path $buildDir "pyinstaller-work"
 $pyInstallerDistDir = Join-Path $buildDir "pyinstaller-dist"
-$pyInstallerAppDir = Join-Path $pyInstallerDistDir "career-copilot"
+$pyInstallerAppDir = Join-Path $pyInstallerDistDir "Career Copilot Premium"
 $specFile = Join-Path $buildDir "career-copilot.spec"
 $configDir = Join-Path $resolvedProjectRoot "config"
 
@@ -90,7 +90,7 @@ try {
         throw "PyInstaller is not available in the selected Python environment. Install PyInstaller into that environment before building the Windows bundle."
     }
 
-    & $pythonExecutable -m PyInstaller --noconfirm --clean career-copilot.spec --workpath $pyInstallerWorkDir --distpath $pyInstallerDistDir --specpath $buildDir
+    & $pythonExecutable -m PyInstaller --noconfirm --clean career-copilot.spec --workpath $pyInstallerWorkDir --distpath $pyInstallerDistDir
     if ($LASTEXITCODE -ne 0) {
         throw "PyInstaller failed to build the career-copilot Windows bundle"
     }
@@ -103,7 +103,7 @@ try {
         }
     }
 
-    Copy-Item -Path (Join-Path $pyInstallerAppDir "career-copilot.exe") -Destination (Join-Path $resolvedOutputDir "career-copilot.exe") -Force
+    Copy-Item -Path (Join-Path $pyInstallerAppDir "Career Copilot Premium.exe") -Destination (Join-Path $resolvedOutputDir "career-copilot.exe") -Force
     Copy-Item -Path (Join-Path $pyInstallerAppDir "_internal") -Destination (Join-Path $resolvedOutputDir "_internal") -Recurse -Force
     Copy-Item -Path (Join-Path $resolvedProjectRoot "config") -Destination (Join-Path $resolvedOutputDir "config") -Recurse -Force
     Copy-Item -Path (Join-Path $resolvedProjectRoot "docs") -Destination (Join-Path $resolvedOutputDir "docs") -Recurse -Force
@@ -117,13 +117,7 @@ try {
         (Join-Path $resolvedOutputDir "career-copilot.exe"),
         (Join-Path $resolvedOutputDir "_internal\base_library.zip"),
         (Join-Path $resolvedOutputDir "_internal\python314.dll"),
-        (Join-Path $resolvedOutputDir "_internal\setuptools\_vendor\jaraco\text\Lorem ipsum.txt"),
-        (Join-Path $resolvedOutputDir "_internal\torch\lib\torch.dll"),
-        (Join-Path $resolvedOutputDir "_internal\torch\lib\torch_cpu.dll"),
-        (Join-Path $resolvedOutputDir "_internal\torch\lib\torch_python.dll"),
-        (Join-Path $resolvedOutputDir "_internal\torch\lib\c10.dll"),
-        (Join-Path $resolvedOutputDir "_internal\torch\lib\libiomp5md.dll"),
-        (Join-Path $resolvedOutputDir "_internal\torch\lib\shm.dll")
+        (Join-Path $resolvedOutputDir "_internal\setuptools\_vendor\jaraco\text\Lorem ipsum.txt")
     )
     foreach ($requiredFile in $requiredBundleFiles) {
         if (-not (Test-Path $requiredFile)) {

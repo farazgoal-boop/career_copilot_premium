@@ -106,7 +106,7 @@
       return (
         '<div style="display:flex;flex-direction:column;gap:6px;">' +
           '<img src="' + image.url + '" alt="' + escapeHtml(image.filename || '') + '" title="' + title + '" ' +
-               'style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;border:1px solid rgba(255,255,255,0.1);" />' +
+               'style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;border:1px solid var(--premium-overlay-10);" />' +
           '<span style="font-size:0.74rem;color:var(--premium-muted);line-height:1.35;">' + caption + '</span>' +
         '</div>'
       );

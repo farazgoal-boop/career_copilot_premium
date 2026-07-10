@@ -22,6 +22,22 @@
     <h1 class="page-title">Settings</h1>
   </div>
 
+  <!-- Appearance -->
+  <div class="st-group settings-card">
+    <p class="st-group-label">Appearance</p>
+    <div id="st-theme-options" style="display:flex;gap:20px;flex-wrap:wrap;font-size:0.9rem;color:var(--premium-text);">
+      <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;">
+        <input type="radio" name="st-theme" value="dark" /> Dark
+      </label>
+      <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;">
+        <input type="radio" name="st-theme" value="light" /> Light
+      </label>
+      <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;">
+        <input type="radio" name="st-theme" value="auto" /> Auto (follows system)
+      </label>
+    </div>
+  </div>
+
   <!-- AI & API -->
   <div class="st-group settings-card">
     <p class="st-group-label">AI &amp; API</p>
@@ -30,7 +46,7 @@
       <div style="display:flex;gap:8px;align-items:center;">
         <input id="st-mistral-key" type="password" autocomplete="off" spellcheck="false"
                placeholder="Enter Mistral API key…"
-               style="flex:1;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:10px 12px;color:var(--premium-text);font-size:0.9rem;font-family:inherit;outline:none;" />
+               style="flex:1;background:var(--premium-overlay-05);border:1px solid var(--premium-overlay-10);border-radius:8px;padding:10px 12px;color:var(--premium-text);font-size:0.9rem;font-family:inherit;outline:none;" />
         <button id="st-mistral-save" type="button"
                 style="padding:10px 18px;border-radius:8px;font-size:0.88rem;font-weight:600;white-space:nowrap;flex-shrink:0;">
           Save key
@@ -38,6 +54,88 @@
       </div>
       <p style="font-size:0.8rem;color:var(--premium-muted);margin:0;">Required — used to generate live interview answers.</p>
       <p id="st-mistral-status" style="font-size:0.83rem;color:var(--premium-muted);min-height:18px;margin:0;"></p>
+    </div>
+  </div>
+
+  <!-- Voice Output -->
+  <div class="st-group settings-card">
+    <p class="st-group-label">Voice Output (Optional)</p>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <p style="font-size:0.88rem;color:var(--premium-muted);margin:0;">AI answers can be spoken aloud — perfect for presenting to clients on calls.</p>
+
+      <label for="st-eleven-key" style="font-size:0.85rem;color:var(--premium-muted);">ElevenLabs API key</label>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input id="st-eleven-key" type="password" autocomplete="off" spellcheck="false"
+               placeholder="Paste your key here…" aria-label="ElevenLabs API key"
+               style="flex:1;background:var(--premium-overlay-05);border:1px solid var(--premium-overlay-10);border-radius:8px;padding:10px 12px;color:var(--premium-text);font-size:0.9rem;font-family:inherit;outline:none;" />
+        <button id="st-eleven-save" type="button"
+                style="padding:10px 18px;border-radius:8px;font-size:0.88rem;font-weight:600;white-space:nowrap;flex-shrink:0;">
+          Save Key
+        </button>
+      </div>
+
+      <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start;margin-top:4px;">
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <label for="st-voice-select" style="font-size:0.8rem;color:var(--premium-muted);">Voice style</label>
+          <select id="st-voice-select" aria-label="Voice style"
+                  style="background:var(--premium-overlay-05);border:1px solid var(--premium-overlay-10);border-radius:8px;padding:8px 10px;color:var(--premium-text);font-size:0.85rem;font-family:inherit;outline:none;"></select>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <span style="font-size:0.8rem;color:var(--premium-muted);">Speed</span>
+          <div id="st-speed-options" style="display:flex;gap:12px;align-items:center;font-size:0.85rem;color:var(--premium-text);min-height:34px;"></div>
+        </div>
+      </div>
+
+      <div>
+        <button id="st-eleven-test" type="button"
+                style="padding:10px 18px;border-radius:8px;font-size:0.88rem;font-weight:600;white-space:nowrap;background:var(--premium-overlay-06);color:var(--premium-text);border:1px solid var(--premium-overlay-10);cursor:pointer;">
+          Test Voice
+        </button>
+      </div>
+
+      <p id="st-eleven-status" style="font-size:0.83rem;color:var(--premium-muted);min-height:18px;margin:0;"></p>
+      <p style="font-size:0.78rem;color:var(--premium-muted);margin:0;">
+        No key? Browser voice works for free. Free key →
+        <a href="https://elevenlabs.io/" target="_blank" rel="noopener noreferrer" style="color:var(--premium-accent);">elevenlabs.io</a>
+        (3 min setup). Free tier: ~4 sessions/month. Paid: $5/mo = unlimited.
+      </p>
+    </div>
+  </div>
+
+  <!-- Language Settings -->
+  <div class="st-group settings-card">
+    <p class="st-group-label">Language Settings</p>
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <label for="st-lang-listen" style="font-size:0.85rem;color:var(--premium-muted);">Caller's language</label>
+        <select id="st-lang-listen" aria-label="Caller's language"
+                style="background:var(--premium-overlay-05);border:1px solid var(--premium-overlay-10);border-radius:8px;padding:8px 10px;color:var(--premium-text);font-size:0.85rem;font-family:inherit;outline:none;"></select>
+        <p style="font-size:0.78rem;color:var(--premium-muted);margin:0;">What language the interviewer/caller speaks — used for speech recognition.</p>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <label for="st-lang-reply" style="font-size:0.85rem;color:var(--premium-muted);">I want answers in</label>
+        <select id="st-lang-reply" aria-label="I want answers in"
+                style="background:var(--premium-overlay-05);border:1px solid var(--premium-overlay-10);border-radius:8px;padding:8px 10px;color:var(--premium-text);font-size:0.85rem;font-family:inherit;outline:none;"></select>
+        <p style="font-size:0.78rem;color:var(--premium-muted);margin:0;">The language AI answers are written in for you to read.</p>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <label for="st-lang-speak" style="font-size:0.85rem;color:var(--premium-muted);">Speak answers to caller in</label>
+        <select id="st-lang-speak" aria-label="Speak answers to caller in"
+                style="background:var(--premium-overlay-05);border:1px solid var(--premium-overlay-10);border-radius:8px;padding:8px 10px;color:var(--premium-text);font-size:0.85rem;font-family:inherit;outline:none;"></select>
+        <p style="font-size:0.78rem;color:var(--premium-muted);margin:0;">Used by the Speak button. If different from "I want answers in", the answer is translated before speaking.</p>
+      </div>
+
+      <p style="font-size:0.78rem;color:var(--premium-muted);margin:0;">Supported: English, Urdu, Arabic, Hindi, Spanish, French, German, Turkish.</p>
+
+      <div>
+        <button id="st-lang-save" type="button"
+                style="padding:10px 18px;border-radius:8px;font-size:0.88rem;font-weight:600;white-space:nowrap;">
+          Save Language Settings
+        </button>
+      </div>
+      <p id="st-lang-status" style="font-size:0.83rem;color:var(--premium-muted);min-height:18px;margin:0;"></p>
     </div>
   </div>
 
@@ -72,6 +170,16 @@
 <script>
 (function () {
   'use strict';
+
+  /* ── Appearance (theme) ── */
+  var themeRadios = document.querySelectorAll('input[name="st-theme"]');
+  var currentThemePref = (window.getThemePref && window.getThemePref()) || 'auto';
+  themeRadios.forEach(function (radio) {
+    radio.checked = radio.value === currentThemePref;
+    radio.addEventListener('change', function () {
+      if (radio.checked && window.setTheme) window.setTheme(radio.value);
+    });
+  });
 
   /* ── Mistral API key ── */
   var mistralInput = document.getElementById('st-mistral-key');
@@ -118,6 +226,212 @@
       setMistralStatus('Request failed.', false);
     } finally {
       mistralSave.disabled = false;
+    }
+  });
+
+  /* ── Voice output (ElevenLabs key + voice/speed prefs) ── */
+  var elevenInput = document.getElementById('st-eleven-key');
+  var elevenSave = document.getElementById('st-eleven-save');
+  var elevenTest = document.getElementById('st-eleven-test');
+  var elevenStatus = document.getElementById('st-eleven-status');
+  var voiceSelect = document.getElementById('st-voice-select');
+  var speedOptionsEl = document.getElementById('st-speed-options');
+
+  function setElevenStatus(msg, ok) {
+    elevenStatus.textContent = msg;
+    elevenStatus.style.color = ok === true ? 'var(--premium-success)' : ok === false ? 'var(--premium-danger)' : 'var(--premium-muted)';
+  }
+
+  function speakWithBrowser(text, lang) {
+    if (!('speechSynthesis' in window)) return;
+    var utterance = new SpeechSynthesisUtterance(text);
+    if (lang) utterance.lang = lang;
+    window.speechSynthesis.speak(utterance);
+  }
+
+  /* Returns 'elevenlabs' when real ElevenLabs audio played, 'browser' when
+     it fell back to Web Speech Synthesis (no key, invalid key, or API error). */
+  async function speakText(text) {
+    try {
+      var resp = await fetch('/api/tts/speak', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: text }),
+      });
+      var contentType = resp.headers.get('Content-Type') || '';
+      if (resp.ok && contentType.indexOf('audio/') === 0) {
+        var blob = await resp.blob();
+        var url = URL.createObjectURL(blob);
+        var audio = new Audio(url);
+        audio.play();
+        return 'elevenlabs';
+      }
+      // Fallback JSON may carry a translated version of the text (see the
+      // Language Settings card's "speak to caller in") plus the target
+      // language code for the browser voice -- speak those, not the input.
+      var data = await resp.json().catch(function () { return null; });
+      speakWithBrowser((data && data.text) || text, data && data.lang);
+      return 'browser';
+    } catch (e) {
+      speakWithBrowser(text);
+      return 'browser';
+    }
+  }
+
+  fetch('/api/settings/elevenlabs-key', { headers: { Accept: 'application/json' } })
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      if (d.has_key) {
+        elevenInput.placeholder = '••••••••  (key saved — enter new key to update)';
+        setElevenStatus('✅ Connected — ElevenLabs ready.', true);
+      } else {
+        setElevenStatus('💡 No key yet — browser voice works for free.', null);
+      }
+    })
+    .catch(function () { setElevenStatus('Could not check key status.', null); });
+
+  elevenSave.addEventListener('click', async function () {
+    var key = elevenInput.value.trim();
+    if (!key) { setElevenStatus('Enter a key first.', false); return; }
+    elevenSave.disabled = true;
+    setElevenStatus('Saving…', null);
+    try {
+      var resp = await fetch('/api/settings/elevenlabs-key', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ api_key: key }),
+      });
+      var data = await resp.json();
+      if (data.ok) {
+        elevenInput.value = '';
+        elevenInput.placeholder = '••••••••  (key saved — enter new key to update)';
+        setElevenStatus('✅ Connected — ElevenLabs ready.', true);
+      } else {
+        setElevenStatus(data.error || 'Failed to save.', false);
+      }
+    } catch (e) {
+      setElevenStatus('Request failed.', false);
+    } finally {
+      elevenSave.disabled = false;
+    }
+  });
+
+  elevenTest.addEventListener('click', async function () {
+    elevenTest.disabled = true;
+    setElevenStatus('Testing voice…', null);
+    var mode = await speakText('This is a test of your Career Copilot voice output.');
+    if (mode === 'elevenlabs') {
+      setElevenStatus('✅ Playing test phrase (ElevenLabs).', true);
+    } else {
+      setElevenStatus('💡 Played via browser voice (no key, invalid key, or ElevenLabs error).', null);
+    }
+    elevenTest.disabled = false;
+  });
+
+  fetch('/api/settings/voice-prefs', { headers: { Accept: 'application/json' } })
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      if (!d.ok) return;
+
+      voiceSelect.innerHTML = '';
+      (d.voice_options || []).forEach(function (opt) {
+        var el = document.createElement('option');
+        el.value = opt.voice_id;
+        el.textContent = opt.label;
+        if (opt.voice_id === d.voice_id) el.selected = true;
+        voiceSelect.appendChild(el);
+      });
+
+      speedOptionsEl.innerHTML = '';
+      (d.speed_options || []).forEach(function (opt) {
+        var label = document.createElement('label');
+        label.style.display = 'inline-flex';
+        label.style.alignItems = 'center';
+        label.style.gap = '4px';
+        label.style.cursor = 'pointer';
+        var radio = document.createElement('input');
+        radio.type = 'radio';
+        radio.name = 'st-speed';
+        radio.value = String(opt.value);
+        if (Math.abs(opt.value - d.speed) < 0.001) radio.checked = true;
+        radio.addEventListener('change', saveVoicePrefs);
+        label.appendChild(radio);
+        label.appendChild(document.createTextNode(opt.label));
+        speedOptionsEl.appendChild(label);
+      });
+
+      voiceSelect.addEventListener('change', saveVoicePrefs);
+    })
+    .catch(function () {});
+
+  function saveVoicePrefs() {
+    var checkedSpeed = speedOptionsEl.querySelector('input[name="st-speed"]:checked');
+    fetch('/api/settings/voice-prefs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        voice_id: voiceSelect.value,
+        speed: checkedSpeed ? parseFloat(checkedSpeed.value) : 1.0,
+      }),
+    }).catch(function () {});
+  }
+
+  /* ── Language settings ── */
+  var langListenSelect = document.getElementById('st-lang-listen');
+  var langReplySelect = document.getElementById('st-lang-reply');
+  var langSpeakSelect = document.getElementById('st-lang-speak');
+  var langSaveBtn = document.getElementById('st-lang-save');
+  var langStatus = document.getElementById('st-lang-status');
+
+  function setLangStatus(msg, ok) {
+    langStatus.textContent = msg;
+    langStatus.style.color = ok === true ? 'var(--premium-success)' : ok === false ? 'var(--premium-danger)' : 'var(--premium-muted)';
+  }
+
+  function fillSelect(select, options, selectedValue, valueKey) {
+    select.innerHTML = '';
+    options.forEach(function (opt) {
+      var el = document.createElement('option');
+      el.value = opt[valueKey];
+      el.textContent = opt.label;
+      if (opt[valueKey] === selectedValue) el.selected = true;
+      select.appendChild(el);
+    });
+  }
+
+  fetch('/api/settings/language-prefs', { headers: { Accept: 'application/json' } })
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      if (!d.ok) return;
+      fillSelect(langListenSelect, d.language_options || [], d.listen_language, 'code');
+      fillSelect(langReplySelect, d.language_options || [], d.reply_language, 'code');
+      fillSelect(langSpeakSelect, d.speak_language_options || [], d.speak_language, 'code');
+    })
+    .catch(function () { setLangStatus('Could not load language settings.', null); });
+
+  langSaveBtn.addEventListener('click', async function () {
+    langSaveBtn.disabled = true;
+    setLangStatus('Saving…', null);
+    try {
+      var resp = await fetch('/api/settings/language-prefs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          listen_language: langListenSelect.value,
+          reply_language: langReplySelect.value,
+          speak_language: langSpeakSelect.value,
+        }),
+      });
+      var data = await resp.json();
+      if (data.ok) {
+        setLangStatus('✅ Language settings saved.', true);
+      } else {
+        setLangStatus(data.error || 'Failed to save.', false);
+      }
+    } catch (e) {
+      setLangStatus('Request failed.', false);
+    } finally {
+      langSaveBtn.disabled = false;
     }
   });
 

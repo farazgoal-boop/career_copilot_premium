@@ -18,7 +18,7 @@
   <nav class="sidebar-nav">
 
     <a href="/dashboard" class="sidebar-item" data-path="/dashboard" aria-label="Home">
-      <span class="sidebar-icon">
+      <span class="sidebar-icon sidebar-icon--home">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
           <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
           <polyline points="9 22 9 12 15 12 15 22"/>
@@ -28,7 +28,7 @@
     </a>
 
     <a href="/sessions" class="sidebar-item" data-path="/sessions" aria-label="Sessions">
-      <span class="sidebar-icon">
+      <span class="sidebar-icon sidebar-icon--sessions">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
           <circle cx="12" cy="12" r="10"/>
           <polyline points="12 6 12 12 16 14"/>
@@ -37,8 +37,18 @@
       <span class="sidebar-label">Sessions</span>
     </a>
 
+    <a href="/prepare" class="sidebar-item" data-path="/prepare" aria-label="Prepare">
+      <span class="sidebar-icon sidebar-icon--prepare">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+          <path d="M9 11l3 3L22 4"/>
+          <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+        </svg>
+      </span>
+      <span class="sidebar-label">Prepare</span>
+    </a>
+
     <a href="/profile" class="sidebar-item" data-path="/profile" aria-label="Profile">
-      <span class="sidebar-icon">
+      <span class="sidebar-icon sidebar-icon--profile">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
           <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
           <circle cx="12" cy="7" r="4"/>
@@ -48,7 +58,7 @@
     </a>
 
     <a href="/system-status" class="sidebar-item" data-path="/system-status" aria-label="System Status">
-      <span class="sidebar-icon">
+      <span class="sidebar-icon sidebar-icon--system">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
           <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
         </svg>
@@ -57,7 +67,7 @@
     </a>
 
     <a href="/settings" class="sidebar-item" data-path="/settings" aria-label="Settings">
-      <span class="sidebar-icon">
+      <span class="sidebar-icon sidebar-icon--settings">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
           <circle cx="12" cy="12" r="3"/>
           <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
@@ -69,7 +79,7 @@
     <div class="sidebar-divider" style="margin:4px 0;"></div>
 
     <button class="sidebar-item sidebar-item--btn" id="sidebar-open-overlay-btn" type="button" aria-label="Open Overlay">
-      <span class="sidebar-icon">
+      <span class="sidebar-icon sidebar-icon--overlay">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
           <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
           <line x1="3" y1="9" x2="21" y2="9"/>
@@ -80,7 +90,7 @@
     </button>
 
     <button class="sidebar-item sidebar-item--btn" type="button" onclick="window.openPairingModal?.()" aria-label="Link Device">
-      <span class="sidebar-icon">
+      <span class="sidebar-icon sidebar-icon--device">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
           <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
           <line x1="12" y1="18" x2="12.01" y2="18"/>
@@ -90,6 +100,18 @@
     </button>
 
   </nav>
+
+  <!-- Version / update check -->
+  <div class="sidebar-version-area">
+    <div class="version-badge">
+      <span class="version-dot"></span>
+      <span class="version-text">v{{ app_version }}</span>
+    </div>
+    <button class="update-check-btn" id="sidebar-update-check-btn" type="button" title="Check for updates">
+      &#8593; Check updates
+    </button>
+    <div class="update-status" id="sidebar-update-status" hidden></div>
+  </div>
 </aside>
 <script>
 (function () {
@@ -120,11 +142,72 @@
     /* when unpinning: mouse still inside, mouseleave handles collapse */
   });
 
-  /* active state */
+  /* active state + signature shatter-out transition on nav clicks.
+     Only intercepts plain left-clicks to a different page — modified
+     clicks (new tab/window) and same-page clicks fall through to normal
+     <a href> navigation untouched. */
   var path = window.location.pathname.replace(/\/+$/, '') || '/dashboard';
   sidebar.querySelectorAll('.sidebar-item[data-path]').forEach(function (item) {
-    if (item.dataset.path === path) item.classList.add('is-active');
+    var isActive = item.dataset.path === path;
+    if (isActive) item.classList.add('is-active');
+
+    item.addEventListener('click', function (event) {
+      if (isActive || event.defaultPrevented || event.button !== 0
+          || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+        return;
+      }
+      var href = item.getAttribute('href');
+      var pageContent = document.querySelector('.page-content');
+      var container = document.querySelector('.premium-main');
+      var prefersReducedMotion = window.matchMedia
+        && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (!href || !pageContent || !container || !window.CC_TRANSITION || prefersReducedMotion) return;
+
+      event.preventDefault();
+      CC_TRANSITION.runOut(pageContent, container).then(function () {
+        window.location.href = href;
+      });
+    });
   });
+
+  /* Check for updates — compares the running version against the latest
+     GitHub release. Manual/click-triggered only, never auto-polled. */
+  var updateBtn = document.getElementById('sidebar-update-check-btn');
+  var updateStatus = document.getElementById('sidebar-update-status');
+  if (updateBtn && updateStatus) {
+    updateBtn.addEventListener('click', function () {
+      updateBtn.textContent = 'Checking...';
+      updateBtn.disabled = true;
+      fetch('/api/check-update', { headers: { Accept: 'application/json' } })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          updateStatus.classList.remove('update-available');
+          if (d.update_available) {
+            var link = document.createElement('a');
+            link.href = d.download_url || '#';
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            link.textContent = 'Download';
+            updateStatus.textContent = '\u{1F389} v' + d.latest_version + ' available! ';
+            updateStatus.appendChild(link);
+            updateStatus.classList.add('update-available');
+          } else if (d.ok) {
+            updateStatus.textContent = '✅ You are up to date';
+          } else {
+            updateStatus.textContent = d.error || 'Could not check. Try again.';
+          }
+          updateStatus.hidden = false;
+        })
+        .catch(function () {
+          updateStatus.textContent = 'Could not check. Try again.';
+          updateStatus.hidden = false;
+        })
+        .finally(function () {
+          updateBtn.innerHTML = '&#8593; Check updates';
+          updateBtn.disabled = false;
+        });
+    });
+  }
 
   /* Open Overlay button — writes a flag file the overlay's poll timer picks up */
   var overlayBtn = document.getElementById('sidebar-open-overlay-btn');

@@ -8,18 +8,10 @@
 
 {% block extra_head %}
 <style>
-  :root {
-    --bg: #0f0f0f;
-    --panel: #171717;
-    --line: rgba(255, 255, 255, 0.08);
-    --text: #ffffff;
-    --muted: #b9b9c2;
-    --accent: #6366f1;
-    --ready: #14b8a6;
-    --listening: #22c55e;
-    --processing: #f59e0b;
-    --danger: #ef4444;
-  }
+  /* Uses the shared --premium-* tokens from premium.css (theme-aware) --
+     this page used to define its own separate --bg/--panel/--line/etc.
+     set, which never re-themed and had --bg/--panel/--danger defined but
+     unused. */
 
   *, *::before, *::after { box-sizing: border-box; }
 
@@ -44,13 +36,13 @@
 
   .ls-home-link {
     font-size: 0.86rem;
-    color: var(--muted);
+    color: var(--premium-muted);
     text-decoration: none;
     white-space: nowrap;
     flex-shrink: 0;
   }
 
-  .ls-home-link:hover { color: var(--text); }
+  .ls-home-link:hover { color: var(--premium-text); }
 
   .ls-status-indicator {
     display: flex;
@@ -68,18 +60,18 @@
   }
 
   .status-dot.listening {
-    background: var(--listening);
+    background: var(--premium-success);
     box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.18);
     animation: ls-pulse 1.8s ease-in-out infinite;
   }
 
   .status-dot.processing {
-    background: var(--processing);
+    background: var(--premium-warning);
     box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.18);
   }
 
   .status-dot.ready {
-    background: var(--ready);
+    background: var(--premium-ready);
     box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.18);
   }
 
@@ -95,8 +87,8 @@
 
   .ls-session-chip {
     font-size: 0.76rem;
-    color: var(--muted);
-    border: 1px solid var(--line);
+    color: var(--premium-muted);
+    border: 1px solid var(--premium-line);
     border-radius: 999px;
     padding: 5px 12px;
     white-space: nowrap;
@@ -108,9 +100,9 @@
 
   /* ── Question ── */
   .ls-question {
-    border: 1px solid var(--line);
+    border: 1px solid var(--premium-line);
     border-radius: 18px;
-    background: rgba(255, 255, 255, 0.025);
+    background: var(--premium-overlay-025);
     padding: 14px 18px;
   }
 
@@ -120,7 +112,7 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    color: var(--muted);
+    color: var(--premium-muted);
   }
 
   #interviewer-text {
@@ -130,13 +122,13 @@
     white-space: pre-wrap;
   }
 
-  #interviewer-text.placeholder { color: var(--muted); font-style: italic; }
+  #interviewer-text.placeholder { color: var(--premium-muted); font-style: italic; }
 
   /* ── Answer — the main element ── */
   .ls-answer-wrap {
-    border: 1px solid var(--line);
+    border: 1px solid var(--premium-line);
     border-radius: 24px;
-    background: rgba(255, 255, 255, 0.02);
+    background: var(--premium-overlay-02);
     padding: 24px;
     display: flex;
     flex-direction: column;
@@ -152,7 +144,7 @@
   }
 
   #answer-body.placeholder {
-    color: var(--muted);
+    color: var(--premium-muted);
     font-size: 1rem;
     font-style: italic;
   }
@@ -175,10 +167,10 @@
 
   /* .pill class is added by JS */
   .pill {
-    border: 1px solid var(--line);
-    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--premium-line);
+    background: var(--premium-overlay-04);
     border-radius: 999px;
-    color: var(--text);
+    color: var(--premium-text);
     cursor: pointer;
     font-family: inherit;
     font-size: 0.84rem;
@@ -187,13 +179,20 @@
     text-align: left;
   }
 
-  .pill:hover { background: rgba(255, 255, 255, 0.09); }
+  .pill:hover { background: var(--premium-overlay-09); }
 
-  #copy-button {
-    border: 1px solid var(--line);
-    background: rgba(255, 255, 255, 0.05);
+  .ls-answer-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  #copy-button,
+  #speak-button {
+    border: 1px solid var(--premium-line);
+    background: var(--premium-overlay-05);
     border-radius: 999px;
-    color: var(--text);
+    color: var(--premium-text);
     cursor: pointer;
     font-family: inherit;
     font-size: 0.86rem;
@@ -202,7 +201,17 @@
     flex-shrink: 0;
   }
 
-  #copy-button:hover { background: rgba(255, 255, 255, 0.1); }
+  #copy-button:hover,
+  #speak-button:hover { background: var(--premium-overlay-10); }
+
+  /* .is-speaking is toggled by JS while audio plays; reuses the mic-pulse
+     keyframes already defined for #browser-mic-toggle.mic-listening. */
+  #speak-button.is-speaking {
+    background: rgba(99, 102, 241, 0.18);
+    border-color: rgba(99, 102, 241, 0.6);
+    color: var(--premium-accent);
+    animation: mic-pulse 1.8s ease-in-out infinite;
+  }
 
   /* ── Quick-action chips ── */
   .ls-action-chips {
@@ -215,7 +224,7 @@
     border: 1px solid rgba(99, 102, 241, 0.35);
     background: rgba(99, 102, 241, 0.08);
     border-radius: 999px;
-    color: var(--text);
+    color: var(--premium-text);
     cursor: pointer;
     font-family: inherit;
     font-size: 0.92rem;
@@ -232,20 +241,20 @@
 
   /* ── Live steer ── */
   .ls-steer-wrap {
-    border: 1px solid var(--line);
+    border: 1px solid var(--premium-line);
     border-radius: 18px;
-    background: rgba(255, 255, 255, 0.02);
+    background: var(--premium-overlay-02);
     overflow: hidden;
   }
 
   #live-steer-input {
     width: 100%;
     border: 0;
-    border-bottom: 1px solid var(--line);
+    border-bottom: 1px solid var(--premium-line);
     padding: 13px 16px;
     font-family: inherit;
     font-size: 0.95rem;
-    color: var(--text);
+    color: var(--premium-text);
     background: transparent;
     resize: none;
     min-height: 70px;
@@ -253,7 +262,7 @@
     display: block;
   }
 
-  #live-steer-input::placeholder { color: var(--muted); }
+  #live-steer-input::placeholder { color: var(--premium-muted); }
 
   .ls-steer-footer {
     display: flex;
@@ -264,7 +273,7 @@
   }
 
   #steer-status {
-    color: var(--muted);
+    color: var(--premium-muted);
     font-size: 0.82rem;
     flex: 1;
     margin: 0;
@@ -273,7 +282,7 @@
 
   #send-live-steer {
     border: 0;
-    background: var(--accent);
+    background: var(--premium-accent);
     color: #fff;
     border-radius: 999px;
     cursor: pointer;
@@ -285,7 +294,7 @@
     flex-shrink: 0;
   }
 
-  #send-live-steer:hover { background: #5254d1; }
+  #send-live-steer:hover { background: var(--premium-accent-hover); }
   #send-live-steer:disabled { opacity: 0.55; cursor: wait; }
 
   /* ── End session ── */
@@ -299,7 +308,7 @@
     border: 1px solid rgba(239, 68, 68, 0.4);
     background: transparent;
     border-radius: 999px;
-    color: #ef4444;
+    color: var(--premium-danger);
     cursor: pointer;
     font-family: inherit;
     font-size: 0.92rem;
@@ -317,7 +326,7 @@
     font-size: 1.4rem;
     font-weight: 700;
     letter-spacing: -0.02em;
-    color: var(--text);
+    color: var(--premium-text);
     margin: 0 0 4px;
   }
 
@@ -343,7 +352,7 @@
   }
 
   #browser-mic-toggle {
-    border: 1px solid var(--line);
+    border: 1px solid var(--premium-line);
     border-radius: 999px;
     cursor: pointer;
     font-family: inherit;
@@ -358,17 +367,17 @@
 
   /* grey = idle/ready */
   #browser-mic-toggle.mic-idle {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: var(--line);
-    color: var(--text);
+    background: var(--premium-overlay-05);
+    border-color: var(--premium-line);
+    color: var(--premium-text);
   }
-  #browser-mic-toggle.mic-idle:hover { background: rgba(255, 255, 255, 0.1); }
+  #browser-mic-toggle.mic-idle:hover { background: var(--premium-overlay-10); }
 
   /* green = listening, pulses to read as "live" */
   #browser-mic-toggle.mic-listening {
     background: rgba(34, 197, 94, 0.15);
     border-color: rgba(34, 197, 94, 0.6);
-    color: #22c55e;
+    color: var(--premium-success);
     animation: mic-pulse 1.8s ease-in-out infinite;
   }
 
@@ -376,14 +385,14 @@
   #browser-mic-toggle.mic-processing {
     background: rgba(245, 158, 11, 0.15);
     border-color: rgba(245, 158, 11, 0.6);
-    color: var(--processing);
+    color: var(--premium-warning);
   }
 
   /* red = error */
   #browser-mic-toggle.mic-error {
     background: rgba(239, 68, 68, 0.15);
     border-color: rgba(239, 68, 68, 0.6);
-    color: #ef4444;
+    color: var(--premium-danger);
   }
 
   @keyframes mic-pulse {
@@ -394,7 +403,7 @@
   #mic-compat-message {
     display: none;
     font-size: 0.82rem;
-    color: var(--muted);
+    color: var(--premium-muted);
     text-align: center;
     max-width: 420px;
   }
@@ -410,26 +419,26 @@
 
   #manual-question-input {
     width: 100%;
-    border: 1px solid var(--line);
+    border: 1px solid var(--premium-line);
     border-radius: 14px;
-    background: rgba(255, 255, 255, 0.02);
+    background: var(--premium-overlay-02);
     padding: 10px 14px;
     font-family: inherit;
     font-size: 0.88rem;
-    color: var(--text);
+    color: var(--premium-text);
     resize: none;
     min-height: 44px;
     outline: none;
   }
 
-  #manual-question-input::placeholder { color: var(--muted); }
+  #manual-question-input::placeholder { color: var(--premium-muted); }
 
   #manual-question-submit {
     align-self: center;
-    border: 1px solid var(--line);
-    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--premium-line);
+    background: var(--premium-overlay-05);
     border-radius: 999px;
-    color: var(--text);
+    color: var(--premium-text);
     cursor: pointer;
     font-family: inherit;
     font-size: 0.86rem;
@@ -437,14 +446,14 @@
     padding: 7px 20px;
   }
 
-  #manual-question-submit:hover { background: rgba(255, 255, 255, 0.1); }
+  #manual-question-submit:hover { background: var(--premium-overlay-10); }
   #manual-question-submit:disabled { opacity: 0.5; cursor: wait; }
 
   /* ── Live transcript log: collapsed by default, muted, does not compete with the main answer ── */
   .ls-transcript-log {
-    border: 1px solid var(--line);
+    border: 1px solid var(--premium-line);
     border-radius: 14px;
-    background: rgba(255, 255, 255, 0.015);
+    background: var(--premium-overlay-015);
     padding: 4px 14px;
   }
 
@@ -452,7 +461,7 @@
     cursor: pointer;
     padding: 8px 0;
     font-size: 0.8rem;
-    color: var(--muted);
+    color: var(--premium-muted);
     font-weight: 600;
     list-style: none;
   }
@@ -479,8 +488,8 @@
   .ls-transcript-log-entry {
     font-size: 0.78rem;
     line-height: 1.5;
-    color: var(--muted);
-    border-top: 1px solid var(--line);
+    color: var(--premium-muted);
+    border-top: 1px solid var(--premium-line);
     padding-top: 8px;
   }
 
@@ -492,25 +501,95 @@
     margin-right: 4px;
   }
 
-  .ls-transcript-log-entry strong { color: var(--text); }
+  .ls-transcript-log-entry strong { color: var(--premium-text); }
 
   .ls-transcript-log-footer {
-    border-top: 1px solid var(--line);
+    border-top: 1px solid var(--premium-line);
     padding: 8px 0 10px;
     text-align: right;
   }
 
   #transcript-download-link {
     font-size: 0.78rem;
-    color: var(--accent);
+    color: var(--premium-accent);
     text-decoration: none;
   }
 
   #transcript-download-link:hover { text-decoration: underline; }
 
   #transcript-download-link.is-disabled {
-    color: var(--muted);
+    color: var(--premium-muted);
     pointer-events: none;
+  }
+
+  /* ── Company research card: same collapsible shell as the transcript log ── */
+  .ls-research-section {
+    margin-bottom: 10px;
+  }
+
+  .ls-research-section:last-child {
+    margin-bottom: 0;
+  }
+
+  .ls-research-section-title {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--premium-muted);
+    margin: 0 0 4px;
+  }
+
+  .ls-research-list {
+    margin: 0;
+    padding-left: 18px;
+  }
+
+  .ls-research-caveat {
+    font-size: 0.72rem;
+    color: var(--premium-muted);
+    opacity: 0.8;
+    font-style: italic;
+    margin-top: 4px;
+  }
+
+  .ls-research-form {
+    display: flex;
+    gap: 8px;
+    border-top: 1px solid var(--premium-line);
+    padding: 8px 0 10px;
+  }
+
+  .ls-research-form input {
+    flex: 1;
+    min-width: 0;
+    padding: 8px 10px;
+    border-radius: 10px;
+    border: 1px solid var(--premium-line);
+    background: var(--premium-overlay-04);
+    color: var(--premium-text);
+    font: inherit;
+    font-size: 0.8rem;
+    outline: none;
+  }
+
+  .ls-research-form button {
+    padding: 8px 14px;
+    border-radius: 10px;
+    border: 0;
+    background: var(--premium-accent);
+    background-image: none;
+    color: #ffffff;
+    font: inherit;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .ls-research-form button:disabled {
+    opacity: 0.6;
+    cursor: wait;
   }
 </style>
 {% endblock %}
@@ -540,7 +619,10 @@
     <div id="answer-body" class="placeholder">Waiting for a question to be captured.</div>
     <div class="ls-answer-footer">
       <div id="alternatives"></div>
-      <button id="copy-button" type="button">Copy</button>
+      <div class="ls-answer-actions">
+        <button id="speak-button" type="button" title="Speak answer aloud (Alt+S)">&#128266; Speak</button>
+        <button id="copy-button" type="button">Copy</button>
+      </div>
     </div>
   </div>
 
@@ -568,6 +650,18 @@
       <button id="manual-question-submit" type="button">Submit question</button>
     </div>
   </div>
+
+  <!-- Company research: LLM-generated briefing, collapsed by default -->
+  <details class="ls-transcript-log">
+    <summary>Company research</summary>
+    <div id="company-research-body" class="ls-transcript-log-body">
+      <p class="ls-transcript-log-entry">No research yet.</p>
+    </div>
+    <form id="company-research-form" class="ls-research-form">
+      <input id="company-research-name-input" type="text" placeholder="Company or client name" autocomplete="off">
+      <button id="company-research-generate-btn" type="submit">Generate</button>
+    </form>
+  </details>
 
   <!-- Live transcript log: running Q&A history, collapsed by default so it stays out of the way -->
   <details class="ls-transcript-log">
@@ -609,6 +703,7 @@
       const statusHint = document.getElementById('status-hint');
       const alternatives = document.getElementById('alternatives');
       const copyButton = document.getElementById('copy-button');
+      const speakButton = document.getElementById('speak-button');
       const fallbackSimple = document.getElementById('fallback-simple');
       const fallbackEmergency = document.getElementById('fallback-emergency');
       const interviewerText = document.getElementById('interviewer-text');
@@ -626,6 +721,10 @@
       const transcriptLogBody = document.getElementById('transcript-log-body');
       const transcriptLogCount = document.getElementById('transcript-log-count');
       const transcriptDownloadLink = document.getElementById('transcript-download-link');
+      const companyResearchBody = document.getElementById('company-research-body');
+      const companyResearchForm = document.getElementById('company-research-form');
+      const companyResearchNameInput = document.getElementById('company-research-name-input');
+      const companyResearchGenerateBtn = document.getElementById('company-research-generate-btn');
       const dataCards = Array.from(document.querySelectorAll('.js-data-card'));
       let latestPersistentPrompt = String(initialPayload?.prompts?.persistent || '');
 
@@ -796,6 +895,110 @@
         transcriptLogBody.scrollTop = transcriptLogBody.scrollHeight;
       }
 
+      function renderResearchList(title, items) {
+        if (!items || !items.length) return null;
+        const section = document.createElement('div');
+        section.className = 'ls-research-section';
+        const heading = document.createElement('p');
+        heading.className = 'ls-research-section-title';
+        heading.textContent = title;
+        section.appendChild(heading);
+        const list = document.createElement('ul');
+        list.className = 'ls-research-list';
+        items.forEach((item) => {
+          const li = document.createElement('li');
+          li.textContent = item;
+          list.appendChild(li);
+        });
+        section.appendChild(list);
+        return section;
+      }
+
+      function renderCompanyResearch(research) {
+        companyResearchBody.innerHTML = '';
+        if (!research || !research.company_name) {
+          companyResearchBody.innerHTML = '<p class="ls-transcript-log-entry">No research yet — add a company or client name below and click Generate.</p>';
+          return;
+        }
+
+        if (research.overview) {
+          const overviewSection = document.createElement('div');
+          overviewSection.className = 'ls-research-section';
+          const heading = document.createElement('p');
+          heading.className = 'ls-research-section-title';
+          heading.textContent = research.role_title
+            ? `${research.company_name} — ${research.role_title}`
+            : research.company_name;
+          overviewSection.appendChild(heading);
+          const overviewText = document.createElement('p');
+          overviewText.className = 'ls-transcript-log-entry';
+          overviewText.style.borderTop = '0';
+          overviewText.style.paddingTop = '0';
+          overviewText.textContent = research.overview;
+          overviewSection.appendChild(overviewText);
+          companyResearchBody.appendChild(overviewSection);
+        }
+
+        const focusSection = renderResearchList('Likely focus areas', research.focus_areas);
+        if (focusSection) companyResearchBody.appendChild(focusSection);
+
+        const valuesSection = renderResearchList('Culture & values', research.culture_values);
+        if (valuesSection) companyResearchBody.appendChild(valuesSection);
+
+        const questionsSection = renderResearchList('Smart questions to ask', research.smart_questions_to_ask);
+        if (questionsSection) companyResearchBody.appendChild(questionsSection);
+
+        if (research.caveat) {
+          const caveat = document.createElement('p');
+          caveat.className = 'ls-research-caveat';
+          caveat.textContent = research.caveat;
+          companyResearchBody.appendChild(caveat);
+        }
+      }
+
+      async function loadCompanyResearch() {
+        try {
+          const response = await fetch(`/api/session/${encodeURIComponent(sessionId)}/research`, { cache: 'no-store' });
+          if (!response.ok) return;
+          const payload = await response.json();
+          renderCompanyResearch(payload.company_research);
+        } catch (error) {
+          // Best-effort: leave the "no research yet" placeholder in place.
+        }
+      }
+
+      async function generateCompanyResearch(event) {
+        event.preventDefault();
+        const companyName = companyResearchNameInput.value.trim();
+        if (!companyName) {
+          window.showToast?.('Enter a company or client name first', 'info');
+          return;
+        }
+        companyResearchGenerateBtn.disabled = true;
+        const previous = companyResearchGenerateBtn.textContent;
+        companyResearchGenerateBtn.textContent = 'Generating…';
+        try {
+          const response = await fetch(`/api/session/${encodeURIComponent(sessionId)}/research/generate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ company_name: companyName }),
+          });
+          const payload = await response.json();
+          if (!response.ok || !payload.ok) {
+            throw new Error(payload.error || 'Could not generate research.');
+          }
+          renderCompanyResearch(payload.company_research);
+          window.showToast?.('Research ready', 'success');
+        } catch (error) {
+          window.showToast?.(error instanceof Error ? error.message : 'Could not generate research.', 'error');
+        } finally {
+          companyResearchGenerateBtn.disabled = false;
+          companyResearchGenerateBtn.textContent = previous;
+        }
+      }
+
+      companyResearchForm.addEventListener('submit', generateCompanyResearch);
+
       function render(payload) {
         dataCards.forEach((card) => card.classList.remove('is-loading'));
         latestPersistentPrompt = String(payload?.prompts?.persistent || latestPersistentPrompt || '');
@@ -892,6 +1095,80 @@
         }
       });
 
+      let currentAudio = null;
+
+      function stopSpeaking() {
+        if (currentAudio) {
+          currentAudio.pause();
+          currentAudio = null;
+        }
+        if ('speechSynthesis' in window) {
+          window.speechSynthesis.cancel();
+        }
+        speakButton.classList.remove('is-speaking');
+        speakButton.innerHTML = '&#128266; Speak';
+      }
+
+      function speakWithBrowser(text, lang) {
+        if (!('speechSynthesis' in window)) {
+          window.showToast?.('Voice output is not supported in this browser', 'error');
+          stopSpeaking();
+          return;
+        }
+        const utterance = new SpeechSynthesisUtterance(text);
+        if (lang) utterance.lang = lang;
+        utterance.onend = stopSpeaking;
+        utterance.onerror = stopSpeaking;
+        window.speechSynthesis.speak(utterance);
+      }
+
+      async function speakAnswer() {
+        if (speakButton.classList.contains('is-speaking')) {
+          stopSpeaking();
+          return;
+        }
+        const text = answerBody.textContent || '';
+        if (!text || answerBody.classList.contains('placeholder')) {
+          window.showToast?.('No answer to speak yet', 'info');
+          return;
+        }
+        speakButton.classList.add('is-speaking');
+        speakButton.innerHTML = '&#9209; Stop';
+        try {
+          const response = await fetch('/api/tts/speak', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text }),
+          });
+          const contentType = response.headers.get('Content-Type') || '';
+          if (response.ok && contentType.indexOf('audio/') === 0) {
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            currentAudio = new Audio(url);
+            currentAudio.onended = stopSpeaking;
+            currentAudio.onerror = stopSpeaking;
+            await currentAudio.play();
+            return;
+          }
+          // Fallback JSON may carry a translated version of the text (see
+          // "speak to caller in" in Settings) plus the target language code
+          // for the browser voice -- speak those, not the original.
+          const data = await response.json().catch(() => null);
+          speakWithBrowser((data && data.text) || text, data && data.lang);
+        } catch (error) {
+          speakWithBrowser(text);
+        }
+      }
+
+      speakButton.addEventListener('click', speakAnswer);
+
+      document.addEventListener('keydown', (event) => {
+        if (event.altKey && !event.ctrlKey && !event.metaKey && (event.key === 's' || event.key === 'S')) {
+          event.preventDefault();
+          speakAnswer();
+        }
+      });
+
       async function submitManualQuestion() {
         const questionText = String(manualQuestionInput.value || '').trim();
         if (!questionText) {
@@ -945,6 +1222,12 @@
 
       render(initialPayload);
       window.setInterval(refresh, 3000);
+
+      const initialCompanyName = String(initialPayload?.snapshot?.company_name || '');
+      if (initialCompanyName && initialCompanyName !== 'Target Company') {
+        companyResearchNameInput.value = initialCompanyName;
+      }
+      loadCompanyResearch();
     })();
   </script>
   <script>window.SESSION_ID = {{ session_id|tojson }};</script>

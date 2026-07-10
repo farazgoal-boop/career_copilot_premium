@@ -1,18 +1,92 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
+/* Theme tokens. :root (no attribute) = dark, matching the app's original
+   look exactly, so anything before base.html's theme-init script runs (or
+   if it fails) renders identically to before this system existed.
+   :root[data-theme="light"] overrides for the light theme. Both blocks
+   must define the same token set. */
 :root {
   --premium-bg: #0a0a0a;
   --premium-surface: #141414;
   --premium-surface-strong: rgba(255, 255, 255, 0.08);
   --premium-accent: #6366f1;
   --premium-accent-strong: #818cf8;
+  --premium-accent-hover: #5254d1;
   --premium-text: #ffffff;
   --premium-muted: #b8b8c8;
   --premium-line: rgba(255, 255, 255, 0.1);
-  --premium-card-bg: rgba(255, 255, 255, 0.05);
+  --premium-card-bg: var(--premium-overlay-05);
   --premium-card-shadow: 0 24px 70px rgba(0, 0, 0, 0.28);
+  --premium-settings-card-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
   --premium-success: #22c55e;
   --premium-danger: #ef4444;
+  --premium-warning: #f59e0b;
+  --premium-info: #60a5fa;
+  --premium-ready: #14b8a6;
+  --premium-digit-warm: #a5b4fc;
+  --premium-body-gradient-top: #111111;
+  --premium-radial-tint: rgba(99, 102, 241, 0.18);
+  --premium-navbar-bg: rgba(10, 10, 10, 0.78);
+  --premium-sidebar-bg: #121214;
+
+  /* Overlay scale: subtle surfaces/borders/hovers layered on --premium-bg.
+     White-tinted in dark theme, black-tinted in light theme (see below) --
+     this is what makes the bulk of the app's hover/border/card styling
+     re-theme correctly without a rule-by-rule rewrite. */
+  --premium-overlay-015: rgba(255, 255, 255, 0.015);
+  --premium-overlay-02: rgba(255, 255, 255, 0.02);
+  --premium-overlay-025: rgba(255, 255, 255, 0.025);
+  --premium-overlay-03: rgba(255, 255, 255, 0.03);
+  --premium-overlay-04: rgba(255, 255, 255, 0.04);
+  --premium-overlay-05: rgba(255, 255, 255, 0.05);
+  --premium-overlay-06: rgba(255, 255, 255, 0.06);
+  --premium-overlay-08: rgba(255, 255, 255, 0.08);
+  --premium-overlay-09: rgba(255, 255, 255, 0.09);
+  --premium-overlay-10: rgba(255, 255, 255, 0.1);
+  --premium-overlay-12: rgba(255, 255, 255, 0.12);
+  --premium-overlay-15: rgba(255, 255, 255, 0.15);
+  --premium-overlay-16: rgba(255, 255, 255, 0.16);
+  --premium-overlay-30: rgba(255, 255, 255, 0.3);
+}
+
+:root[data-theme="light"] {
+  --premium-bg: #f5f5f7;
+  --premium-surface: #ffffff;
+  --premium-surface-strong: rgba(0, 0, 0, 0.06);
+  --premium-accent: #6366f1;
+  --premium-accent-strong: #4f46e5;
+  --premium-accent-hover: #4f46e5;
+  --premium-text: #1d1d1f;
+  --premium-muted: #6e6e73;
+  --premium-line: rgba(0, 0, 0, 0.1);
+  --premium-card-bg: #ffffff;
+  --premium-card-shadow: 0 24px 70px rgba(0, 0, 0, 0.08);
+  --premium-settings-card-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+  --premium-success: #16a34a;
+  --premium-danger: #dc2626;
+  --premium-warning: #d97706;
+  --premium-info: #2563eb;
+  --premium-ready: #0d9488;
+  --premium-digit-warm: #4f46e5;
+  --premium-body-gradient-top: #ffffff;
+  --premium-radial-tint: rgba(99, 102, 241, 0.08);
+  --premium-navbar-bg: rgba(255, 255, 255, 0.82);
+  --premium-sidebar-bg: #ffffff;
+
+  --premium-overlay-015: rgba(0, 0, 0, 0.015);
+  --premium-overlay-02: rgba(0, 0, 0, 0.02);
+  --premium-overlay-025: rgba(0, 0, 0, 0.025);
+  --premium-overlay-03: rgba(0, 0, 0, 0.03);
+  --premium-overlay-04: rgba(0, 0, 0, 0.04);
+  --premium-overlay-05: rgba(0, 0, 0, 0.05);
+  --premium-overlay-06: rgba(0, 0, 0, 0.06);
+  --premium-overlay-08: rgba(0, 0, 0, 0.08);
+  --premium-overlay-09: rgba(0, 0, 0, 0.09);
+  --premium-overlay-10: rgba(0, 0, 0, 0.1);
+  --premium-overlay-12: rgba(0, 0, 0, 0.12);
+  --premium-overlay-15: rgba(0, 0, 0, 0.15);
+  --premium-overlay-16: rgba(0, 0, 0, 0.16);
+  --premium-overlay-30: rgba(0, 0, 0, 0.3);
 }
 
 *,
@@ -36,8 +110,8 @@ body {
   margin: 0;
   min-height: 100vh;
   background:
-    radial-gradient(circle at top, rgba(99, 102, 241, 0.18), transparent 28%),
-    linear-gradient(180deg, #111111 0%, var(--premium-bg) 100%);
+    radial-gradient(circle at top, var(--premium-radial-tint), transparent 28%),
+    linear-gradient(180deg, var(--premium-body-gradient-top) 0%, var(--premium-bg) 100%);
   color: var(--premium-text);
   font-family: 'Inter', 'Segoe UI', sans-serif;
 }
@@ -97,8 +171,8 @@ input[type='submit']:hover {
   justify-content: space-between;
   gap: 16px;
   padding: 14px 20px;
-  background: rgba(10, 10, 10, 0.78);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--premium-navbar-bg);
+  border-bottom: 1px solid var(--premium-overlay-08);
   backdrop-filter: blur(18px);
 }
 
@@ -144,8 +218,8 @@ input[type='submit']:hover {
   gap: 10px;
   padding: 10px 14px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--premium-overlay-05);
+  border: 1px solid var(--premium-overlay-08);
   color: var(--premium-muted);
   font-size: 0.92rem;
 }
@@ -179,6 +253,9 @@ input[type='submit']:hover {
 
 .premium-main {
   padding: 24px 0 40px;
+  position: relative;
+  perspective: 1200px;
+  perspective-origin: 50% -20%;
 }
 
 .premium-toast-host {
@@ -196,7 +273,7 @@ input[type='submit']:hover {
   padding: 14px 16px;
   border-radius: 18px;
   color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--premium-overlay-12);
   background: rgba(20, 20, 20, 0.92);
   box-shadow: var(--premium-card-shadow);
   opacity: 0;
@@ -234,9 +311,9 @@ input[type='submit']:hover {
   transform: translateX(-100%);
   background: linear-gradient(
     90deg,
-    rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.08) 50%,
-    rgba(255, 255, 255, 0) 100%
+    transparent 0%,
+    var(--premium-overlay-08) 50%,
+    transparent 100%
   );
   animation: premium-skeleton 1.4s ease-in-out infinite;
 }
@@ -245,7 +322,7 @@ input[type='submit']:hover {
   display: block;
   min-height: 14px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--premium-overlay-08);
   animation: premium-pulse 1.4s ease-in-out infinite;
 }
 
@@ -268,7 +345,7 @@ input[type='submit']:hover {
   margin-top: auto;
   padding: 18px 24px 28px;
   border-top: 1px solid var(--premium-line);
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--premium-overlay-03);
   margin-left: 0;
   transition: margin-left 220ms cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -393,13 +470,13 @@ body.home-view .premium-main {
   color: var(--premium-muted);
   text-decoration: none;
   border: 1px solid var(--premium-line);
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--premium-overlay-04);
   flex-shrink: 0;
 }
 
 .home-gear:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.16);
+  background: var(--premium-overlay-08);
+  border-color: var(--premium-overlay-16);
   color: var(--premium-text);
 }
 
@@ -428,7 +505,7 @@ body.home-view .premium-main {
 }
 
 .home-start-btn:hover {
-  background: #5254d1;
+  background: var(--premium-accent-hover);
   background-image: none;
   box-shadow: 0 10px 32px rgba(99, 102, 241, 0.36);
 }
@@ -452,6 +529,82 @@ body.home-view .premium-main {
 
 .home-status--error {
   color: var(--premium-danger);
+}
+
+.home-company-details-link {
+  align-self: flex-start;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  color: var(--premium-accent-strong);
+  font-family: inherit;
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.home-company-details-link:hover {
+  text-decoration: underline;
+}
+
+.company-details-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.company-details-form label {
+  display: block;
+  text-align: left;
+}
+
+.company-details-form label span {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 0.82rem;
+  color: var(--premium-muted);
+}
+
+.company-details-form input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--premium-line);
+  background: var(--premium-overlay-04);
+  color: var(--premium-text);
+  font: inherit;
+  font-size: 0.92rem;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.company-details-form input:focus {
+  border-color: rgba(99, 102, 241, 0.5);
+}
+
+.company-details-submit {
+  width: 100%;
+  height: 46px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--premium-accent);
+  background-image: none;
+  color: #ffffff;
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.company-details-submit:hover {
+  background: var(--premium-accent-hover);
+  background-image: none;
+}
+
+.company-details-submit:disabled {
+  opacity: 0.6;
+  cursor: wait;
 }
 
 /* Recent sessions */
@@ -484,11 +637,11 @@ body.home-view .premium-main {
 }
 
 .home-session-item:not(:last-child) {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid var(--premium-overlay-06);
 }
 
 .home-session-item:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--premium-overlay-04);
   border-color: var(--premium-line);
 }
 
@@ -541,6 +694,17 @@ body.home-view .premium-main {
   gap: 40px;
 }
 
+/* Signature page-entry transition (base.html's DOMContentLoaded handler
+   animates transform/opacity/filter inline). Users who prefer reduced
+   motion get a plain fade instead of the 3D flip. */
+@media (prefers-reduced-motion: reduce) {
+  .page-content {
+    transition: opacity 0.2s ease !important;
+    transform: none !important;
+    filter: none !important;
+  }
+}
+
 /* Unified page header — title + optional breadcrumb, same across all pages */
 .page-header {
   display: flex;
@@ -572,9 +736,9 @@ body.home-view .premium-main {
 .settings-card {
   border-radius: 12px;
   padding: 20px 24px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  background: var(--premium-card-bg);
+  border: 1px solid var(--premium-line);
+  box-shadow: var(--premium-settings-card-shadow);
 }
 
 .st-shell {
@@ -629,12 +793,12 @@ body.home-view .premium-main {
   gap: 16px;
   padding: 14px 16px;
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.025);
+  background: var(--premium-overlay-025);
   border: 1px solid transparent;
 }
 
 .st-row:not(:last-child) {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid var(--premium-overlay-06);
 }
 
 .st-row--link {
@@ -645,7 +809,7 @@ body.home-view .premium-main {
 }
 
 .st-row--link:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--premium-overlay-05);
   border-color: var(--premium-line);
 }
 
@@ -665,12 +829,12 @@ body.home-view .premium-main {
   height: 8px;
   border-radius: 50%;
   flex: 0 0 auto;
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--premium-overlay-15);
 }
 
-.st-dot--ok   { background: #22c55e; box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15); }
-.st-dot--err  { background: #ef4444; box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12); }
-.st-dot--warn { background: #f59e0b; box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.12); }
+.st-dot--ok   { background: var(--premium-success); box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15); }
+.st-dot--err  { background: var(--premium-danger); box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12); }
+.st-dot--warn { background: var(--premium-warning); box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.12); }
 
 .st-row-text {
   display: flex;
@@ -710,7 +874,7 @@ body.home-view .premium-main {
   width: 120px;
   height: 14px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--premium-overlay-08);
   animation: st-pulse 1.4s ease-in-out infinite;
 }
 
@@ -718,7 +882,7 @@ body.home-view .premium-main {
   width: 200px;
   height: 11px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--premium-overlay-05);
   margin-top: 4px;
   animation: st-pulse 1.4s ease-in-out infinite 0.2s;
 }
@@ -745,7 +909,7 @@ body.home-view .premium-main {
   gap: 12px;
 }
 
-.st-cleanup-btn:hover { background: rgba(255, 255, 255, 0.04); }
+.st-cleanup-btn:hover { background: var(--premium-overlay-04); }
 .st-cleanup-btn:disabled { opacity: 0.5; cursor: wait; }
 
 .st-cleanup-result {
@@ -770,8 +934,8 @@ body.has-sidebar .premium-main {
   bottom: 0;
   width: 56px;
   z-index: 40;
-  background: #121214;
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--premium-sidebar-bg);
+  border-right: 1px solid var(--premium-overlay-08);
   backdrop-filter: blur(20px);
   display: flex;
   flex-direction: column;
@@ -853,7 +1017,7 @@ body.has-sidebar .premium-main {
 }
 
 .sidebar-pin:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--premium-overlay-08);
   color: var(--premium-text);
 }
 
@@ -866,7 +1030,7 @@ body.has-sidebar .premium-main {
 .sidebar-divider {
   flex-shrink: 0;
   height: 1px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--premium-overlay-08);
   width: 100%;
   margin: 0;
 }
@@ -896,7 +1060,7 @@ body.has-sidebar .premium-main {
 
 .sidebar-item:hover {
   color: var(--premium-text);
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--premium-overlay-06);
 }
 
 .sidebar-item.is-active {
@@ -911,6 +1075,24 @@ body.has-sidebar .premium-main {
   width: 24px;
   height: 24px;
   flex-shrink: 0;
+  transition: filter 150ms ease;
+}
+
+/* Each nav item's icon keeps its own identity color in every state
+   (default/hover/active) -- only the label and the active-state pill
+   background use the shared app accent, matching Notion/Linear/Arc-style
+   sidebars where icon color != selection color. */
+.sidebar-icon--home     { color: #6366f1; }
+.sidebar-icon--sessions { color: #0ea5e9; }
+.sidebar-icon--prepare  { color: #f97316; }
+.sidebar-icon--profile  { color: #8b5cf6; }
+.sidebar-icon--system   { color: #f59e0b; }
+.sidebar-icon--settings { color: #64748b; }
+.sidebar-icon--overlay  { color: #f43f5e; }
+.sidebar-icon--device   { color: #10b981; }
+
+.sidebar-item:hover .sidebar-icon {
+  filter: brightness(1.2);
 }
 
 .sidebar-label {
@@ -946,7 +1128,7 @@ body.has-sidebar .premium-main {
   height: 32px;
   border-radius: 50%;
   background: rgba(99, 102, 241, 0.15);
-  color: #818cf8;
+  color: var(--premium-accent-strong);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -999,8 +1181,83 @@ body.has-sidebar .premium-main {
 }
 
 .sidebar-item--btn:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--premium-overlay-06);
   color: var(--premium-text);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   SIDEBAR — version / update check (rail bottom, revealed on hover/pin same
+   as .sidebar-label -- opacity only, the sidebar's own width+overflow:hidden
+   transition handles the collapsed-state clipping)
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.sidebar-version-area {
+  flex-shrink: 0;
+  padding: 10px 8px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  opacity: 0;
+  white-space: nowrap;
+}
+
+.sidebar:hover .sidebar-version-area,
+.sidebar.is-open .sidebar-version-area {
+  opacity: 1;
+}
+
+.version-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 4px;
+}
+
+.version-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--premium-success);
+  flex-shrink: 0;
+}
+
+.version-text {
+  font-size: 0.76rem;
+  color: var(--premium-muted);
+  font-weight: 600;
+}
+
+.update-check-btn {
+  border: 1px solid rgba(20, 184, 166, 0.28);
+  background: rgba(20, 184, 166, 0.08);
+  color: #14b8a6;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 6px 10px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.update-check-btn:hover { background: rgba(20, 184, 166, 0.16); color: #14b8a6; filter: brightness(1.15); }
+.update-check-btn:disabled { opacity: 0.6; cursor: wait; }
+
+.update-status {
+  font-size: 0.74rem;
+  color: var(--premium-muted);
+  line-height: 1.4;
+  padding: 0 4px;
+  white-space: normal;
+}
+
+.update-status a {
+  color: var(--premium-accent-strong);
+  text-decoration: underline;
+}
+
+.update-status.update-available {
+  color: var(--premium-success);
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -1025,8 +1282,8 @@ body.has-sidebar .premium-main {
 
 .pairing-modal-card {
   position: relative;
-  background: #141414;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--premium-surface);
+  border: 1px solid var(--premium-overlay-10);
   border-radius: 24px;
   box-shadow: 0 32px 80px rgba(0, 0, 0, 0.6);
   padding: 40px 32px 32px;
@@ -1045,8 +1302,8 @@ body.has-sidebar .premium-main {
   right: 16px;
   width: 34px;
   height: 34px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--premium-overlay-05);
+  border: 1px solid var(--premium-overlay-10);
   color: var(--premium-text);
   font-size: 16px;
   cursor: pointer;
@@ -1059,7 +1316,7 @@ body.has-sidebar .premium-main {
 }
 
 .pairing-modal-close:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--premium-overlay-10);
 }
 
 .pairing-modal-kicker {
@@ -1159,7 +1416,7 @@ body.has-sidebar .premium-main {
 
 .pairing-digit--warm {
   background: rgba(129, 140, 248, 0.08);
-  color: #a5b4fc;
+  color: var(--premium-digit-warm);
   border: 1px solid rgba(129, 140, 248, 0.2);
 }
 
@@ -1193,13 +1450,13 @@ body.has-sidebar .premium-main {
 }
 
 .pairing-btn--secondary {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--premium-overlay-06);
+  border: 1px solid var(--premium-overlay-12);
   color: var(--premium-text);
 }
 
 .pairing-btn--secondary:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--premium-overlay-10);
 }
 
 .pairing-btn--secondary:disabled {
@@ -1209,12 +1466,12 @@ body.has-sidebar .premium-main {
 
 .pairing-btn--ghost {
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--premium-overlay-08);
   color: var(--premium-muted);
 }
 
 .pairing-btn--ghost:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--premium-overlay-06);
   color: var(--premium-text);
 }
 

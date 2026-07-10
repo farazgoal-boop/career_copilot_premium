@@ -14,6 +14,10 @@ New-Item -Path $securityDir -ItemType Directory -Force | Out-Null
 $manifestPath = Join-Path $securityDir "SHA256-MANIFEST.txt"
 $vtPath = Join-Path $securityDir "VIRUSTOTAL-LINK.txt"
 
+$installerExe = Get-ChildItem -Path (Join-Path $PackageDir "installer") -Filter "CareerCopilotPremium_Setup_v*.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
+$installerRelPath = if ($installerExe) { "installer/$($installerExe.Name)" } else { "installer/CareerCopilotPremium_Setup_vX.X.X.exe" }
+$versionTag = if ($installerExe -and $installerExe.BaseName -match '_(v[\d.]+)$') { $matches[1] } else { "vUNKNOWN" }
+
 $includeRoots = @(
     (Join-Path $PackageDir "installer"),
     (Join-Path $PackageDir "android"),
@@ -53,7 +57,7 @@ if (-not (Test-Path $vtPath)) {
         "===============",
         "",
         "Upload this file to https://www.virustotal.com :",
-        "  installer/CareerCopilotPremium_Setup_v1.0.7.exe",
+        "  $installerRelPath",
         "",
         "Paste the public scan link below after upload:",
         "LINK: (pending - upload Setup.exe and paste link here)",
@@ -62,7 +66,7 @@ if (-not (Test-Path $vtPath)) {
     ) | Out-File -FilePath $vtPath -Encoding utf8
 }
 
-$zipPath = Join-Path $projectRoot "CareerCopilotPremium-v1.0.7-CLIENT.zip"
+$zipPath = Join-Path $projectRoot "CareerCopilotPremium-$versionTag-CLIENT.zip"
 if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
 
 $staging = Join-Path $projectRoot "dist\client-zip-staging"

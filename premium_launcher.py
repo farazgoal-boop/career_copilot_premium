@@ -253,6 +253,7 @@ def _run_overlay_event_loop(services: PremiumRuntime, qt_app: "QtApplication") -
 
     window.show()
     window.raise_()
+    window.activateWindow()
     window.dashboard_url = services.dashboard_url
 
     last_status = ""

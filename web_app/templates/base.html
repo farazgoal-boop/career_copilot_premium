@@ -4,7 +4,34 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Career Copilot Premium{% endblock %}</title>
+  <script>
+    /* Runs before the stylesheet paints so there's no flash of the wrong
+       theme. Settings -> Appearance writes the raw preference ('dark' |
+       'light' | 'auto') to localStorage; this resolves 'auto' against the
+       OS preference and stamps data-theme on <html> for premium.css's
+       :root[data-theme="light"] rules to match. Leaving data-theme unset
+       for 'dark' keeps the default :root (dark) values in effect --
+       identical to how the app looked before this system existed. */
+    (function () {
+      try {
+        var stored = localStorage.getItem('ccp-theme') || 'auto';
+        var resolved = stored;
+        if (stored === 'auto') {
+          resolved = (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark';
+        }
+        if (resolved === 'light') {
+          document.documentElement.setAttribute('data-theme', 'light');
+        }
+      } catch (e) {}
+    })();
+  </script>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/premium.css') }}">
+  <!-- Signature page transition: shatter-out (canvas capture) + 3D flip-in.
+       Deferred so a slow/offline CDN fetch never blocks page render --
+       transition.js and the click handlers below degrade to plain
+       navigation/fade if html2canvas doesn't load in time. -->
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script defer src="{{ url_for('static', filename='js/transition.js') }}"></script>
   {% block extra_head %}{% endblock %}
 </head>
 <body class="premium-layout {% block body_class %}{% endblock %}">
@@ -68,6 +95,38 @@
 
   <script>
     (() => {
+      // Theme: 'dark' | 'light' | 'auto', persisted to localStorage.
+      // window.setTheme() applies + saves it immediately (no reload needed);
+      // the inline <head> script (this same resolution logic) handles the
+      // no-flash case on the next page load.
+      function resolveTheme(pref) {
+        if (pref === 'auto') {
+          return (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark';
+        }
+        return pref;
+      }
+
+      window.setTheme = function setTheme(pref) {
+        try { localStorage.setItem('ccp-theme', pref); } catch (e) {}
+        const resolved = resolveTheme(pref);
+        if (resolved === 'light') {
+          document.documentElement.setAttribute('data-theme', 'light');
+        } else {
+          document.documentElement.removeAttribute('data-theme');
+        }
+      };
+
+      window.getThemePref = function getThemePref() {
+        try { return localStorage.getItem('ccp-theme') || 'auto'; } catch (e) { return 'auto'; }
+      };
+
+      // Live-follow the OS theme while 'auto' is selected.
+      if (window.matchMedia) {
+        window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => {
+          if (window.getThemePref() === 'auto') window.setTheme('auto');
+        });
+      }
+
       const host = document.getElementById('premium-toast-host');
       window.showToast = function showToast(message, tone = 'info') {
         if (!host || !message) {
@@ -83,6 +142,47 @@
           window.setTimeout(() => toast.remove(), 200);
         }, 2600);
       };
+    })();
+  </script>
+
+  <script>
+    (() => {
+      // Signature page-entry animation: .page-content flips in 3D from the
+      // active sidebar item's position. Pairs with _sidebar.html's
+      // shatter-out on the previous page (see transition.js). Skipped
+      // entirely (plain CSS fade takes over, see premium.css) when the
+      // user prefers reduced motion, or on pages with no sidebar/content
+      // shell (onboarding, activation, the live-session overlay).
+      const content = document.querySelector('.page-content');
+      const container = document.querySelector('.premium-main');
+      const navItems = document.querySelectorAll('.sidebar-item[data-path]');
+      if (!content || !container || !navItems.length) return;
+      if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+      const origin = document.querySelector('.sidebar-item.is-active') || navItems[0];
+      const containerRect = container.getBoundingClientRect();
+      const originRect = origin.getBoundingClientRect();
+      const ox = originRect.left + originRect.width / 2 - containerRect.left;
+      const oy = originRect.top + originRect.height / 2 - containerRect.top;
+
+      content.style.transformOrigin = `${ox}px ${oy}px`;
+      content.style.transform = 'scale(0.05) rotateX(-75deg) rotateY(25deg)';
+      content.style.opacity = '0';
+      content.style.filter = 'blur(4px)';
+      content.style.transition = 'none';
+
+      // Double rAF: guarantees the browser paints the "from" state on its
+      // own frame before the transition to the "to" state starts, or the
+      // two get batched into one style recalc and the animation never plays.
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          content.style.transition =
+            'transform 780ms cubic-bezier(0.34, 1.28, 0.64, 1), opacity 300ms ease-out, filter 440ms ease-out';
+          content.style.transform = 'scale(1) rotateX(0deg) rotateY(0deg)';
+          content.style.opacity = '1';
+          content.style.filter = 'blur(0)';
+        });
+      });
     })();
   </script>
   {% block extra_scripts %}{% endblock %}

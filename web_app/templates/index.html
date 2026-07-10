@@ -16,8 +16,29 @@
 
   <section class="home-hero">
     <button id="home-start-btn" class="home-start-btn" type="button">Start session</button>
+    <button id="home-company-details-btn" class="home-company-details-link" type="button">Add company details for research</button>
     <p id="home-status" class="home-status" role="status" aria-live="polite"></p>
   </section>
+
+  <div id="company-details-modal" class="pairing-modal hidden" role="dialog" aria-modal="true" aria-label="Add company details">
+    <div class="pairing-modal-card">
+      <button id="company-details-modal-close" class="pairing-modal-close" type="button" aria-label="Close">&#10005;</button>
+      <p class="pairing-modal-kicker">Research</p>
+      <h2 class="pairing-modal-title">Company details</h2>
+      <p class="pairing-modal-hint">Add the company or client name so Career Copilot can prepare a research briefing before you start.</p>
+      <form id="company-details-form" class="company-details-form">
+        <label>
+          <span>Company or client name</span>
+          <input id="company-details-name" type="text" placeholder="e.g. Acme Corp" autocomplete="off" required>
+        </label>
+        <label>
+          <span>Role or meeting topic <span style="opacity:.6;font-weight:400">(optional)</span></span>
+          <input id="company-details-role" type="text" placeholder="e.g. Senior Backend Engineer" autocomplete="off">
+        </label>
+        <button id="company-details-submit" class="company-details-submit" type="submit">Start with research</button>
+      </form>
+    </div>
+  </div>
 
   <section class="home-sessions settings-card">
     <p class="home-sessions-label">Recent</p>
@@ -103,15 +124,12 @@
     }
   }
 
-  startBtn.addEventListener('click', async function () {
-    startBtn.disabled = true;
-    startBtn.textContent = 'Starting…';
-    setStatus('');
+  async function startSession(extraFields, onError) {
     try {
       var resp = await fetch('/api/session/quick-start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ use_microphone: true }),
+        body: JSON.stringify(Object.assign({ use_microphone: true }, extraFields || {})),
       });
       var data = await resp.json();
       if (resp.ok && data.ok && data.session_id) {
@@ -124,10 +142,62 @@
       }
       throw new Error(data.error || 'Could not start session.');
     } catch (e) {
+      onError(e.message || String(e));
+    }
+  }
+
+  startBtn.addEventListener('click', function () {
+    startBtn.disabled = true;
+    startBtn.textContent = 'Starting…';
+    setStatus('');
+    startSession({}, function (message) {
       startBtn.disabled = false;
       startBtn.textContent = 'Start session';
-      setStatus(e.message || String(e), true);
-    }
+      setStatus(message, true);
+    });
+  });
+
+  // Company details modal — optional path to capture a real company/client
+  // name before quick-start so a research briefing can be generated. Kept
+  // separate from home-start-btn so the one-click instant path is untouched.
+  var companyModal = document.getElementById('company-details-modal');
+  var companyModalOpenBtn = document.getElementById('home-company-details-btn');
+  var companyModalCloseBtn = document.getElementById('company-details-modal-close');
+  var companyForm = document.getElementById('company-details-form');
+  var companyNameInput = document.getElementById('company-details-name');
+  var companyRoleInput = document.getElementById('company-details-role');
+  var companySubmitBtn = document.getElementById('company-details-submit');
+
+  function openCompanyModal() {
+    companyModal.classList.remove('hidden');
+    companyNameInput.focus();
+  }
+
+  function closeCompanyModal() {
+    companyModal.classList.add('hidden');
+  }
+
+  companyModalOpenBtn.addEventListener('click', openCompanyModal);
+  companyModalCloseBtn.addEventListener('click', closeCompanyModal);
+  companyModal.addEventListener('click', function (event) {
+    if (event.target === companyModal) closeCompanyModal();
+  });
+
+  companyForm.addEventListener('submit', function (event) {
+    event.preventDefault();
+    var companyName = companyNameInput.value.trim();
+    if (!companyName) return;
+    companySubmitBtn.disabled = true;
+    companySubmitBtn.textContent = 'Preparing research…';
+    setStatus('');
+    startSession(
+      { company_name: companyName, target_role: companyRoleInput.value.trim() },
+      function (message) {
+        companySubmitBtn.disabled = false;
+        companySubmitBtn.textContent = 'Start with research';
+        setStatus(message, true);
+      }
+    );
   });
 
   loadRecent();

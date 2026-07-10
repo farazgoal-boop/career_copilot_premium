@@ -24,6 +24,12 @@ from runtime_paths import (
 DEFAULT_BRIEFING_ID = "primary"
 _MIC_RUNTIME_CACHE: dict[str, object] | None = None
 
+# Single source of truth for the running app's version, shown in the
+# sidebar and compared against GitHub releases by /api/check-update. Bump
+# alongside setup.py / career-copilot-version.txt / the other files listed
+# in CLAUDE.md's version-bump checklist.
+CURRENT_APP_VERSION = "2.0.0"
+
 
 def _is_public_route(path: str) -> bool:
     normalized = (path or "/").rstrip("/").lower() or "/"
@@ -39,6 +45,10 @@ def _is_public_route(path: str) -> bool:
 
 
 def register_routes(app: Flask) -> None:
+    @app.context_processor
+    def inject_app_version() -> dict[str, object]:
+        return {"app_version": CURRENT_APP_VERSION}
+
     @app.get("/api/health")
     def health() -> Response:
         return jsonify({"status": "ok"}), 200
@@ -92,9 +102,65 @@ def register_routes(app: Flask) -> None:
     def profile_page() -> str:
         return render_template("profile.html", existing_profile=_load_existing_onboarding_profile())
 
+    @app.get("/prepare")
+    def prepare_mode() -> str:
+        from desktop_app.onboarding import PROFILE_FILENAME, load_completed_profile
+        from desktop_app.session_types import normalize_session_type, session_type_label
+        from desktop_app.strategy_generator import generate_strategy_pack
+
+        briefing = load_briefing_helper()
+        company_name = str(briefing.get("company_name", "") or "").strip() or "Target Company"
+        role_title = str(briefing.get("target_role", "") or "").strip() or "Target Role"
+        session_type = normalize_session_type(briefing.get("session_type"))
+
+        profile_directory = _resolve_quick_start_profile_directory({})
+        profile = None
+        if profile_directory is not None:
+            try:
+                profile = load_completed_profile(profile_directory / PROFILE_FILENAME)
+            except (OSError, KeyError, ValueError):
+                profile = None
+
+        if profile is None:
+            return render_template("prepare.html", profile_ready=False)
+
+        strategy_pack = generate_strategy_pack(
+            profile, company_name=company_name, role_title=role_title, session_type=session_type
+        )
+
+        return render_template(
+            "prepare.html",
+            profile_ready=True,
+            company_name=company_name,
+            role_title=role_title,
+            session_type=session_type,
+            session_type_label=session_type_label(session_type),
+            strategy_pack=strategy_pack.to_dict(),
+        )
+
+    @app.post("/api/prepare/research")
+    def prepare_research() -> Response:
+        from desktop_app.company_research import company_research_to_dict, generate_company_research
+        from desktop_app.session_types import normalize_session_type
+
+        body = request.get_json(silent=True) or {}
+        briefing = load_briefing_helper()
+        company_name = str(body.get("company_name") or briefing.get("company_name") or "").strip()
+        role_title = str(body.get("role_title") or briefing.get("target_role") or "").strip()
+        session_type = normalize_session_type(body.get("session_type") or briefing.get("session_type"))
+        if not company_name or company_name == "Target Company":
+            return jsonify({"ok": False, "error": "Add a company or client name in your profile first."}), 400
+
+        try:
+            research_result = generate_company_research(company_name, role_title=role_title, session_type=session_type)
+        except Exception as error:
+            return jsonify({"ok": False, "error": str(error)}), 502
+
+        return jsonify({"ok": True, "company_research": company_research_to_dict(research_result)}), 200
+
     @app.get("/system-status")
     def system_status_page() -> str:
-        return render_template("system_status.html")
+        return render_template("system_status.html", host_platform=sys.platform)
 
     @app.get("/session/<session_id>/live")
     def live_session(session_id: str) -> Response | str:
@@ -197,7 +263,7 @@ def register_routes(app: Flask) -> None:
             return _render_onboarding_error("Upload a resume PDF or type a product or service description.")
 
         try:
-            profile_path = _materialize_onboarding_profile(
+            profile_path, resume_extracted, skills_preview = _materialize_onboarding_profile(
                 full_name=full_name,
                 current_role=current_role or target_name or "Professional",
                 target_name=target_name,
@@ -224,6 +290,8 @@ def register_routes(app: Flask) -> None:
                     "connect_mobile_url": "/settings",
                     "dashboard_url": "/dashboard",
                     "bridge_hint": _bridge_base_url(),
+                    "resume_extracted": resume_extracted,
+                    "skills_preview": skills_preview,
                 }
             )
             response.headers["Content-Type"] = "application/json; charset=utf-8"
@@ -378,6 +446,50 @@ def register_routes(app: Flask) -> None:
 
         return jsonify({"ok": True, **portable_status_payload()})
 
+    @app.get("/api/check-update")
+    def check_update() -> Response:
+        """Compare the running version against the latest published GitHub release.
+
+        Manual/user-triggered only (no auto-polling) -- one outbound request
+        per click. Never blocks or errors loudly: any failure reaching
+        GitHub just reports "could not check" rather than surfacing a stack
+        trace, since this is a nice-to-have, not a required feature.
+        """
+        import json as _json
+        from urllib import error as _url_error
+        from urllib import request as _url_request
+
+        current_version = CURRENT_APP_VERSION
+        repo = "farazgoal-boop/career_copilot_premium"
+
+        try:
+            url = f"https://api.github.com/repos/{repo}/releases/latest"
+            req = _url_request.Request(url, headers={"User-Agent": "CareerCopilotPremium"})
+            with _url_request.urlopen(req, timeout=5) as response:
+                data = _json.loads(response.read())
+            latest_version = str(data.get("tag_name", "")).lstrip("v").strip()
+            if not latest_version:
+                raise ValueError("Release response had no tag_name.")
+            return jsonify(
+                {
+                    "ok": True,
+                    "update_available": _is_version_newer(latest_version, current_version),
+                    "current_version": current_version,
+                    "latest_version": latest_version,
+                    "download_url": str(data.get("html_url", "")),
+                }
+            )
+        except (_url_error.URLError, _url_error.HTTPError, OSError, TimeoutError, ValueError, KeyError) as exc:
+            current_app.logger.warning("check-update failed: %s", exc)
+            return jsonify(
+                {
+                    "ok": False,
+                    "update_available": False,
+                    "current_version": current_version,
+                    "error": "Could not reach GitHub.",
+                }
+            )
+
     @app.get("/api/sessions/recent")
     def recent_sessions() -> Response:
         try:
@@ -441,6 +553,137 @@ def register_routes(app: Flask) -> None:
         except Exception as exc:
             current_app.logger.exception("Failed to save Mistral key")
             return jsonify({"ok": False, "error": str(exc)}), 500
+
+    @app.get("/api/settings/elevenlabs-key")
+    def get_elevenlabs_key_status() -> Response:
+        from desktop_app.elevenlabs_setup import elevenlabs_api_key
+        key = elevenlabs_api_key()
+        return jsonify({"ok": True, "has_key": bool(key)})
+
+    @app.post("/api/settings/elevenlabs-key")
+    def save_elevenlabs_key() -> Response:
+        from desktop_app.elevenlabs_setup import save_elevenlabs_api_key
+        body = request.get_json(force=True, silent=True) or {}
+        key = str(body.get("api_key", "")).strip()
+        if not key:
+            return jsonify({"ok": False, "error": "API key is required."}), 400
+        try:
+            save_elevenlabs_api_key(key)
+            return jsonify({"ok": True, "message": "ElevenLabs API key saved."})
+        except Exception as exc:
+            current_app.logger.exception("Failed to save ElevenLabs key")
+            return jsonify({"ok": False, "error": str(exc)}), 500
+
+    @app.get("/api/settings/voice-prefs")
+    def get_voice_prefs() -> Response:
+        from desktop_app.voice_prefs import SPEED_OPTIONS, VOICE_OPTIONS, load_voice_prefs
+        prefs = load_voice_prefs()
+        return jsonify(
+            {
+                "ok": True,
+                "voice_id": prefs["voice_id"],
+                "speed": prefs["speed"],
+                "voice_options": [{"label": label, "voice_id": voice_id} for label, voice_id in VOICE_OPTIONS],
+                "speed_options": [{"label": label, "value": value} for label, value in SPEED_OPTIONS],
+            }
+        )
+
+    @app.post("/api/settings/voice-prefs")
+    def save_voice_prefs_route() -> Response:
+        from desktop_app.voice_prefs import save_voice_prefs
+        body = request.get_json(force=True, silent=True) or {}
+        voice_id = str(body.get("voice_id", "") or "")
+        speed = body.get("speed", 1.0)
+        try:
+            prefs = save_voice_prefs(voice_id, speed)
+            return jsonify({"ok": True, **prefs})
+        except Exception as exc:
+            current_app.logger.exception("Failed to save voice prefs")
+            return jsonify({"ok": False, "error": str(exc)}), 500
+
+    @app.get("/api/settings/language-prefs")
+    def get_language_prefs_route() -> Response:
+        from desktop_app.language_config import LANGUAGE_OPTIONS, SPEAK_LANGUAGE_OPTIONS, load_language_prefs
+        prefs = load_language_prefs()
+        return jsonify(
+            {
+                "ok": True,
+                "listen_language": prefs["listen_language"],
+                "reply_language": prefs["reply_language"],
+                "speak_language": prefs["speak_language"],
+                "language_options": [{"label": label, "code": code} for label, code in LANGUAGE_OPTIONS],
+                "speak_language_options": [{"label": label, "code": code} for label, code in SPEAK_LANGUAGE_OPTIONS],
+            }
+        )
+
+    @app.post("/api/settings/language-prefs")
+    def save_language_prefs_route() -> Response:
+        from desktop_app.language_config import save_language_prefs
+        body = request.get_json(force=True, silent=True) or {}
+        listen_language = str(body.get("listen_language", "") or "")
+        reply_language = str(body.get("reply_language", "") or "")
+        speak_language = body.get("speak_language")
+        try:
+            prefs = save_language_prefs(
+                listen_language,
+                reply_language,
+                speak_language=str(speak_language) if speak_language is not None else None,
+            )
+            return jsonify({"ok": True, **prefs})
+        except Exception as exc:
+            current_app.logger.exception("Failed to save language prefs")
+            return jsonify({"ok": False, "error": str(exc)}), 500
+
+    @app.post("/api/tts/speak")
+    def tts_speak() -> Response:
+        from desktop_app.elevenlabs_setup import elevenlabs_api_key
+        from desktop_app.language_config import get_speak_language_code, language_label_for_code, load_language_prefs
+        from desktop_app.translation import TranslationError, translate_text
+        from desktop_app.tts import SpeechSynthesisError, synthesize_speech
+        from desktop_app.voice_prefs import load_voice_prefs
+
+        body = request.get_json(force=True, silent=True) or {}
+        text = str(body.get("text", "") or "").strip()
+        if not text:
+            return jsonify({"ok": False, "error": "No text to speak."}), 400
+
+        # Translate first if "speak to caller in" resolves to a different
+        # language than the answer was generated in -- TTS reads text
+        # aloud in whatever language it's written in, it doesn't translate.
+        lang_prefs = load_language_prefs()
+        speak_code = get_speak_language_code()
+        final_text = text
+        if speak_code != lang_prefs["reply_language"]:
+            try:
+                final_text = translate_text(
+                    text,
+                    target_language_label=language_label_for_code(speak_code),
+                    source_language_label=language_label_for_code(lang_prefs["reply_language"]),
+                )
+            except TranslationError as exc:
+                current_app.logger.warning("Speak translation failed, using original text: %s", exc)
+                final_text = text
+
+        api_key = elevenlabs_api_key()
+        if not api_key:
+            return jsonify({"ok": True, "use_browser_fallback": True, "text": final_text, "lang": speak_code}), 200
+
+        prefs = load_voice_prefs()
+        voice_id = str(body.get("voice_id", "") or prefs["voice_id"])
+        try:
+            speed = float(body.get("speed", prefs["speed"]))
+        except (TypeError, ValueError):
+            speed = float(prefs["speed"])
+
+        try:
+            audio_bytes = synthesize_speech(final_text, api_key, voice_id=voice_id, speed=speed)
+        except SpeechSynthesisError as exc:
+            current_app.logger.warning("ElevenLabs synthesis failed: %s", exc)
+            return jsonify(
+                {"ok": True, "use_browser_fallback": True, "text": final_text, "lang": speak_code, "error": str(exc)}
+            ), 200
+
+        return Response(audio_bytes, mimetype="audio/mpeg")
 
     @app.post("/api/overlay/show")
     def overlay_show() -> Response:
@@ -657,7 +900,7 @@ def register_routes(app: Flask) -> None:
         """One-click session start using the latest saved profile and briefing."""
         try:
             from desktop_app.onboarding import is_session_ready
-            from desktop_app.runtime_controller import register_web_session
+            from desktop_app.runtime_controller import register_web_session, update_registered_session_state
             from desktop_app.session_types import normalize_session_type
             from mobile_app.live_bridge import build_live_bridge_payload_for_session, ensure_live_session_worker
             from .briefing import build_operator_prompts, load_briefing
@@ -718,6 +961,27 @@ def register_routes(app: Flask) -> None:
             except Exception as worker_error:
                 current_app.logger.warning("Session worker skipped: %s", worker_error)
                 worker_started = False
+
+            research_generated = False
+            if company_name and company_name != "Target Company":
+                try:
+                    from desktop_app.company_research import company_research_to_dict, generate_company_research
+
+                    research_result = generate_company_research(
+                        company_name,
+                        role_title=role_title if role_title != "Target Role" else "",
+                        session_type=session_type,
+                    )
+                    update_registered_session_state(
+                        session_id,
+                        {"company_research": company_research_to_dict(research_result)},
+                        registry_path=_registry_path(),
+                    )
+                    research_generated = True
+                except Exception as research_error:
+                    # Best-effort: never block session start on a research-generation failure.
+                    current_app.logger.warning("Company research generation skipped for session %s: %s", session_id, research_error)
+
             session_payload = build_live_bridge_payload_for_session(
                 session_id,
                 registry_path=_registry_path(),
@@ -732,6 +996,7 @@ def register_routes(app: Flask) -> None:
                     "role_name": role_title,
                     "session_type": session_type,
                     "worker_started": worker_started,
+                    "research_generated": research_generated,
                     "bridge_url": _bridge_base_url(),
                     "session": session_payload,
                     "hint": "Press F2 or click Listen in the overlay to capture the interviewer's question and generate your script.",
@@ -757,6 +1022,49 @@ def register_routes(app: Flask) -> None:
         except KeyError as error:
             return jsonify({"error": _display_error(error)}), 404
         return jsonify(payload)
+
+    @app.get("/api/session/<session_id>/research")
+    def session_research(session_id: str) -> Response:
+        from desktop_app.runtime_controller import load_registered_session_state
+
+        try:
+            state = load_registered_session_state(session_id, _registry_path())
+        except KeyError as error:
+            return jsonify({"ok": False, "error": _display_error(error)}), 404
+        return jsonify({"ok": True, "company_research": state.get("company_research") or None})
+
+    @app.post("/api/session/<session_id>/research/generate")
+    def session_research_generate(session_id: str) -> Response:
+        from desktop_app.company_research import company_research_to_dict, generate_company_research
+        from desktop_app.runtime_controller import load_registered_session_state, update_registered_session_state
+
+        try:
+            state = load_registered_session_state(session_id, _registry_path())
+        except KeyError as error:
+            return jsonify({"ok": False, "error": _display_error(error)}), 404
+
+        body = request.get_json(silent=True) or {}
+        company_name = str(body.get("company_name") or state.get("company_name") or "").strip()
+        role_title = str(body.get("role_title") or state.get("role_title") or "").strip()
+        if not company_name or company_name == "Target Company":
+            return jsonify({"ok": False, "error": "Enter a company or client name first."}), 400
+
+        try:
+            research_result = generate_company_research(
+                company_name,
+                role_title=role_title if role_title != "Target Role" else "",
+                session_type=str(state.get("session_type") or ""),
+            )
+        except Exception as error:
+            return jsonify({"ok": False, "error": str(error)}), 502
+
+        research_payload = company_research_to_dict(research_result)
+        update_registered_session_state(
+            session_id,
+            {"company_research": research_payload},
+            registry_path=_registry_path(),
+        )
+        return jsonify({"ok": True, "company_research": research_payload}), 200
 
     @app.post("/api/session/<session_id>/end")
     def session_end(session_id: str) -> Response:
@@ -1308,6 +1616,20 @@ def _wants_json_response() -> bool:
     return "application/json" in str(request.headers.get("Accept", "")).lower()
 
 
+_DOCX_WORD_NAMESPACE = {"w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"}
+
+
+def _extract_docx_text_from_stream(stream) -> str:
+    import zipfile
+    from xml.etree import ElementTree
+
+    with zipfile.ZipFile(stream) as archive:
+        document_xml = archive.read("word/document.xml")
+    root = ElementTree.fromstring(document_xml)
+    fragments = [node.text for node in root.findall(".//w:t", _DOCX_WORD_NAMESPACE) if node.text]
+    return re.sub(r"\s+", " ", " ".join(fragments)).strip()
+
+
 def _extract_onboarding_resume_payload(
     resume_file,
     product_description: str,
@@ -1331,6 +1653,8 @@ def _extract_onboarding_resume_payload(
                     extracted_text = output.getvalue().strip()
                 except ImportError:
                     extracted_text = ""
+            elif ext == "docx":
+                extracted_text = _extract_docx_text_from_stream(resume_file.stream)
             else:
                 extracted_text = resume_file.read().decode("utf-8", errors="replace").strip()
         except Exception:
@@ -1366,11 +1690,11 @@ def _materialize_onboarding_profile(
     resume_text: str,
     resume_filename: str,
     product_description: str,
-) -> Path:
+) -> tuple[Path, bool, list[str]]:
     profile_directory = _profiles_root() / _slug_profile_name(full_name)
     profile_directory.mkdir(parents=True, exist_ok=True)
 
-    profile_payload = _build_onboarding_profile_payload(
+    profile_payload, resume_extracted = _build_onboarding_profile_payload(
         full_name=full_name,
         current_role=current_role,
         target_name=target_name,
@@ -1382,7 +1706,45 @@ def _materialize_onboarding_profile(
     profile_path = profile_directory / "user_complete_profile.json"
     profile_path.write_text(json.dumps(profile_payload, indent=2), encoding="utf-8")
     (profile_directory / "user_session_ready.flag").write_text("session-ready\n", encoding="utf-8")
-    return profile_path
+    skills_preview = [str(skill["name"]) for skill in profile_payload["skills"][:6]]
+    return profile_path, resume_extracted, skills_preview
+
+
+def _extracted_onboarding_profile_sections(
+    resume_text: str, target_name: str
+) -> tuple[list[dict[str, object]], list[dict[str, object]], list[dict[str, object]]] | None:
+    """Try to build skills/work_history/projects from the actual resume text via
+    Mistral. Returns None on any failure so the caller falls back to placeholder
+    data instead of blocking onboarding -- see resume_profile_extractor.py."""
+    try:
+        from desktop_app.resume_profile_extractor import extract_resume_profile
+
+        extraction = extract_resume_profile(resume_text, target_role=target_name)
+    except Exception:
+        return None
+
+    skills = [{"name": skill.name, "level": skill.level} for skill in extraction.skills]
+    work_history = [
+        {
+            "company_name": job.company_name,
+            "duration": job.duration,
+            "achievements": job.achievements,
+            "reason_for_leaving": "Not specified.",
+            "salary_expectations": "Open based on opportunity.",
+        }
+        for job in extraction.work_history
+    ]
+    projects = [
+        {
+            "name": project.name,
+            "description": project.description or f"Project delivered while working toward {target_name}.",
+            "technologies": project.technologies,
+            "contribution": project.contribution or "Led delivery of this work.",
+            "link": None,
+        }
+        for project in extraction.projects
+    ]
+    return skills, work_history, projects
 
 
 def _build_onboarding_profile_payload(
@@ -1393,49 +1755,47 @@ def _build_onboarding_profile_payload(
     resume_text: str,
     resume_filename: str,
     product_description: str,
-) -> dict[str, object]:
+) -> tuple[dict[str, object], bool]:
     now = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
     project_summary = product_description.strip() or f"Session context for {target_name}."
-    skill_names = [
-        target_name,
-        "Communication",
-        "Problem Solving",
-        "Positioning",
-        "Discovery Calls",
-        "Closing",
-        "Client Strategy",
-        "Offer Design",
-        "Follow-up",
-        "Execution",
-    ]
 
-    unique_skills: list[dict[str, str]] = []
-    seen: set[str] = set()
-    for item in skill_names:
-        cleaned = str(item).strip()
-        if not cleaned:
-            continue
-        key = cleaned.casefold()
-        if key in seen:
-            continue
-        seen.add(key)
-        unique_skills.append(
-            {
-                "name": cleaned,
-                "level": "Expert" if len(unique_skills) < 3 else "Intermediate",
-            }
-        )
+    extracted = _extracted_onboarding_profile_sections(resume_text, target_name)
+    resume_extracted = extracted is not None
 
-    return {
-        "identity": {
-            "full_name": full_name,
-            "current_role": current_role,
-            "total_experience_years": 0,
-            "location": "Remote",
-            "work_mode": "Hybrid",
-        },
-        "skills": unique_skills,
-        "work_history": [
+    if extracted is not None:
+        unique_skills, work_history, projects = extracted
+    else:
+        skill_names = [
+            target_name,
+            "Communication",
+            "Problem Solving",
+            "Positioning",
+            "Discovery Calls",
+            "Closing",
+            "Client Strategy",
+            "Offer Design",
+            "Follow-up",
+            "Execution",
+        ]
+
+        unique_skills = []
+        seen: set[str] = set()
+        for item in skill_names:
+            cleaned = str(item).strip()
+            if not cleaned:
+                continue
+            key = cleaned.casefold()
+            if key in seen:
+                continue
+            seen.add(key)
+            unique_skills.append(
+                {
+                    "name": cleaned,
+                    "level": "Expert" if len(unique_skills) < 3 else "Intermediate",
+                }
+            )
+
+        work_history = [
             {
                 "company_name": target_name,
                 "duration": "Current focus",
@@ -1447,8 +1807,8 @@ def _build_onboarding_profile_payload(
                 "reason_for_leaving": "Active focus area.",
                 "salary_expectations": "Open based on opportunity.",
             }
-        ],
-        "projects": [
+        ]
+        projects = [
             {
                 "name": target_name,
                 "description": project_summary,
@@ -1456,12 +1816,24 @@ def _build_onboarding_profile_payload(
                 "contribution": product_description.strip() or f"Created the working session context for {target_name}.",
                 "link": None,
             }
-        ],
+        ]
+
+    payload = {
+        "identity": {
+            "full_name": full_name,
+            "current_role": current_role,
+            "total_experience_years": 0,
+            "location": "Remote",
+            "work_mode": "Hybrid",
+        },
+        "skills": unique_skills,
+        "work_history": work_history,
+        "projects": projects,
         "resume": {
             "filename": resume_filename,
             "extracted_text": resume_text,
             "confirmed": True,
-            "source_format": "pdf" if resume_filename.lower().endswith(".pdf") else "text",
+            "source_format": _resume_source_format(resume_filename),
         },
         "weaknesses": {
             "english_fluency_level": 7,
@@ -1483,6 +1855,16 @@ def _build_onboarding_profile_payload(
         "created_at": now,
         "updated_at": now,
     }
+    return payload, resume_extracted
+
+
+def _resume_source_format(resume_filename: str) -> str:
+    lowered = resume_filename.lower()
+    if lowered.endswith(".docx"):
+        return "docx"
+    if lowered.endswith(".pdf"):
+        return "pdf"
+    return "text"
 
 
 def _slug_profile_name(value: str) -> str:
@@ -1678,6 +2060,32 @@ def _display_error(error: KeyError) -> str:
     if error.args:
         return str(error.args[0])
     return str(error)
+
+
+def _is_version_newer(candidate: str, baseline: str) -> bool:
+    """True if candidate > baseline as a dotted version (e.g. "1.10.0" > "1.9.0").
+
+    Plain string inequality (candidate != baseline) would also flag a
+    downgrade or a differently-formatted-but-equal tag as "update
+    available" -- this compares the actual numeric parts instead. Falls
+    back to False on anything that doesn't parse as dotted integers,
+    since a malformed tag shouldn't nag the user with a false positive.
+    """
+    def parts(value: str) -> tuple[int, ...] | None:
+        try:
+            return tuple(int(segment) for segment in value.strip().split("."))
+        except ValueError:
+            return None
+
+    candidate_parts = parts(candidate)
+    baseline_parts = parts(baseline)
+    if candidate_parts is None or baseline_parts is None:
+        return False
+
+    length = max(len(candidate_parts), len(baseline_parts))
+    candidate_padded = candidate_parts + (0,) * (length - len(candidate_parts))
+    baseline_padded = baseline_parts + (0,) * (length - len(baseline_parts))
+    return candidate_padded > baseline_padded
 
 
 def _extract_validation_issues(message: str) -> list[str]:

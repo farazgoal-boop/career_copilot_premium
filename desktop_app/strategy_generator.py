@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 import json
 from pathlib import Path
+import re
 
 from .confidence_validator import ConfidenceAssessment, assess_interview_confidence
 from .fallback_manager import build_fallback_plan
@@ -37,12 +38,19 @@ class ExpectedQuestion:
 
 
 @dataclass
+class ResumeHighlight:
+    text: str
+    keywords: list[str]
+
+
+@dataclass
 class StrategyPack:
     company_brief: CompanyResearchBrief
     answer_templates: PersonalizedAnswerTemplates
     expected_questions: list[ExpectedQuestion]
     fallback_plan: dict[str, str]
     confidence: ConfidenceAssessment
+    resume_highlights: list[ResumeHighlight]
 
     def to_dict(self) -> dict[str, object]:
         return asdict(self)
@@ -88,7 +96,50 @@ def generate_strategy_pack(
         expected_questions=expected_questions,
         fallback_plan=build_fallback_plan(),
         confidence=assess_interview_confidence(profile, role_title),
+        resume_highlights=build_resume_highlights(profile),
     )
+
+
+def build_resume_highlights(profile: CompleteUserProfile) -> list[ResumeHighlight]:
+    """Flatten the full resume (every skill/achievement/project, not just the top-3/latest
+    used for templates above) into keyword-tagged highlights so a live question can be
+    matched against the most relevant specific experience, not always the same one.
+    """
+    highlights: list[ResumeHighlight] = []
+    for skill in profile.skills:
+        highlights.append(
+            ResumeHighlight(
+                text=f"Skilled in {skill.name} ({skill.level} level).",
+                keywords=_tokenize(skill.name),
+            )
+        )
+    for job in profile.work_history:
+        for achievement in job.achievements:
+            if not achievement.strip():
+                continue
+            highlights.append(
+                ResumeHighlight(
+                    text=f"At {job.company_name}: {achievement}",
+                    keywords=list(set(_tokenize(achievement)) | set(_tokenize(job.company_name))),
+                )
+            )
+    for project in profile.projects:
+        detail = project.description.strip() or project.contribution.strip()
+        highlights.append(
+            ResumeHighlight(
+                text=f"On {project.name}: {detail}" if detail else f"Worked on {project.name}.",
+                keywords=list(
+                    set(_tokenize(project.name))
+                    | set(_tokenize(detail))
+                    | {tech.strip().lower() for tech in project.technologies if tech.strip()}
+                ),
+            )
+        )
+    return highlights
+
+
+def _tokenize(text: str) -> list[str]:
+    return re.findall(r"[a-z0-9]+", text.lower())
 
 
 def save_strategy_pack(strategy_pack: StrategyPack, destination: str | Path) -> Path:
@@ -110,12 +161,14 @@ def load_strategy_pack(source: str | Path) -> StrategyPack:
         band=str(confidence_payload.get("band", "Ready") or "Ready"),
         action_plan=str(confidence_payload.get("action_plan", "") or ""),
     )
+    resume_highlights = [ResumeHighlight(**item) for item in payload.get("resume_highlights", [])]
     return StrategyPack(
         company_brief=company_brief,
         answer_templates=answer_templates,
         expected_questions=expected_questions,
         fallback_plan=dict(payload.get("fallback_plan", {})),
         confidence=confidence,
+        resume_highlights=resume_highlights,
     )
 
 
