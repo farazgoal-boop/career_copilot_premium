@@ -790,12 +790,18 @@ if QT_AVAILABLE:
                 x = int(payload.get("x", 0))
                 y = int(payload.get("y", 0))
                 if x or y:
+                    if sys.platform == "darwin" and not self._saved_position_visible(x, y):
+                        raise ValueError("Saved overlay position is off-screen on macOS.")
                     self.move(x, y)
                     return
             except Exception:
                 pass
             screen = QApplication.primaryScreen().availableGeometry()
             self.move(screen.width() - self.width() - 24, screen.height() - self.height() - 60)
+
+        def _saved_position_visible(self, x: int, y: int) -> bool:
+            center = QPoint(x + self.width() // 2, y + self.height() // 2)
+            return any(screen.geometry().contains(center) for screen in QApplication.screens())
 
         def _save_overlay_position(self) -> None:
             try:
