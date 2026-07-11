@@ -159,11 +159,36 @@
       if (!content || !container || !navItems.length) return;
       if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-      const origin = document.querySelector('.sidebar-item.is-active') || navItems[0];
-      const containerRect = container.getBoundingClientRect();
-      const originRect = origin.getBoundingClientRect();
-      const ox = originRect.left + originRect.width / 2 - containerRect.left;
-      const oy = originRect.top + originRect.height / 2 - containerRect.top;
+      // Prefer the position the previous page's click handler stored in
+      // sessionStorage (_sidebar.html) -- it reflects the item actually
+      // clicked, which .sidebar-item.is-active can't for dynamic routes
+      // (e.g. /session/<id>/live) that match no static data-path. Fall
+      // back to the active-item lookup for direct loads/reloads/bookmarks,
+      // where there was no preceding click to have recorded anything.
+      let ox = null;
+      let oy = null;
+      try {
+        const storedX = sessionStorage.getItem('ccNavOriginX');
+        const storedY = sessionStorage.getItem('ccNavOriginY');
+        sessionStorage.removeItem('ccNavOriginX');
+        sessionStorage.removeItem('ccNavOriginY');
+        if (storedX !== null && storedY !== null) {
+          const px = parseFloat(storedX);
+          const py = parseFloat(storedY);
+          if (!Number.isNaN(px) && !Number.isNaN(py)) {
+            ox = px;
+            oy = py;
+          }
+        }
+      } catch (e) {}
+
+      if (ox === null || oy === null) {
+        const origin = document.querySelector('.sidebar-item.is-active') || navItems[0];
+        const containerRect = container.getBoundingClientRect();
+        const originRect = origin.getBoundingClientRect();
+        ox = originRect.left + originRect.width / 2 - containerRect.left;
+        oy = originRect.top + originRect.height / 2 - containerRect.top;
+      }
 
       content.style.transformOrigin = `${ox}px ${oy}px`;
       content.style.transform = 'scale(0.05) rotateX(-75deg) rotateY(25deg)';

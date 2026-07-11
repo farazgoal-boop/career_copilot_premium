@@ -164,6 +164,17 @@
       if (!href || !pageContent || !container || !window.CC_TRANSITION || prefersReducedMotion) return;
 
       event.preventDefault();
+      /* Record exactly where this item sits so the next page's entry
+         animation can land there -- storing the click position (rather
+         than re-deriving it from the destination URL on load) is what
+         makes this work for dynamic routes like /session/<id>/live that
+         have no matching data-path in the sidebar. See base.html. */
+      var itemRect = item.getBoundingClientRect();
+      var containerBox = container.getBoundingClientRect();
+      try {
+        sessionStorage.setItem('ccNavOriginX', String(itemRect.left + itemRect.width / 2 - containerBox.left));
+        sessionStorage.setItem('ccNavOriginY', String(itemRect.top + itemRect.height / 2 - containerBox.top));
+      } catch (e) {}
       CC_TRANSITION.runOut(pageContent, container).then(function () {
         window.location.href = href;
       });
