@@ -119,9 +119,36 @@
   var pinBtn = document.getElementById('sidebar-pin');
   if (!sidebar || !pinBtn) return;
 
+  var PIN_STORAGE_KEY = 'sidebar-pinned';
+
+  function loadPinnedPref() {
+    try {
+      var stored = localStorage.getItem(PIN_STORAGE_KEY);
+      /* Never set before -> default to pinned/open. */
+      return stored === null ? true : stored === 'true';
+    } catch (e) {
+      return true;
+    }
+  }
+
+  function savePinnedPref(pinned) {
+    try { localStorage.setItem(PIN_STORAGE_KEY, String(pinned)); } catch (e) {}
+  }
+
   function setSidebarOpen(open) {
     sidebar.classList.toggle('is-open', open);
     document.body.classList.toggle('sidebar-is-open', open);
+  }
+
+  function setPinned(pinned) {
+    sidebar.classList.toggle('is-pinned', pinned);
+    pinBtn.classList.toggle('is-pinned', pinned);
+    pinBtn.setAttribute('aria-label', pinned ? 'Unpin sidebar' : 'Pin sidebar open');
+    pinBtn.setAttribute('title', pinned ? 'Unpin sidebar' : 'Pin sidebar open');
+    if (pinned) setSidebarOpen(true);
+    /* when unpinning: if the mouse isn't over the sidebar, collapse right
+       away rather than waiting for a mouseleave that may never fire. */
+    else if (!sidebar.matches(':hover')) setSidebarOpen(false);
   }
 
   /* expand/collapse: mouse only — no keyboard listeners */
@@ -131,16 +158,18 @@
     if (!sidebar.classList.contains('is-pinned')) setSidebarOpen(false);
   });
 
-  /* pin toggle — locks sidebar open until unpinned */
+  /* pin toggle — locks sidebar open until unpinned. Defaults to pinned/open
+     on first visit (loadPinnedPref()); clicking the pin button while pinned
+     unpins it and the sidebar collapses back to hover-only, same as before
+     but starting from the opposite default. */
   pinBtn.addEventListener('click', function (e) {
     e.stopPropagation();
-    var nowPinned = sidebar.classList.toggle('is-pinned');
-    pinBtn.classList.toggle('is-pinned', nowPinned);
-    pinBtn.setAttribute('aria-label', nowPinned ? 'Unpin sidebar' : 'Pin sidebar open');
-    pinBtn.setAttribute('title', nowPinned ? 'Unpin sidebar' : 'Pin sidebar open');
-    if (nowPinned) setSidebarOpen(true);
-    /* when unpinning: mouse still inside, mouseleave handles collapse */
+    var nowPinned = !sidebar.classList.contains('is-pinned');
+    setPinned(nowPinned);
+    savePinnedPref(nowPinned);
   });
+
+  setPinned(loadPinnedPref());
 
   /* active state + signature shatter-out transition on nav clicks.
      Only intercepts plain left-clicks to a different page — modified

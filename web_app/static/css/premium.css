@@ -366,47 +366,6 @@ body.has-sidebar.sidebar-is-open .premium-footer {
   margin-bottom: 10px;
 }
 
-.premium-footer__links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.premium-footer__link {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 10px;
-  border-radius: 999px;
-  border: 1px solid var(--premium-line);
-  background: var(--premium-card-bg);
-  color: var(--premium-text);
-  font-size: 12px;
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.premium-footer__link:hover {
-  transform: translateY(-1px);
-  border-color: rgba(99, 102, 241, 0.45);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
-}
-
-.premium-footer__icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 18px;
-  font-weight: 800;
-}
-
-.premium-footer__link--facebook .premium-footer__icon { color: #1877f2; }
-.premium-footer__link--fiverr .premium-footer__icon { color: #1dbf73; }
-.premium-footer__link--upwork .premium-footer__icon { color: #14a800; }
-.premium-footer__link--linkedin .premium-footer__icon { color: #0a66c2; }
-.premium-footer__link--youtube .premium-footer__icon { color: #ff0000; }
-.premium-footer__link--email .premium-footer__icon { color: #f0883e; }
-
 body.premium-layout {
   display: flex;
   flex-direction: column;
@@ -1258,6 +1217,102 @@ body.has-sidebar .premium-main {
 
 .update-status.update-available {
   color: var(--premium-success);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   RIGHT SIDEBAR (social links, icon-rail, hover-expand) -- mirrors the left
+   sidebar's collapsed/hover-expand pattern on the opposite edge. Fixed +
+   vertically centered, overlays content on hover rather than pushing it
+   (same approach .sidebar/.premium-main already use on the left).
+   ───────────────────────────────────────────────────────────────────────────── */
+
+body.has-sidebar .premium-main {
+  padding-right: 40px;
+}
+
+.right-sidebar {
+  position: fixed;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 40;
+  width: 40px;
+  border-radius: 14px 0 0 14px;
+  background: var(--premium-sidebar-bg);
+  border: 1px solid var(--premium-overlay-08);
+  border-right: none;
+  backdrop-filter: blur(20px);
+  overflow: hidden;
+  transition: width 220ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.right-sidebar:hover {
+  width: 168px;
+}
+
+.right-sidebar-inner {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 0;
+  gap: 6px;
+}
+
+.right-sidebar-link {
+  display: flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 10px;
+  margin: 0 4px;
+  border-radius: 8px;
+  text-decoration: none;
+  color: var(--premium-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.right-sidebar-link:hover {
+  color: var(--premium-text);
+  background: var(--premium-overlay-06);
+}
+
+.right-sidebar-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  font-weight: 800;
+  font-size: 0.78rem;
+}
+
+/* Same brand colors the old footer links used. */
+.right-sidebar-link--facebook .right-sidebar-icon { color: #1877f2; }
+.right-sidebar-link--fiverr .right-sidebar-icon { color: #1dbf73; }
+.right-sidebar-link--upwork .right-sidebar-icon { color: #14a800; }
+.right-sidebar-link--linkedin .right-sidebar-icon { color: #0a66c2; }
+.right-sidebar-link--youtube .right-sidebar-icon { color: #ff0000; }
+.right-sidebar-link--email .right-sidebar-icon { color: #f0883e; }
+
+.right-sidebar-label {
+  margin-left: 10px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  opacity: 0;
+  transform: translateX(6px);
+}
+
+.right-sidebar:hover .right-sidebar-label {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .right-sidebar-label {
+    transition: opacity 0.15s ease !important;
+    transform: none !important;
+  }
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
