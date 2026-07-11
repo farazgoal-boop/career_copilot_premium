@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import subprocess
 import sys
 import threading
 import time
@@ -443,6 +444,53 @@ def _run_overlay_event_loop(services: PremiumRuntime, qt_app: "QtApplication") -
         services.stop_services()
 
 
+def _run_macos_electron_overlay(services: PremiumRuntime) -> int:
+    """Mac-only alternative overlay (experimental): spawns the Electron app in
+    electron-overlay/ instead of the PySide6 TransparentOverlayWindow. Flask
+    and the mobile bridge keep running exactly as on Windows/Linux -- Electron
+    talks to them over the same HTTP/SSE endpoints the browser dashboard and
+    mobile companion already use, nothing in web_app/ changes for this.
+    Falls back to dashboard-only (mirrors the missing-PySide6 fallback in
+    _run_overlay_event_loop) if the Electron toolchain isn't installed yet.
+    """
+    overlay_dir = repo_root() / "electron-overlay"
+    electron_bin = overlay_dir / "node_modules" / ".bin" / "electron"
+
+    if not electron_bin.exists():
+        webbrowser.open(services.dashboard_url)
+        print(f"[premium] Dashboard ready: {services.dashboard_url}")
+        print(
+            "[premium] Electron overlay unavailable — run 'npm install' inside "
+            "electron-overlay/. Only the browser dashboard will work this session."
+        )
+        try:
+            while True:
+                time.sleep(3600)
+        except KeyboardInterrupt:
+            return 0
+        finally:
+            services.stop_services()
+
+    env = dict(os.environ)
+    env["CCP_DASHBOARD_URL"] = services.dashboard_url
+
+    webbrowser.open(services.dashboard_url)
+    status = portable_status_payload()
+    print("[premium] Career Copilot Premium is running.")
+    print(f"[premium] Dashboard: {services.dashboard_url}")
+    print(f"[premium] Data folder: {status['data_root']}")
+    print("[premium] Mac overlay: Electron (experimental) — F2/F3 via globalShortcut.")
+
+    process = subprocess.Popen([str(electron_bin), str(overlay_dir)], env=env)
+    try:
+        return process.wait()
+    except KeyboardInterrupt:
+        process.terminate()
+        return 0
+    finally:
+        services.stop_services()
+
+
 def main() -> int:
     import argparse
 
@@ -518,6 +566,8 @@ def main() -> int:
         close_splash(splash)
         splash = None
         print("Career Copilot Premium is running — close this window to stop the app")
+        if sys.platform == "darwin":
+            return _run_macos_electron_overlay(services)
         return _run_overlay_event_loop(services, qt_app)
     except KeyboardInterrupt:
         return 0

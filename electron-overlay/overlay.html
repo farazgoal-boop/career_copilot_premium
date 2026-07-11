@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <!-- Dashboard port floats (see runtime_paths.get_dashboard_port()), so
+       connect-src allows any localhost port rather than one fixed origin. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' http://127.0.0.1:* http://localhost:*;" />
+  <title>Career Copilot</title>
+  <link rel="stylesheet" href="overlay.css" />
+</head>
+<body>
+  <div class="card" id="card">
+    <div class="titlebar" id="titlebar">
+      <span class="icon">*</span>
+      <span class="title">Career Copilot Premium</span>
+      <span class="pill" id="pill">READY</span>
+      <button class="tbtn hide-btn" id="hideBtn" title="Hide (F3)">X</button>
+    </div>
+
+    <div class="body">
+      <div class="section-label">INTERVIEWER SAID</div>
+      <div class="box" id="questionBox">Listening for interviewer question...</div>
+
+      <div class="section-label accent">SUGGESTED ANSWER</div>
+      <div class="box answer-box" id="answerBox">Processing answer...</div>
+
+      <div class="meta-row">
+        <span class="meta-label">CONFIDENCE</span>
+        <span class="meta-value" id="confidenceValue">0%</span>
+        <span class="spacer"></span>
+        <span class="meta-label" id="providerLabel">AI ---</span>
+      </div>
+
+      <div class="section-label">ALTERNATIVES</div>
+      <div class="box" id="alternativesBox">No alternatives yet.</div>
+
+      <div class="section-label">LANGUAGE SETTINGS</div>
+      <div class="lang-row">
+        <label>Listen:</label>
+        <select id="listenLang"></select>
+        <label>Reply:</label>
+        <select id="replyLang"></select>
+      </div>
+
+      <div class="section-label">MANUAL INPUT - Type question and press Enter</div>
+      <input type="text" id="manualInput" placeholder="Type interviewer question and press Enter..." />
+    </div>
+
+    <div class="button-row">
+      <button id="btnListen">Listen F2</button>
+      <button id="btnCopy">Copy Answer</button>
+      <button id="btnRegen">Regenerate</button>
+      <button id="btnSimple">Simple</button>
+      <button id="btnSend">Send Input</button>
+    </div>
+
+    <div class="opacity-row">
+      <label>Opacity:</label>
+      <input type="range" id="opacitySlider" min="20" max="100" value="92" />
+    </div>
+
+    <div class="status-bar">
+      <div id="apiStatus">API: Loading...</div>
+      <div id="audioStatus">Audio: Loading...</div>
+      <div id="langStatus">Languages: English -&gt; English</div>
+    </div>
+  </div>
+
+  <script src="overlay.js"></script>
+</body>
+</html>

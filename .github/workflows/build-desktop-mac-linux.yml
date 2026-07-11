@@ -231,8 +231,49 @@ jobs:
             CareerCopilotPremium-linux.deb
             CareerCopilotPremium-linux.AppImage
 
+  build-macos-electron-overlay:
+    # Experimental, additive Mac-only build (see experiment/electron-mac-overlay).
+    # continue-on-error so a failure here (no codesigning/icons yet -- known
+    # gaps from Steps 1-2) never blocks the real build-macos/build-linux
+    # release artifacts below.
+    runs-on: macos-latest
+    continue-on-error: true
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Electron overlay dependencies
+        working-directory: electron-overlay
+        run: npm install
+
+      - name: Build Electron overlay DMG
+        working-directory: electron-overlay
+        run: npm run build-mac
+
+      - name: Locate built DMG
+        working-directory: electron-overlay
+        run: |
+          DMG_PATH=$(find dist -maxdepth 1 -name "*.dmg" | head -n 1)
+          if [ -z "$DMG_PATH" ]; then
+            echo "No DMG produced by electron-builder — check electron-overlay/package.json build config"
+            exit 1
+          fi
+          cp "$DMG_PATH" "../CareerCopilotOverlay-mac.dmg"
+
+      - name: Upload Electron overlay artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: CareerCopilotOverlay-mac.dmg
+          path: CareerCopilotOverlay-mac.dmg
+          if-no-files-found: warn
+
   create-release:
-    needs: [build-macos, build-linux]
+    needs: [build-macos, build-linux, build-macos-electron-overlay]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
     steps:
@@ -248,6 +289,7 @@ jobs:
             artifacts/CareerCopilotPremium-mac.dmg/CareerCopilotPremium-mac.dmg
             artifacts/CareerCopilotPremium-linux/CareerCopilotPremium-linux.deb
             artifacts/CareerCopilotPremium-linux/CareerCopilotPremium-linux.AppImage
+            artifacts/CareerCopilotOverlay-mac.dmg/CareerCopilotOverlay-mac.dmg
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
