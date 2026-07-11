@@ -62,11 +62,13 @@ class TestHome:
 # 2 — Sidebar interactions
 # ---------------------------------------------------------------------------
 class TestSidebar:
-    def test_sidebar_collapsed_by_default(self, page: Page, live_server):
+    def test_sidebar_open_by_default(self, page: Page, live_server):
         goto(page, "/dashboard")
         sidebar = page.locator(".sidebar")
-        # Not pinned and not open by default
-        assert not sidebar.evaluate("el => el.classList.contains('is-open')")
+        # Pinned and open by default (Part 4: reversed from the old collapsed
+        # default; localStorage 'sidebar-pinned' defaults to true when unset).
+        assert sidebar.evaluate("el => el.classList.contains('is-pinned')")
+        assert sidebar.evaluate("el => el.classList.contains('is-open')")
 
     def test_sidebar_expands_on_hover(self, page: Page, live_server):
         goto(page, "/dashboard")
@@ -79,7 +81,12 @@ class TestSidebar:
     def test_sidebar_collapses_on_mouseleave(self, page: Page, live_server):
         goto(page, "/dashboard")
         sidebar = page.locator(".sidebar")
+        # Starts pinned by default -- unpin first so mouseleave can actually
+        # collapse it (a pinned sidebar is supposed to stay open, see
+        # test_sidebar_pin_stays_open_on_mouseleave below).
         sidebar.hover()
+        page.wait_for_timeout(300)
+        page.locator("#sidebar-pin").click()
         page.wait_for_timeout(350)
         # Move away
         page.mouse.move(500, 300)
@@ -91,7 +98,10 @@ class TestSidebar:
         sidebar = page.locator(".sidebar")
         sidebar.hover()
         page.wait_for_timeout(300)
-        page.locator("#sidebar-pin").click()
+        # Starts pinned by default -- unpin then re-pin to exercise the
+        # actual click transition into the locked-open state.
+        page.locator("#sidebar-pin").click()   # unpin
+        page.locator("#sidebar-pin").click()   # pin
         ss(page, "03-sidebar-pinned")
         assert sidebar.evaluate("el => el.classList.contains('is-pinned')")
         assert sidebar.evaluate("el => el.classList.contains('is-open')")
@@ -99,12 +109,12 @@ class TestSidebar:
     def test_sidebar_pin_stays_open_on_mouseleave(self, page: Page, live_server):
         goto(page, "/dashboard")
         sidebar = page.locator(".sidebar")
+        # Pinned by default -- should stay open across a hover-then-leave
+        # cycle with no click needed.
         sidebar.hover()
         page.wait_for_timeout(300)
-        page.locator("#sidebar-pin").click()
         page.mouse.move(500, 300)
         page.wait_for_timeout(350)
-        # Should still be open when pinned
         assert sidebar.evaluate("el => el.classList.contains('is-open')")
 
     def test_sidebar_unpin_collapses(self, page: Page, live_server):
@@ -112,11 +122,12 @@ class TestSidebar:
         sidebar = page.locator(".sidebar")
         sidebar.hover()
         page.wait_for_timeout(300)
-        page.locator("#sidebar-pin").click()       # pin
-        page.locator("#sidebar-pin").click()       # unpin
+        # Starts pinned by default -- a single click unpins it.
+        page.locator("#sidebar-pin").click()
         page.mouse.move(500, 300)
         page.wait_for_timeout(350)
         assert not sidebar.evaluate("el => el.classList.contains('is-pinned')")
+        assert not sidebar.evaluate("el => el.classList.contains('is-open')")
 
     def test_sidebar_nav_links(self, page: Page, live_server):
         """All five nav items are present and point to the right paths."""
@@ -149,15 +160,15 @@ class TestSidebar:
         """Arrow keys must NOT expand or collapse the sidebar (regression)."""
         goto(page, "/dashboard")
         sidebar = page.locator(".sidebar")
-        # Sidebar starts closed
-        assert not sidebar.evaluate("el => el.classList.contains('is-open')")
+        # Sidebar starts open (pinned by default)
+        assert sidebar.evaluate("el => el.classList.contains('is-open')")
         page.keyboard.press("ArrowDown")
         page.keyboard.press("ArrowUp")
         page.keyboard.press("ArrowLeft")
         page.keyboard.press("ArrowRight")
         page.wait_for_timeout(200)
-        # Must still be closed
-        assert not sidebar.evaluate("el => el.classList.contains('is-open')")
+        # Must still be open -- unchanged by arrow keys either way
+        assert sidebar.evaluate("el => el.classList.contains('is-open')")
 
     def test_footer_not_covered_by_sidebar(self, page: Page, live_server):
         """Footer must be visible and not clipped by the sidebar in any state."""
