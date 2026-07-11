@@ -258,6 +258,7 @@ if QT_AVAILABLE:
             self._last_api_status = ""
             self._last_audio_status = ""
             self._restore_overlay_position()
+            self._apply_macos_all_spaces_behavior()
 
         def _build_ui(self):
             root = QVBoxLayout(self)
@@ -802,6 +803,52 @@ if QT_AVAILABLE:
         def _saved_position_visible(self, x: int, y: int) -> bool:
             center = QPoint(x + self.width() // 2, y + self.height() // 2)
             return any(screen.geometry().contains(center) for screen in QApplication.screens())
+
+        def _apply_macos_all_spaces_behavior(self) -> None:
+            """Let the overlay follow the user into other Spaces and full-screen
+            apps (Zoom/Meet/Teams) on macOS. Qt.WindowStaysOnTopHint alone only
+            keeps a window above others within its own Space; it does not join
+            full-screen Spaces, which macOS treats as isolated. Best-effort via
+            the raw Objective-C runtime (no PyObjC dependency); any failure here
+            must never block the overlay from working, so every step is guarded.
+            """
+            if sys.platform != "darwin":
+                return
+            try:
+                import ctypes
+                import ctypes.util
+
+                objc_path = ctypes.util.find_library("objc")
+                if not objc_path:
+                    return
+                objc = ctypes.cdll.LoadLibrary(objc_path)
+                objc.sel_registerName.restype = ctypes.c_void_p
+                objc.sel_registerName.argtypes = [ctypes.c_char_p]
+                objc.objc_msgSend.restype = ctypes.c_void_p
+                objc.objc_msgSend.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
+
+                nsview = ctypes.c_void_p(int(self.winId()))
+                window_sel = objc.sel_registerName(b"window")
+                nswindow = objc.objc_msgSend(nsview, window_sel)
+                if not nswindow:
+                    return
+
+                # NSWindowCollectionBehaviorCanJoinAllSpaces (1<<0) lets the window
+                # follow across regular Spaces; NSWindowCollectionBehaviorFullScreenAuxiliary
+                # (1<<8) is the flag Apple documents specifically for utility/HUD windows
+                # that should stay visible alongside another app's full-screen Space.
+                behavior_sel = objc.sel_registerName(b"setCollectionBehavior:")
+                objc.objc_msgSend.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_ulong]
+                objc.objc_msgSend(ctypes.c_void_p(nswindow), behavior_sel, 1 | 256)
+
+                # collectionBehavior alone does not raise the window above a
+                # full-screen app's own window level -- match the level macOS
+                # uses for screen-saver/HUD-class overlays.
+                level_sel = objc.sel_registerName(b"setLevel:")
+                objc.objc_msgSend.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_long]
+                objc.objc_msgSend(ctypes.c_void_p(nswindow), level_sel, 1000)
+            except Exception:
+                pass
 
         def _save_overlay_position(self) -> None:
             try:
