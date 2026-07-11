@@ -1,0 +1,23 @@
+{
+  "name": "career-copilot-overlay",
+  "version": "2.0.0",
+  "description": "Career Copilot Premium - macOS floating overlay (Electron, experimental, Mac-only)",
+  "main": "main.js",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "build-mac": "electron-builder --mac dmg"
+  },
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.0.0"
+  },
+  "build": {
+    "appId": "com.farazautomation.careercopilot.overlay",
+    "productName": "CareerCopilotOverlay",
+    "mac": {
+      "target": "dmg",
+      "category": "public.app-category.productivity"
+    }
+  }
+}
