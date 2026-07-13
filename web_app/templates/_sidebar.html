@@ -211,17 +211,10 @@
   });
 
   /* Check for updates — compares the running version against the latest
-     GitHub release. Manual/click-triggered only, never auto-polled. */
-  function pickPlatformAssetUrl(assets) {
-    if (!assets || !assets.length) return null;
-    var ua = navigator.userAgent || navigator.platform || '';
-    var pattern = /Mac/i.test(ua) ? /\.dmg$/i : /Linux/i.test(ua) ? /\.deb$/i : /\.exe$/i;
-    for (var i = 0; i < assets.length; i++) {
-      if (pattern.test(assets[i].name)) return assets[i].browser_download_url;
-    }
-    return null;
-  }
-
+     GitHub release. Manual/click-triggered only, never auto-polled.
+     Platform-specific asset matching happens server-side in /api/check-update
+     (the Flask server runs on the user's own OS, so it knows the real target
+     platform); the JS just uses direct_download_url when present. */
   var updateBtn = document.getElementById('sidebar-update-check-btn');
   var updateStatus = document.getElementById('sidebar-update-status');
   if (updateBtn && updateStatus) {
@@ -233,10 +226,9 @@
         .then(function (d) {
           updateStatus.classList.remove('update-available');
           if (d.update_available) {
-            var assetUrl = pickPlatformAssetUrl(d.assets);
             var link = document.createElement('a');
-            link.href = assetUrl || d.download_url || '#';
-            if (!assetUrl) {
+            link.href = d.direct_download_url || d.download_url || '#';
+            if (!d.direct_download_url) {
               link.target = '_blank';
               link.rel = 'noopener noreferrer';
             }

@@ -240,8 +240,85 @@ jobs:
             CareerCopilotPremium-linux.deb
             CareerCopilotPremium-linux.AppImage
 
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Verify speech-to-text runtime
+        run: python -c "import speech_recognition; print('SpeechRecognition OK')"
+
+      - name: Build with PyInstaller
+        run: pyinstaller career-copilot.spec --clean --noconfirm
+
+      - name: Verify PyInstaller build exists
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "dist\Career Copilot Premium\Career Copilot Premium.exe")) {
+            Write-Error "PyInstaller did not produce 'dist\Career Copilot Premium\Career Copilot Premium.exe' -- check career-copilot.spec"
+            Get-ChildItem dist -Recurse
+            exit 1
+          }
+
+      - name: Assemble windows-bundle
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path "dist\windows-bundle" -Force | Out-Null
+          Copy-Item "dist\Career Copilot Premium\*" "dist\windows-bundle\" -Recurse -Force
+          Copy-Item "dist\windows-bundle\Career Copilot Premium.exe" "dist\windows-bundle\career-copilot.exe" -Force
+          if (Test-Path ".env.example") {
+            Copy-Item ".env.example" "dist\windows-bundle\.env.example" -Force
+          }
+
+      - name: Install Inno Setup
+        run: choco install innosetup -y
+
+      - name: Build Setup.exe with Inno Setup
+        shell: pwsh
+        run: |
+          $iscc = @(
+            "C:\Program Files (x86)\Inno Setup 6\ISCC.exe",
+            "C:\Program Files\Inno Setup 6\ISCC.exe"
+          ) | Where-Object { Test-Path $_ } | Select-Object -First 1
+          if (-not $iscc) {
+            Write-Error "ISCC.exe not found after installing Inno Setup"
+            exit 1
+          }
+          & $iscc "installers\windows_setup.iss"
+          if ($LASTEXITCODE -ne 0) {
+            exit $LASTEXITCODE
+          }
+
+      - name: Verify installer exists
+        shell: pwsh
+        run: |
+          $exe = Get-ChildItem "dist\installer" -Filter "CareerCopilotPremium_Setup_*.exe" -ErrorAction SilentlyContinue
+          if (-not $exe) {
+            Write-Error "Setup.exe was not produced in dist\installer"
+            exit 1
+          }
+          Write-Host "Built: $($exe.FullName) ($([math]::Round($exe.Length / 1MB, 1)) MB)"
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: CareerCopilotPremium-windows
+          path: dist/installer/CareerCopilotPremium_Setup_*.exe
+
   create-release:
-    needs: [build-macos, build-linux]
+    needs: [build-macos, build-linux, build-windows]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
     steps:
@@ -257,6 +334,7 @@ jobs:
             artifacts/CareerCopilotPremium-mac.dmg/CareerCopilotPremium-mac.dmg
             artifacts/CareerCopilotPremium-linux/CareerCopilotPremium-linux.deb
             artifacts/CareerCopilotPremium-linux/CareerCopilotPremium-linux.AppImage
+            artifacts/CareerCopilotPremium-windows/CareerCopilotPremium_Setup_*.exe
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

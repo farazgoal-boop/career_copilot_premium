@@ -28,7 +28,7 @@ _MIC_RUNTIME_CACHE: dict[str, object] | None = None
 # sidebar and compared against GitHub releases by /api/check-update. Bump
 # alongside setup.py / career-copilot-version.txt / the other files listed
 # in CLAUDE.md's version-bump checklist.
-CURRENT_APP_VERSION = "2.0.4"
+CURRENT_APP_VERSION = "2.0.5"
 
 
 def _is_public_route(path: str) -> bool:
@@ -456,6 +456,7 @@ def register_routes(app: Flask) -> None:
         trace, since this is a nice-to-have, not a required feature.
         """
         import json as _json
+        import platform as _platform
         from urllib import error as _url_error
         from urllib import request as _url_request
 
@@ -470,13 +471,23 @@ def register_routes(app: Flask) -> None:
             latest_version = str(data.get("tag_name", "")).lstrip("v").strip()
             if not latest_version:
                 raise ValueError("Release response had no tag_name.")
-            assets = [
-                {
-                    "name": str(a.get("name", "")),
-                    "browser_download_url": str(a.get("browser_download_url", "")),
-                }
-                for a in data.get("assets", [])
-            ]
+
+            # Match the asset to the OS this Flask server is actually running on --
+            # each install runs its own local server, so this is the real target
+            # platform (more reliable than sniffing the browser's user agent).
+            system = _platform.system()
+            direct_download_url = None
+            for asset in data.get("assets", []):
+                name = str(asset.get("name", "")).lower()
+                is_match = (
+                    (system == "Windows" and name.endswith(".exe") and "setup" in name)
+                    or (system == "Darwin" and name.endswith(".dmg"))
+                    or (system == "Linux" and name.endswith(".deb"))
+                )
+                if is_match:
+                    direct_download_url = str(asset.get("browser_download_url", ""))
+                    break
+
             return jsonify(
                 {
                     "ok": True,
@@ -484,7 +495,7 @@ def register_routes(app: Flask) -> None:
                     "current_version": current_version,
                     "latest_version": latest_version,
                     "download_url": str(data.get("html_url", "")),
-                    "assets": assets,
+                    "direct_download_url": direct_download_url,
                 }
             )
         except (_url_error.URLError, _url_error.HTTPError, OSError, TimeoutError, ValueError, KeyError) as exc:
