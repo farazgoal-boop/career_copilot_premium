@@ -209,12 +209,19 @@ class PremiumRuntime:
 
 
 def _swift_overlay_binary_path() -> str:
+    """Path to the compiled Swift overlay binary.
+
+    Packaged builds get it copied next to the frozen executable by the
+    build-macos CI job (single DMG — see 'Build and embed Swift overlay' step).
+    Running from source looks for a local `swift build -c release` output.
+    """
+    if getattr(sys, "frozen", False):
+        return os.path.join(os.path.dirname(sys.executable), "CareerCopilotOverlay")
     return os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
         "swift-overlay",
-        "CareerCopilotOverlay.app",
-        "Contents",
-        "MacOS",
+        ".build",
+        "release",
         "CareerCopilotOverlay",
     )
 
