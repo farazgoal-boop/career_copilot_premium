@@ -231,6 +231,52 @@ jobs:
             CareerCopilotPremium-linux.deb
             CareerCopilotPremium-linux.AppImage
 
+  build-macos-swift-overlay:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Build Swift overlay
+        run: |
+          cd swift-overlay
+          swift build -c release
+          mkdir -p CareerCopilotOverlay.app/Contents/MacOS
+          mkdir -p CareerCopilotOverlay.app/Contents/Resources
+          cp .build/release/CareerCopilotOverlay \
+             CareerCopilotOverlay.app/Contents/MacOS/
+
+          cat > CareerCopilotOverlay.app/Contents/Info.plist << 'EOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+            "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>CFBundleName</key>
+            <string>CareerCopilotOverlay</string>
+            <key>CFBundleIdentifier</key>
+            <string>com.farazautomation.overlay</string>
+            <key>CFBundleVersion</key>
+            <string>2.0.1</string>
+            <key>NSMicrophoneUsageDescription</key>
+            <string>Microphone access for interview capture</string>
+            <key>LSUIElement</key>
+            <true/>
+          </dict>
+          </plist>
+          EOF
+
+          hdiutil create -volname "CareerCopilot Overlay" \
+            -srcfolder CareerCopilotOverlay.app \
+            -ov -format UDZO \
+            CareerCopilotOverlay-swift-mac.dmg
+
+      - name: Upload Swift overlay DMG
+        uses: actions/upload-artifact@v4
+        with:
+          name: CareerCopilotOverlay-swift-mac
+          path: swift-overlay/CareerCopilotOverlay-swift-mac.dmg
+
   create-release:
     needs: [build-macos, build-linux]
     runs-on: ubuntu-latest
