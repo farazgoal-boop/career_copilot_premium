@@ -208,6 +208,47 @@ class PremiumRuntime:
             self.mobile_bridge = None
 
 
+def _swift_overlay_binary_path() -> str:
+    """Path to the compiled Swift overlay binary.
+
+    Packaged builds get it copied next to the frozen executable by the
+    build-macos CI job (single DMG — see 'Build and embed Swift overlay' step).
+    Running from source looks for a local `swift build -c release` output.
+    """
+    if getattr(sys, "frozen", False):
+        return os.path.join(os.path.dirname(sys.executable), "CareerCopilotOverlay")
+    return os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "swift-overlay",
+        ".build",
+        "release",
+        "CareerCopilotOverlay",
+    )
+
+
+def _run_swift_overlay(services: PremiumRuntime) -> int:
+    """macOS-only: run the native Swift/NSPanel overlay instead of PySide6.
+
+    Avoids the PySide6-on-Mac codesigning/focus issues (see CLAUDE.md 'Mac overlay'
+    pending item) by using NSPanel + Carbon hotkeys, which need no signing or
+    Input Monitoring permission.
+    """
+    import subprocess
+
+    process = subprocess.Popen([_swift_overlay_binary_path()])
+    print("[premium] Swift overlay launched")
+    webbrowser.open(services.dashboard_url)
+    print(f"[premium] Dashboard: {services.dashboard_url}")
+    print("[premium] F2 / F3: native macOS hotkeys (Swift overlay, no permission prompt).")
+    try:
+        return process.wait()
+    except KeyboardInterrupt:
+        process.terminate()
+        return 0
+    finally:
+        services.stop_services()
+
+
 def _run_overlay_event_loop(services: PremiumRuntime, qt_app: "QtApplication") -> int:
     from PySide6.QtCore import QObject, QTimer, Qt, Signal
     from PySide6.QtGui import QKeySequence, QShortcut
@@ -518,6 +559,8 @@ def main() -> int:
         close_splash(splash)
         splash = None
         print("Career Copilot Premium is running — close this window to stop the app")
+        if sys.platform == "darwin" and os.path.exists(_swift_overlay_binary_path()):
+            return _run_swift_overlay(services)
         return _run_overlay_event_loop(services, qt_app)
     except KeyboardInterrupt:
         return 0
