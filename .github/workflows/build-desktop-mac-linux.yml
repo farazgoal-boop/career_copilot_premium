@@ -260,6 +260,17 @@ jobs:
       - name: Verify speech-to-text runtime
         run: python -c "import speech_recognition; print('SpeechRecognition OK')"
 
+      - name: Prepare local data directories
+        shell: pwsh
+        run: |
+          # career-copilot.spec requires these as data files, but data/cache and
+          # data/user_profiles are gitignored -- a fresh CI checkout never has
+          # them, unlike a dev machine that's already run the app once.
+          New-Item -ItemType Directory -Force -Path "data\cache" | Out-Null
+          New-Item -ItemType Directory -Force -Path "data\user_profiles" | Out-Null
+          if (-not (Test-Path "data\cache\.gitkeep")) { New-Item -ItemType File -Path "data\cache\.gitkeep" | Out-Null }
+          if (-not (Test-Path "data\user_profiles\.gitkeep")) { New-Item -ItemType File -Path "data\user_profiles\.gitkeep" | Out-Null }
+
       - name: Build with PyInstaller
         run: pyinstaller career-copilot.spec --clean --noconfirm
 
