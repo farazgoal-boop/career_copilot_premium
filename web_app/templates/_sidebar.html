@@ -212,6 +212,16 @@
 
   /* Check for updates — compares the running version against the latest
      GitHub release. Manual/click-triggered only, never auto-polled. */
+  function pickPlatformAssetUrl(assets) {
+    if (!assets || !assets.length) return null;
+    var ua = navigator.userAgent || navigator.platform || '';
+    var pattern = /Mac/i.test(ua) ? /\.dmg$/i : /Linux/i.test(ua) ? /\.deb$/i : /\.exe$/i;
+    for (var i = 0; i < assets.length; i++) {
+      if (pattern.test(assets[i].name)) return assets[i].browser_download_url;
+    }
+    return null;
+  }
+
   var updateBtn = document.getElementById('sidebar-update-check-btn');
   var updateStatus = document.getElementById('sidebar-update-status');
   if (updateBtn && updateStatus) {
@@ -223,11 +233,14 @@
         .then(function (d) {
           updateStatus.classList.remove('update-available');
           if (d.update_available) {
+            var assetUrl = pickPlatformAssetUrl(d.assets);
             var link = document.createElement('a');
-            link.href = d.download_url || '#';
-            link.target = '_blank';
-            link.rel = 'noopener noreferrer';
-            link.textContent = 'Download';
+            link.href = assetUrl || d.download_url || '#';
+            if (!assetUrl) {
+              link.target = '_blank';
+              link.rel = 'noopener noreferrer';
+            }
+            link.textContent = 'Download Now';
             updateStatus.textContent = '\u{1F389} v' + d.latest_version + ' available! ';
             updateStatus.appendChild(link);
             updateStatus.classList.add('update-available');

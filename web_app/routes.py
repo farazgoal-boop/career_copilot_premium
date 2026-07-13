@@ -28,7 +28,7 @@ _MIC_RUNTIME_CACHE: dict[str, object] | None = None
 # sidebar and compared against GitHub releases by /api/check-update. Bump
 # alongside setup.py / career-copilot-version.txt / the other files listed
 # in CLAUDE.md's version-bump checklist.
-CURRENT_APP_VERSION = "2.0.3"
+CURRENT_APP_VERSION = "2.0.4"
 
 
 def _is_public_route(path: str) -> bool:
@@ -470,6 +470,13 @@ def register_routes(app: Flask) -> None:
             latest_version = str(data.get("tag_name", "")).lstrip("v").strip()
             if not latest_version:
                 raise ValueError("Release response had no tag_name.")
+            assets = [
+                {
+                    "name": str(a.get("name", "")),
+                    "browser_download_url": str(a.get("browser_download_url", "")),
+                }
+                for a in data.get("assets", [])
+            ]
             return jsonify(
                 {
                     "ok": True,
@@ -477,6 +484,7 @@ def register_routes(app: Flask) -> None:
                     "current_version": current_version,
                     "latest_version": latest_version,
                     "download_url": str(data.get("html_url", "")),
+                    "assets": assets,
                 }
             )
         except (_url_error.URLError, _url_error.HTTPError, OSError, TimeoutError, ValueError, KeyError) as exc:
