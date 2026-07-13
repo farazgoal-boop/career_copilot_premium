@@ -252,7 +252,7 @@ input[type='submit']:hover {
 }
 
 .premium-main {
-  padding: 24px 0 40px;
+  padding: 24px 0 0;
   position: relative;
   perspective: 1200px;
   perspective-origin: 50% -20%;
@@ -645,9 +645,9 @@ body.home-view .premium-main {
    ───────────────────────────────────────────────────────────────────────────── */
 
 .page-content {
-  max-width: 760px;
+  max-width: 720px;
   margin: 0 auto;
-  padding: 48px 32px;
+  padding: 40px 32px;
   display: flex;
   flex-direction: column;
   gap: 40px;
@@ -995,12 +995,11 @@ body.has-sidebar .premium-main {
 }
 
 .sidebar-nav {
-  flex: 1;
+  flex: 0 0 auto;
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
   padding: 8px 0;
-  gap: 10px;
+  gap: 8px;
 }
 
 .sidebar-item {
@@ -1152,6 +1151,7 @@ body.has-sidebar .premium-main {
 
 .sidebar-version-area {
   flex-shrink: 0;
+  margin-top: auto;
   padding: 10px 8px 14px;
   display: flex;
   flex-direction: column;
