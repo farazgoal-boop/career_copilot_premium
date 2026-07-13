@@ -296,6 +296,14 @@ jobs:
       - name: Install Inno Setup
         run: choco install innosetup -y
 
+      - name: Ensure VC++ redistributable
+        shell: pwsh
+        run: |
+          # windows_setup.iss embeds this at compile time (not just at install
+          # time) -- it's gitignored (*.exe), so a fresh CI checkout needs it
+          # fetched the same way BUILD_CLIENT_PACKAGE.bat does locally.
+          .\scripts\ensure_vcredist.ps1
+
       - name: Build Setup.exe with Inno Setup
         shell: pwsh
         run: |
