@@ -21,9 +21,6 @@ jobs:
           echo $! > /tmp/overlay.pid
           sleep 3
 
-      - name: Screenshot before hotkeys
-        run: screencapture -x /tmp/before.png
-
       - name: Simulate F2 (listen) and F3 (toggle visibility)
         run: |
           osascript -e 'tell application "System Events" to key code 120' || echo "F2 simulation failed"
@@ -33,6 +30,9 @@ jobs:
 
       - name: Screenshot after hotkeys
         run: screencapture -x /tmp/after.png
+        # Only one screencapture call per run: a second call in the same
+        # session previously triggered an unattended macOS screen-recording
+        # consent dialog that papered over the actual screen content.
 
       - name: Stop overlay
         if: always()
@@ -48,6 +48,5 @@ jobs:
         with:
           name: swift-overlay-smoke-test
           path: |
-            /tmp/before.png
             /tmp/after.png
             /tmp/overlay.log
