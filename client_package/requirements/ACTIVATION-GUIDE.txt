@@ -14,4 +14,15 @@ Activation — One Computer Per License ($300 Lifetime)
 6. Activation is bound to this computer only.
 
 Seller tool (for you, not the client):
-  python scripts/generate_activation_code.py CCP-XXXX-...
+  One time only, on your machine:
+    python scripts/generate_activation_code.py --init-keys
+    (creates ~/.career-copilot-license-signing/private_key.pem and prints the
+     PUBLIC_KEY_B64 to paste into app_licensing.py -- back up that key file)
+
+  Per buyer:
+    python scripts/generate_activation_code.py "Buyer Name <email>" CCP-XXXX-...
+    (the name is optional and only recorded in your local issued_licenses.log)
+
+  Codes are Ed25519 signatures bound to the buyer's machine. The private key
+  never ships in the app. Any code issued before this change stops working --
+  existing clients must re-activate after updating.

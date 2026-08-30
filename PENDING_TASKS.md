@@ -27,6 +27,19 @@ scripts\build_apk.bat
 
 ## Seller activation
 
+One-time, on the seller machine only (creates `~/.career-copilot-license-signing/private_key.pem`,
+then paste the printed `PUBLIC_KEY_B64` into `app_licensing.py`):
+
 ```bat
-venv311\Scripts\python.exe scripts\generate_activation_code.py CCP-XXXX-XXXX-XXXX-XXXX-XXXX
+venv311\Scripts\python.exe scripts\generate_activation_code.py --init-keys
 ```
+
+Per buyer (the optional first argument is a customer name/email recorded in the local
+`issued_licenses.log` ledger next to the private key):
+
+```bat
+venv311\Scripts\python.exe scripts\generate_activation_code.py "Jane <jane@example.com>" CCP-XXXX-XXXX-XXXX-XXXX-XXXX
+```
+
+Codes are Ed25519 signatures now (not the old shared-secret HMAC); the private key never ships.
+Any code issued before this change no longer verifies — existing clients must re-activate.
