@@ -1,16 +1,38 @@
-"""Offline machine-bound licensing helpers for packaged desktop installs."""
+"""Offline, machine-bound license verification using Ed25519 signatures.
+
+Flow: the app derives a REQUEST CODE from a stable per-machine fingerprint and
+shows it to the user, who sends it to the seller. The seller runs
+scripts/generate_activation_code.py (which holds the ONLY copy of the private
+key, kept entirely outside this repo, never shipped) to sign that exact string,
+producing an ACTIVATION CODE unique to that one machine. This module verifies
+that signature using only the embedded PUBLIC key -- a public key reveals
+nothing that lets anyone forge a new signature or activate a different machine.
+
+This replaces the previous shared-secret HMAC scheme (ACTIVATION_SECRET, a
+single string that both signed and verified, compiled into every shipped
+build -- recoverable by decompiling the app and reusable to mint codes for
+any machine). Mirrors the same request/activation-code shape used by the
+sibling products JobMind Match and MessageCannon.
+
+This module must never import or reference a private key. If a private key
+ever needs to be loaded, that belongs in scripts/generate_activation_code.py
+only.
+"""
 
 from __future__ import annotations
 
+import base64
 from datetime import datetime, timezone
 import hashlib
-import hmac
 import json
 import os
 from pathlib import Path
 import platform
 import re
 import subprocess
+
+from cryptography.exceptions import InvalidSignature
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 try:
     import winreg
@@ -20,7 +42,16 @@ except ImportError:  # pragma: no cover - non-Windows fallback.
 
 APP_STORAGE_DIRNAME = "CareerCopilotPremium"
 LICENSE_FILENAME = "license_state.json"
-ACTIVATION_SECRET = b"career-copilot-premium-offline-license-v1"
+
+REQUEST_PREFIX = "CCP"
+ACTIVATION_PREFIX = "ACT"
+_SIGNATURE_LEN = 64  # Ed25519 signatures are always exactly 64 bytes.
+
+# Public key only -- generated once via `python scripts/generate_activation_code.py
+# --init-keys`, which prints this value for pasting in here. Safe to embed: an
+# Ed25519 public key cannot be used to derive the private key or forge a
+# signature, only to verify one already produced by the matching private key.
+PUBLIC_KEY_B64 = "S6IeU7Jq4rRvPpEqz7yn4JXM+1CTsovQdiQUbt56H3Q="
 
 
 def license_storage_dir() -> Path:
@@ -67,30 +98,70 @@ def machine_fingerprint() -> str:
 
 
 def machine_request_code() -> str:
+    """Not itself cryptographic material -- just a stable, human-shareable
+    proxy for this machine's fingerprint. The seller signs this exact string;
+    verification recomputes it locally and checks the signature against it, so
+    a request code copied to a different machine won't produce a matching
+    signature there."""
     digest = hashlib.sha256(f"REQUEST::{machine_fingerprint()}".encode("utf-8")).hexdigest().upper()[:20]
-    return _format_code("CCP", digest)
+    return _format_code(REQUEST_PREFIX, digest)
 
 
-def generate_activation_code(request_code: str) -> str:
-    normalized_request_code = _normalize_code(request_code)
-    if len(normalized_request_code) != 23 or not normalized_request_code.startswith("CCP"):
-        raise ValueError("Request code format is invalid.")
-    digest = hmac.new(ACTIVATION_SECRET, normalized_request_code.encode("utf-8"), hashlib.sha256).hexdigest().upper()[:20]
-    return _format_code("ACT", digest)
+def _b32_encode_signature(signature: bytes) -> str:
+    return base64.b32encode(signature).decode("ascii").rstrip("=")
+
+
+def _b32_decode_signature(encoded: str) -> bytes:
+    # base32 requires the input length padded up to a multiple of 8.
+    padded = encoded + "=" * (-len(encoded) % 8)
+    return base64.b32decode(padded)
+
+
+def format_activation_code(signature: bytes) -> str:
+    if len(signature) != _SIGNATURE_LEN:
+        raise ValueError(f"Expected a {_SIGNATURE_LEN}-byte Ed25519 signature")
+    return _format_code(ACTIVATION_PREFIX, _b32_encode_signature(signature))
+
+
+def verify_activation_code(request_code: str, activation_code: str) -> bool:
+    """True only if activation_code is a valid Ed25519 signature (by the
+    embedded public key) over the exact request_code string. Never raises --
+    malformed input, a tampered code, and a genuinely wrong signature are all
+    just "not valid", since this sits directly in the untrusted activation
+    request path."""
+    try:
+        normalized_activation = _normalize_code(activation_code)
+        if not normalized_activation.startswith(ACTIVATION_PREFIX):
+            return False
+        raw = normalized_activation[len(ACTIVATION_PREFIX):]
+        signature = _b32_decode_signature(raw)
+        if len(signature) != _SIGNATURE_LEN:
+            return False
+        public_key = Ed25519PublicKey.from_public_bytes(base64.b64decode(PUBLIC_KEY_B64))
+        public_key.verify(signature, _normalize_code(request_code).encode("utf-8"))
+        return True
+    except (InvalidSignature, ValueError, TypeError):
+        return False
+    except Exception:
+        # Any other decode/library failure on attacker-controlled input is
+        # still just "not a valid code", not a crash.
+        return False
 
 
 def activate_machine_license(activation_code: str) -> dict[str, object]:
-    normalized_activation_code = _normalize_code(activation_code)
-    expected_code = _normalize_code(generate_activation_code(machine_request_code()))
-    if normalized_activation_code != expected_code:
+    request_code = machine_request_code()
+    if not verify_activation_code(request_code, activation_code):
         raise ValueError("Activation code is invalid for this computer.")
 
+    normalized_activation_code = _normalize_code(activation_code)
     payload = {
         "activated": True,
         "machine_name": machine_name(),
         "machine_fingerprint": machine_fingerprint(),
-        "request_code": machine_request_code(),
-        "activation_code": _format_code("ACT", normalized_activation_code[3:]),
+        "request_code": request_code,
+        "activation_code": _format_code(
+            ACTIVATION_PREFIX, normalized_activation_code[len(ACTIVATION_PREFIX):]
+        ),
         "activated_at": datetime.now(timezone.utc).isoformat(),
     }
     path = license_state_path()
@@ -108,8 +179,7 @@ def current_license_status() -> dict[str, object]:
         payload.get("activated")
         and str(payload.get("machine_fingerprint", "")).upper() == current_fingerprint
         and _normalize_code(str(payload.get("request_code", ""))) == _normalize_code(current_request_code)
-        and _normalize_code(str(payload.get("activation_code", "")))
-        == _normalize_code(generate_activation_code(current_request_code))
+        and verify_activation_code(current_request_code, str(payload.get("activation_code", "")))
     )
     return {
         "activated": activated,

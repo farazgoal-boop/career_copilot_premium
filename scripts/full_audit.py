@@ -581,10 +581,21 @@ def check_licensing() -> AuditCheck:
     from app_licensing import (
         activate_machine_license,
         current_license_status,
-        generate_activation_code,
         machine_fingerprint,
         machine_request_code,
+        verify_activation_code,
     )
+
+    # Signing needs the seller's Ed25519 private key, which lives outside the
+    # repo and is present only on the seller's machine. Import is best-effort.
+    try:
+        from generate_activation_code import default_key_path, sign_request_code
+    except Exception:  # pragma: no cover - import path depends on how audit is invoked
+        try:
+            from scripts.generate_activation_code import default_key_path, sign_request_code
+        except Exception:
+            default_key_path = None  # type: ignore[assignment]
+            sign_request_code = None  # type: ignore[assignment]
 
     details: list[str] = []
     issues: list[str] = []
@@ -593,7 +604,6 @@ def check_licensing() -> AuditCheck:
     try:
         fingerprint = machine_fingerprint()
         request_code = machine_request_code()
-        activation_code = generate_activation_code(request_code)
         status = current_license_status()
 
         if not re.fullmatch(r"[A-F0-9]{24}", fingerprint):
@@ -608,17 +618,32 @@ def check_licensing() -> AuditCheck:
         else:
             details.append(f"Request code format valid: {request_code}")
 
-        if not re.fullmatch(r"ACT(?:-[A-Z0-9]{4}){5}", activation_code):
+        if verify_activation_code(request_code, "ACT-NOT-A-REAL-CODE"):
             passed = False
-            issues.append(f"Generated activation code format invalid: {activation_code}")
-
-        license_path = Path(str(status.get("license_path", "")))
-        if not license_path.exists():
-            passed = False
-            issues.append(f"License file does not exist: {license_path}")
+            issues.append("verify_activation_code accepted an obviously invalid code.")
         else:
+            details.append("verify_activation_code rejects invalid codes.")
+
+        signing_available = bool(
+            sign_request_code and default_key_path and default_key_path().exists()
+        )
+
+        if signing_available:
+            activation_code = sign_request_code(request_code, customer_name="full_audit self-test")
+            if not (
+                activation_code.startswith("ACT-")
+                and len(re.sub(r"[^A-Z0-9]", "", activation_code)) >= 100
+            ):
+                passed = False
+                issues.append(f"Generated activation code format invalid: {activation_code}")
+            elif not verify_activation_code(request_code, activation_code):
+                passed = False
+                issues.append("Freshly signed activation code did not verify.")
+            else:
+                details.append("Signed a machine-bound activation code and verified it.")
+
             if not bool(status.get("activated", False)):
-                # Self-heal for local audit runs: generate machine-bound activation code and activate.
+                # Self-heal for local audit runs on the seller's own machine.
                 activate_machine_license(activation_code)
                 status = current_license_status()
                 details.append("License auto-activation attempted during audit.")
@@ -627,7 +652,20 @@ def check_licensing() -> AuditCheck:
                 passed = False
                 issues.append("License file exists but is not activated/valid for this machine.")
             else:
-                details.append(f"License file valid: {license_path}")
+                details.append(f"License file valid: {status.get('license_path', '')}")
+        else:
+            details.append(
+                "Seller signing key not present on this machine - skipping sign/activate self-test "
+                "(expected off the seller's machine)."
+            )
+            if bool(status.get("activated", False)):
+                details.append(
+                    f"Existing license is valid for this machine: {status.get('license_path', '')}"
+                )
+            else:
+                details.append(
+                    "No active license on this machine (not a failure without the signing key)."
+                )
     except Exception as error:
         passed = False
         issues.append(f"Licensing check crashed: {error}")
