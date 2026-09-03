@@ -912,7 +912,8 @@ body.has-sidebar .premium-main {
   display: flex;
   align-items: center;
   height: 52px;
-  padding: 0 12px;
+  /* 4px so the logo lines up with the flush-left nav icons below it. */
+  padding: 0 4px;
   gap: 10px;
   overflow: hidden;
   white-space: nowrap;
@@ -1005,8 +1006,11 @@ body.has-sidebar .premium-main {
   display: flex;
   align-items: center;
   height: 40px;
-  padding: 0 6px;
-  margin: 0 6px;
+  /* Flush-left rail: 4px item margin + 0 padding puts the 20px icon box
+     at 4px, so the visible glyph stroke sits ~6px from the sidebar edge.
+     The hover/active pill is the 4px-inset rounded rect. */
+  padding: 0;
+  margin: 0 4px;
   border-radius: 8px;
   text-decoration: none;
   color: var(--premium-muted);
@@ -1126,11 +1130,9 @@ body.has-sidebar .premium-main {
    ───────────────────────────────────────────────────────────────────────────── */
 
 .sidebar-item--btn {
-  /* Must match .sidebar-item's 6px margin + 6px padding so the icons on
-     Open Overlay / Link Device start at the same 12px as every anchor
-     nav item above them. Was 8/8 (=16px), which left those two visibly
-     indented relative to the rest of the rail. */
-  width: calc(100% - 12px);
+  /* Match .sidebar-item exactly (4px margin, 0 padding) so Open Overlay /
+     Link Device icons sit flush at the same ~6px as every anchor item. */
+  width: calc(100% - 8px);
   text-align: left;
   background: none;
   box-shadow: none;
@@ -1139,8 +1141,8 @@ body.has-sidebar .premium-main {
   color: var(--premium-muted);
   font: inherit;
   cursor: pointer;
-  padding: 0 6px;
-  margin: 0 6px;
+  padding: 0;
+  margin: 0 4px;
   display: flex;
   align-items: center;
   height: 40px;
@@ -1163,9 +1165,9 @@ body.has-sidebar .premium-main {
 .sidebar-version-area {
   flex-shrink: 0;
   margin-top: auto;
-  /* 12px left so the version badge + update button line up under the
-     nav icons/labels (which sit at 12px). */
-  padding: 10px 12px 14px;
+  /* 4px left so the version badge + update button line up under the
+     flush-left nav icons. */
+  padding: 10px 4px 14px;
   display: flex;
   flex-direction: column;
   gap: 8px;
