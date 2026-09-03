@@ -343,19 +343,18 @@ input[type='submit']:hover {
 
 .premium-footer {
   margin-top: auto;
-  padding: 18px 24px 28px;
+  padding: 12px 16px;
   border-top: 1px solid var(--premium-line);
   background: var(--premium-overlay-03);
   margin-left: 0;
-  transition: margin-left 220ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Footer sits beside the collapsed rail and stays put when the sidebar
+   expands -- the open sidebar overlays content (same as .premium-main),
+   so the footer must NOT follow it out to 200px or it detaches from the
+   content column above it. */
 body.has-sidebar .premium-footer {
   margin-left: 56px;
-}
-
-body.has-sidebar.sidebar-is-open .premium-footer {
-  margin-left: 200px;
 }
 
 .premium-footer__brand {
@@ -913,7 +912,7 @@ body.has-sidebar .premium-main {
   display: flex;
   align-items: center;
   height: 52px;
-  padding: 0 16px;
+  padding: 0 12px;
   gap: 10px;
   overflow: hidden;
   white-space: nowrap;
@@ -1006,8 +1005,8 @@ body.has-sidebar .premium-main {
   display: flex;
   align-items: center;
   height: 40px;
-  padding: 0 8px;
-  margin: 0 8px;
+  padding: 0 6px;
+  margin: 0 6px;
   border-radius: 8px;
   text-decoration: none;
   color: var(--premium-muted);
@@ -1152,7 +1151,7 @@ body.has-sidebar .premium-main {
 .sidebar-version-area {
   flex-shrink: 0;
   margin-top: auto;
-  padding: 10px 8px 14px;
+  padding: 10px 6px 14px;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -1218,6 +1217,33 @@ body.has-sidebar .premium-main {
 .update-status.update-available {
   color: var(--premium-success);
 }
+
+/* In-app self-update (Windows packaged build) — "Download Now" is a button
+   that triggers POST /api/prepare-update, not a link. Styled to read like the
+   existing update-status link. */
+.update-download-btn {
+  border: 1px solid rgba(20, 184, 166, 0.28);
+  background: rgba(20, 184, 166, 0.10);
+  color: var(--premium-accent-strong);
+  border-radius: 8px;
+  font: inherit;
+  font-size: 0.74rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+
+.update-download-btn:hover { background: rgba(20, 184, 166, 0.18); }
+.update-download-btn:disabled { opacity: 0.7; cursor: wait; }
+
+.update-restart-note {
+  margin-top: 4px;
+  font-size: 0.72rem;
+  color: var(--premium-muted);
+}
+
+.update-restart-note.update-error { color: var(--premium-danger); }
+.update-restart-note a { color: var(--premium-accent-strong); text-decoration: underline; }
 
 /* ─────────────────────────────────────────────────────────────────────────────
    RIGHT SIDEBAR (social links, icon-rail, hover-expand) -- mirrors the left
