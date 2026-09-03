@@ -28,7 +28,7 @@ _MIC_RUNTIME_CACHE: dict[str, object] | None = None
 # sidebar and compared against GitHub releases by /api/check-update. Bump
 # alongside setup.py / career-copilot-version.txt / the other files listed
 # in CLAUDE.md's version-bump checklist.
-CURRENT_APP_VERSION = "2.1.3"
+CURRENT_APP_VERSION = "2.1.4"
 
 
 def _is_public_route(path: str) -> bool:
@@ -608,20 +608,43 @@ def register_routes(app: Flask) -> None:
                     raise RuntimeError("Downloaded installer looks truncated.")
 
                 bat_path = os.path.join(work_dir, "apply_update.bat")
+                # The old app MUST be fully gone before the installer runs,
+                # otherwise the new build lands while the previous one is still
+                # live (locked files / two copies running). Kill every name the
+                # app can appear under, plus any source-run Python whose command
+                # line mentions the app, then wait it out before installing.
                 bat_body = (
                     "@echo off\r\n"
-                    "timeout /t 3 /nobreak >nul\r\n"
+                    "echo Career Copilot update starting...\r\n"
+                    "timeout /t 2 /nobreak >nul\r\n"
+                    "\r\n"
+                    ":: Kill this process and every name the app can run under\r\n"
                     f"taskkill /f /pid {app_pid} >nul 2>&1\r\n"
                     f'taskkill /f /im "{exe_basename}" >nul 2>&1\r\n'
-                    "timeout /t 2 /nobreak >nul\r\n"
-                    f'start "" /wait "{installer_path}" /SILENT /SUPPRESSMSGBOXES '
-                    "/NORESTART /CLOSEAPPLICATIONS\r\n"
-                    "timeout /t 2 /nobreak >nul\r\n"
+                    'taskkill /f /im "career-copilot.exe" >nul 2>&1\r\n'
+                    'taskkill /f /im "CareerCopilotPremium.exe" >nul 2>&1\r\n'
+                    'taskkill /f /im "Career Copilot Premium.exe" >nul 2>&1\r\n'
+                    "\r\n"
+                    ":: Kill any source-run Python hosting the app\r\n"
+                    "wmic process where \"CommandLine like '%%career_copilot%%'\" delete >nul 2>&1\r\n"
+                    "wmic process where \"CommandLine like '%%premium_launcher%%'\" delete >nul 2>&1\r\n"
+                    "\r\n"
+                    ":: Wait for the processes to fully die\r\n"
+                    "timeout /t 4 /nobreak >nul\r\n"
+                    "\r\n"
+                    ":: Run the new installer silently\r\n"
+                    f'start "" /wait "{installer_path}" /SILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS\r\n'
+                    "\r\n"
+                    ":: Relaunch the app, then clean up\r\n"
+                    "timeout /t 1 /nobreak >nul\r\n"
                     f'start "" "{current_exe}"\r\n'
                     f'del "{installer_path}" >nul 2>&1\r\n'
-                    'del "%~f0" >nul 2>&1\r\n'
+                    'del "%~f0"\r\n'
                 )
-                with open(bat_path, "w", encoding="ascii") as fh:
+                # newline="" so the \r\n already in bat_body is written verbatim
+                # (CRLF) -- default text mode would translate the \n and produce
+                # \r\r\n.
+                with open(bat_path, "w", encoding="ascii", newline="") as fh:
                     fh.write(bat_body)
 
                 detached_no_window = 0x00000008 | 0x00000200 | 0x08000000
@@ -632,7 +655,8 @@ def register_routes(app: Flask) -> None:
                     close_fds=True,
                 )
 
-                time.sleep(1)
+                # Give the detached batch time to start before this process dies.
+                time.sleep(2)
                 os._exit(0)
             except Exception as exc:  # noqa: BLE001 - detached worker, nowhere to bubble
                 logger.warning("prepare-update failed: %s", exc)

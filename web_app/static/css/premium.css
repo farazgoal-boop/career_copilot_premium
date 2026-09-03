@@ -1057,7 +1057,9 @@ body.has-sidebar .premium-main {
 }
 
 .sidebar-label {
-  margin-left: 12px;
+  /* 10px icon->label gap, matching .sidebar-item--btn's `gap: 10px` so
+     anchor and button nav items are identical. */
+  margin-left: 10px;
   font-size: 0.88rem;
   font-weight: 500;
   opacity: 0;
@@ -1124,7 +1126,11 @@ body.has-sidebar .premium-main {
    ───────────────────────────────────────────────────────────────────────────── */
 
 .sidebar-item--btn {
-  width: calc(100% - 16px);
+  /* Must match .sidebar-item's 6px margin + 6px padding so the icons on
+     Open Overlay / Link Device start at the same 12px as every anchor
+     nav item above them. Was 8/8 (=16px), which left those two visibly
+     indented relative to the rest of the rail. */
+  width: calc(100% - 12px);
   text-align: left;
   background: none;
   box-shadow: none;
@@ -1133,12 +1139,14 @@ body.has-sidebar .premium-main {
   color: var(--premium-muted);
   font: inherit;
   cursor: pointer;
-  padding: 0 8px;
-  margin: 0 8px;
+  padding: 0 6px;
+  margin: 0 6px;
   display: flex;
   align-items: center;
   height: 40px;
-  gap: 10px;
+  /* no flex `gap` -- the icon->label spacing comes from
+     .sidebar-label's margin-left (10px), same as the anchor items, so
+     buttons and anchors match exactly. */
 }
 
 .sidebar-item--btn:hover {

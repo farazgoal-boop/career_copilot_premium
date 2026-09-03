@@ -228,12 +228,17 @@
   var updateStatus = document.getElementById('sidebar-update-status');
 
   function startWindowsUpdate(btn, url) {
-    btn.disabled = true;
+    btn.disabled = true;                       /* prevent double-click */
     btn.textContent = 'Updating… \u{1F504}';
     var note = document.createElement('div');
     note.className = 'update-restart-note';
-    note.textContent = 'App will restart automatically.';
+    note.textContent = 'App will close and restart automatically. Please wait…';
     updateStatus.appendChild(note);
+
+    /* After ~3s the old app has been killed and the installer is running. */
+    var installingTimer = setTimeout(function () {
+      note.textContent = 'Installing…';
+    }, 3000);
 
     fetch('/api/prepare-update', {
       method: 'POST',
@@ -244,24 +249,19 @@
         return r.json().then(function (j) { return { httpOk: r.ok, body: j }; });
       })
       .then(function (res) {
-        if (res.httpOk && res.body && res.body.ok) {
-          btn.textContent = 'Restarting…';
-          note.textContent = 'Downloading update, then the app will close and reopen.';
-        } else {
+        if (!(res.httpOk && res.body && res.body.ok)) {
           throw new Error((res.body && res.body.error) || 'Update failed.');
         }
+        /* Server has started the download; it will kill this app shortly.
+           Leave the 3s -> "Installing…" swap running. */
+        btn.textContent = 'Restarting…';
       })
       .catch(function () {
+        clearTimeout(installingTimer);
         btn.disabled = false;
         btn.textContent = 'Download Now';
         note.className = 'update-restart-note update-error';
-        note.textContent = 'Update failed — ';
-        var link = document.createElement('a');
-        link.href = url;
-        link.target = '_blank';
-        link.rel = 'noopener noreferrer';
-        link.textContent = 'download manually';
-        note.appendChild(link);
+        note.textContent = 'Update failed — try again';
       });
   }
 
