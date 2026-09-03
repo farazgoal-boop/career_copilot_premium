@@ -9,7 +9,7 @@ README_PATH = PROJECT_ROOT / "README.md"
 
 setup(
     name="career-copilot-premium",
-    version="2.1.2",
+    version="2.1.3",
     description="Cross-platform AI interview copilot.",
     long_description=README_PATH.read_text(encoding="utf-8"),
     long_description_content_type="text/markdown",

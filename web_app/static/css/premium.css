@@ -1029,8 +1029,12 @@ body.has-sidebar .premium-main {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  /* Box is exactly the 20px glyph size -- a wider box would center the
+     glyph and push it right of the .sidebar-item padding edge, adding a
+     few px of dead space before every icon. Keep box == glyph so icons
+     start at exactly 12px (6px item margin + 6px item padding). */
+  width: 20px;
+  height: 20px;
   flex-shrink: 0;
   transition: filter 150ms ease;
 }
@@ -1151,7 +1155,9 @@ body.has-sidebar .premium-main {
 .sidebar-version-area {
   flex-shrink: 0;
   margin-top: auto;
-  padding: 10px 6px 14px;
+  /* 12px left so the version badge + update button line up under the
+     nav icons/labels (which sit at 12px). */
+  padding: 10px 12px 14px;
   display: flex;
   flex-direction: column;
   gap: 8px;
