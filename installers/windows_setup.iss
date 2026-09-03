@@ -16,7 +16,7 @@ Uninstallable=yes
 PrivilegesRequired=admin
 UsePreviousAppDir=no
 CloseApplications=yes
-CloseApplicationsFilter=Career Copilot Premium.exe
+CloseApplicationsFilter=career-copilot.exe,Career Copilot Premium.exe
 RestartApplications=no
 
 [Languages]

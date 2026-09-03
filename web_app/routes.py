@@ -496,6 +496,16 @@ def register_routes(app: Flask) -> None:
                     "latest_version": latest_version,
                     "download_url": str(data.get("html_url", "")),
                     "direct_download_url": direct_download_url,
+                    # Raw sys.platform of the machine running this local server --
+                    # the sidebar JS uses "win32" to pick the in-app self-update
+                    # flow (POST /api/prepare-update) instead of a plain download
+                    # link. Mac/Linux keep the link.
+                    "platform": sys.platform,
+                    "can_self_update": (
+                        sys.platform == "win32"
+                        and bool(getattr(sys, "frozen", False))
+                        and bool(direct_download_url)
+                    ),
                 }
             )
         except (_url_error.URLError, _url_error.HTTPError, OSError, TimeoutError, ValueError, KeyError) as exc:
@@ -505,9 +515,136 @@ def register_routes(app: Flask) -> None:
                     "ok": False,
                     "update_available": False,
                     "current_version": current_version,
+                    "platform": sys.platform,
+                    "can_self_update": False,
                     "error": "Could not reach GitHub.",
                 }
             )
+
+    @app.post("/api/prepare-update")
+    def prepare_update() -> Response:
+        """Windows-only in-app self-update.
+
+        The browser download + double-click path fails on installed builds:
+        the running ``career-copilot.exe`` holds its own files locked, so the
+        new installer hits "access denied" / "app already exists". Instead:
+
+          1. Download the new installer to a private temp dir (server-side).
+          2. Write a small detached ``.bat`` that waits, kills this process,
+             runs the installer silently, relaunches the app, then deletes
+             itself.
+          3. Spawn the ``.bat`` detached and exit this process.
+
+        Only runs in a frozen (PyInstaller) Windows build. In a dev/source run
+        there is no installer to apply and killing "career-copilot.exe" is
+        meaningless, so we refuse and the sidebar falls back to a manual link.
+        Mac/Linux never call this endpoint (see the sidebar JS).
+        """
+        import subprocess
+        import tempfile
+        import threading
+        import time
+        from urllib import request as _url_request
+        from urllib.parse import urlsplit as _urlsplit
+
+        logger = app.logger
+
+        if sys.platform != "win32" or not getattr(sys, "frozen", False):
+            return (
+                jsonify(
+                    {
+                        "ok": False,
+                        "error": "In-app update is only available in the packaged Windows build.",
+                    }
+                ),
+                400,
+            )
+
+        body = request.get_json(silent=True) or {}
+        download_url = str(body.get("download_url", "")).strip()
+        if not download_url:
+            return jsonify({"ok": False, "error": "No download URL provided."}), 400
+
+        # This endpoint downloads and *executes* whatever it is pointed at, so
+        # only accept HTTPS GitHub release-asset URLs for this repo's own
+        # installer. Anything else -> refuse, JS shows the manual link.
+        allowed_hosts = {
+            "github.com",
+            "www.github.com",
+            "objects.githubusercontent.com",
+            "release-assets.githubusercontent.com",
+        }
+        parts = _urlsplit(download_url)
+        if (
+            parts.scheme != "https"
+            or parts.hostname not in allowed_hosts
+            or not parts.path.lower().endswith(".exe")
+        ):
+            return (
+                jsonify({"ok": False, "error": "Download URL is not a recognised release asset."}),
+                400,
+            )
+
+        current_exe = sys.executable
+        exe_basename = os.path.basename(current_exe)
+        app_pid = os.getpid()
+
+        def _run_update() -> None:
+            try:
+                work_dir = tempfile.mkdtemp(prefix="ccp-update-")
+                installer_path = os.path.join(work_dir, "CareerCopilotPremium_Setup.exe")
+
+                req = _url_request.Request(
+                    download_url, headers={"User-Agent": "CareerCopilotPremium"}
+                )
+                with _url_request.urlopen(req, timeout=120) as resp, open(installer_path, "wb") as fh:
+                    while True:
+                        chunk = resp.read(65536)
+                        if not chunk:
+                            break
+                        fh.write(chunk)
+
+                if os.path.getsize(installer_path) < 1_000_000:
+                    raise RuntimeError("Downloaded installer looks truncated.")
+
+                bat_path = os.path.join(work_dir, "apply_update.bat")
+                bat_body = (
+                    "@echo off\r\n"
+                    "timeout /t 3 /nobreak >nul\r\n"
+                    f"taskkill /f /pid {app_pid} >nul 2>&1\r\n"
+                    f'taskkill /f /im "{exe_basename}" >nul 2>&1\r\n'
+                    "timeout /t 2 /nobreak >nul\r\n"
+                    f'start "" /wait "{installer_path}" /SILENT /SUPPRESSMSGBOXES '
+                    "/NORESTART /CLOSEAPPLICATIONS\r\n"
+                    "timeout /t 2 /nobreak >nul\r\n"
+                    f'start "" "{current_exe}"\r\n'
+                    f'del "{installer_path}" >nul 2>&1\r\n'
+                    'del "%~f0" >nul 2>&1\r\n'
+                )
+                with open(bat_path, "w", encoding="ascii") as fh:
+                    fh.write(bat_body)
+
+                detached_no_window = 0x00000008 | 0x00000200 | 0x08000000
+                subprocess.Popen(  # noqa: S603 - fixed argv, path we just wrote
+                    ["cmd", "/c", bat_path],
+                    cwd=work_dir,
+                    creationflags=detached_no_window,
+                    close_fds=True,
+                )
+
+                time.sleep(1)
+                os._exit(0)
+            except Exception as exc:  # noqa: BLE001 - detached worker, nowhere to bubble
+                logger.warning("prepare-update failed: %s", exc)
+
+        threading.Thread(target=_run_update, name="prepare-update", daemon=True).start()
+        return jsonify(
+            {
+                "ok": True,
+                "status": "downloading",
+                "message": "Update downloading. The app will restart automatically.",
+            }
+        )
 
     @app.get("/api/sessions/recent")
     def recent_sessions() -> Response:

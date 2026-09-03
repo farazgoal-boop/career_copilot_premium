@@ -1219,6 +1219,33 @@ body.has-sidebar .premium-main {
   color: var(--premium-success);
 }
 
+/* In-app self-update (Windows packaged build) — "Download Now" is a button
+   that triggers POST /api/prepare-update, not a link. Styled to read like the
+   existing update-status link. */
+.update-download-btn {
+  border: 1px solid rgba(20, 184, 166, 0.28);
+  background: rgba(20, 184, 166, 0.10);
+  color: var(--premium-accent-strong);
+  border-radius: 8px;
+  font: inherit;
+  font-size: 0.74rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+
+.update-download-btn:hover { background: rgba(20, 184, 166, 0.18); }
+.update-download-btn:disabled { opacity: 0.7; cursor: wait; }
+
+.update-restart-note {
+  margin-top: 4px;
+  font-size: 0.72rem;
+  color: var(--premium-muted);
+}
+
+.update-restart-note.update-error { color: var(--premium-danger); }
+.update-restart-note a { color: var(--premium-accent-strong); text-decoration: underline; }
+
 /* ─────────────────────────────────────────────────────────────────────────────
    RIGHT SIDEBAR (social links, icon-rail, hover-expand) -- mirrors the left
    sidebar's collapsed/hover-expand pattern on the opposite edge. Fixed +

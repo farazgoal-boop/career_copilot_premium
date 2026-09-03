@@ -214,9 +214,57 @@
      GitHub release. Manual/click-triggered only, never auto-polled.
      Platform-specific asset matching happens server-side in /api/check-update
      (the Flask server runs on the user's own OS, so it knows the real target
-     platform); the JS just uses direct_download_url when present. */
+     platform).
+
+     Windows (packaged build): "Download Now" triggers an in-app self-update —
+     POST /api/prepare-update downloads the installer server-side, hands off to
+     a detached batch script that swaps the app and relaunches it, then this
+     process exits. No manual "run the .exe from Downloads" step (which fails
+     with "access denied" because the running exe locks its own files).
+
+     Mac / Linux (and any build that can't self-update): unchanged — a plain
+     link to the platform installer, or the GitHub release page as fallback. */
   var updateBtn = document.getElementById('sidebar-update-check-btn');
   var updateStatus = document.getElementById('sidebar-update-status');
+
+  function startWindowsUpdate(btn, url) {
+    btn.disabled = true;
+    btn.textContent = 'Updating… \u{1F504}';
+    var note = document.createElement('div');
+    note.className = 'update-restart-note';
+    note.textContent = 'App will restart automatically.';
+    updateStatus.appendChild(note);
+
+    fetch('/api/prepare-update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({ download_url: url })
+    })
+      .then(function (r) {
+        return r.json().then(function (j) { return { httpOk: r.ok, body: j }; });
+      })
+      .then(function (res) {
+        if (res.httpOk && res.body && res.body.ok) {
+          btn.textContent = 'Restarting…';
+          note.textContent = 'Downloading update, then the app will close and reopen.';
+        } else {
+          throw new Error((res.body && res.body.error) || 'Update failed.');
+        }
+      })
+      .catch(function () {
+        btn.disabled = false;
+        btn.textContent = 'Download Now';
+        note.className = 'update-restart-note update-error';
+        note.textContent = 'Update failed — ';
+        var link = document.createElement('a');
+        link.href = url;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.textContent = 'download manually';
+        note.appendChild(link);
+      });
+  }
+
   if (updateBtn && updateStatus) {
     updateBtn.addEventListener('click', function () {
       updateBtn.textContent = 'Checking...';
@@ -225,16 +273,28 @@
         .then(function (r) { return r.json(); })
         .then(function (d) {
           updateStatus.classList.remove('update-available');
+          updateStatus.textContent = '';
           if (d.update_available) {
-            var link = document.createElement('a');
-            link.href = d.direct_download_url || d.download_url || '#';
-            if (!d.direct_download_url) {
-              link.target = '_blank';
-              link.rel = 'noopener noreferrer';
-            }
-            link.textContent = 'Download Now';
             updateStatus.textContent = '\u{1F389} v' + d.latest_version + ' available! ';
-            updateStatus.appendChild(link);
+            if (d.can_self_update && d.direct_download_url) {
+              var btn = document.createElement('button');
+              btn.type = 'button';
+              btn.className = 'update-download-btn';
+              btn.textContent = 'Download Now';
+              btn.addEventListener('click', function () {
+                startWindowsUpdate(btn, d.direct_download_url);
+              });
+              updateStatus.appendChild(btn);
+            } else {
+              var link = document.createElement('a');
+              link.href = d.direct_download_url || d.download_url || '#';
+              if (!d.direct_download_url) {
+                link.target = '_blank';
+                link.rel = 'noopener noreferrer';
+              }
+              link.textContent = 'Download Now';
+              updateStatus.appendChild(link);
+            }
             updateStatus.classList.add('update-available');
           } else if (d.ok) {
             updateStatus.textContent = '✅ You are up to date';
